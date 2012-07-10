@@ -1,0 +1,24 @@
+{
+	"name": "kdyby/redis-extension",
+	"description": "Redis storage for Nette Framework",
+	"keywords": ["nette", "kdyby", "redis", "client", "cache"],
+    "homepage":"http://kdyby.org",
+    "license":["BSD-3", "GPLv2", "GPLv3"],
+	"authors": [
+		{
+			"name": "Filip Procházka",
+			"homepage": "http://hosiplan.com"
+		}
+	],
+	"require": {
+		"php" : ">=5.3.2",
+		"nette/nette" : "2.0.*"
+	},
+    "conflict": {
+        "kdyby/framework": "self.version"
+    },
+	"autoload": {
+        "psr-0": {"Kdyby\\Extension\\Redis": ""}
+    },
+    "target-dir":"Kdyby/Extension/Redis"
+}
