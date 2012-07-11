@@ -19,10 +19,11 @@ use Nette\Diagnostics\Debugger;
 /**
  * TinyRedisClient - the most lightweight Redis client written in PHP
  *
- * Usage example:
+ * <code>
  * $client = new Kdyby\Extension\Redis\RedisClient();
  * $client->set('key', 'value');
  * $value = $client->get('key');
+ * </code>
  *
  * Full list of commands you can see on http://redis.io/commands
  *

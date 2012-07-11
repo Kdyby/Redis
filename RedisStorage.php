@@ -19,8 +19,8 @@ use Nette\Utils\Json;
 
 
 /**
- * @see: https://github.com/OndrejSlamecka/RedisStorage
- * @author Ondrej Slamecka, www.slamecka.cz
+ * Redis Storage.
+ *
  * @author Filip Procházka <filip.prochazka@kdyby.org>
  */
 class RedisStorage extends Nette\Object implements Nette\Caching\IStorage

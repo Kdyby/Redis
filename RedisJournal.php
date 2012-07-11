@@ -17,6 +17,8 @@ use Nette\Caching\Cache;
 
 
 /**
+ * Redis journal for tags and priorities of cached values.
+ *
  * @author Filip Procházka <filip.prochazka@kdyby.org>
  */
 class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJournal
