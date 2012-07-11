@@ -176,6 +176,10 @@ use Nette\Diagnostics\Debugger;
 class RedisClient extends Nette\Object
 {
 
+	/** @internal */
+	const MAX_BUFFER_SIZE = 8192;
+
+	/** commands */
 	const WITH_SCORES = 'WITHSCORES';
 
 	/**
@@ -304,7 +308,7 @@ class RedisClient extends Nette\Object
 				$result = null;
 
 			else {
-				$line = fread($this->session, $result + 2);
+				$line = $this->readResponse($result + 2);
 				$result = substr($line, 0, strlen($line) - 2);
 			}
 
@@ -314,12 +318,34 @@ class RedisClient extends Nette\Object
 			for ($i = 0; $i < $count; $i++) {
 				$line = fgets($this->session);
 				$length = (int)substr($line, 1, strlen($line) - 3);
-				$line = fread($this->session, $length + 2);
+				$line = $this->readResponse($length + 2);
 				$result[] = substr($line, 0, strlen($line) - 2);
 			}
 		}
 
 		return $result;
+	}
+
+
+
+	/**
+	 * @param int $length
+	 * @return null|string
+	 */
+	private function readResponse($length)
+	{
+		if ($length <= self::MAX_BUFFER_SIZE) {
+			return fread($this->session, $length);
+		}
+
+		$buffer = NULL;
+		while ($length > self::MAX_BUFFER_SIZE) {
+			$buffer .= fread($this->session, self::MAX_BUFFER_SIZE);
+			$length -= self::MAX_BUFFER_SIZE;
+		};
+		$buffer .= fread($this->session, $length);
+
+		return $buffer;
 	}
 
 
