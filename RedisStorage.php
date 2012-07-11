@@ -170,7 +170,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 		if (isset($dp[Cache::ITEMS])) {
 			foreach ((array)$dp[Cache::ITEMS] as $itemName) {
 				$m = $this->readMeta($itemName);
-				$meta[self::META_ITEMS][$itemName] = @$m[self::META_TIME]; // may be NULL
+				$meta[self::META_ITEMS][$itemName] = $m[self::META_TIME]; // may be NULL
 				unset($m);
 			}
 		}
@@ -240,7 +240,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 		// cleaning using file iterator
 		if (!empty($conds[Cache::ALL])) {
 			foreach ($this->client->keys(self::NS_NETTE . ':*') as $entry) {
-				$this->remove($entry);
+				$this->client->del($entry);
 			}
 
 			if ($this->journal) {
@@ -291,9 +291,10 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 		if ($meta = $this->client->get($this->getMetaKey($key))) {
 			$meta = Json::decode($meta, JSON::FORCE_ARRAY);
 			$meta[self::KEY] = $key;
+			return $meta;
 		}
 
-		return $meta ?: array();
+		return NULL;
 	}
 
 }
