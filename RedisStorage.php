@@ -289,7 +289,12 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	protected function readMeta($key)
 	{
 		if ($meta = $this->client->get($this->getMetaKey($key))) {
-			$meta = Json::decode($meta, JSON::FORCE_ARRAY);
+			try {
+				$meta = Json::decode($meta, JSON::FORCE_ARRAY);
+			} catch (Nette\Utils\JsonException $e) {
+				$meta = array();
+				Nette\Diagnostics\Debugger::log($e, 'redis-error');
+			}
 			$meta[self::KEY] = $key;
 			return $meta;
 		}

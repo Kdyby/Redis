@@ -184,6 +184,11 @@ class RedisClient extends Nette\Object
 	private $session;
 
 	/**
+	 * @var Diagnostics\Panel
+	 */
+	private $panel;
+
+	/**
 	 * @var string
 	 */
 	private $host = 'localhost';
@@ -207,13 +212,15 @@ class RedisClient extends Nette\Object
 
 	/**
 	 * @param array $options
+	 * @param Diagnostics\Panel $panel
 	 */
-	public function __construct(array $options = array())
+	public function __construct(array $options = array(), Diagnostics\Panel $panel = NULL)
 	{
-		unset($options['session']);
+		unset($options['session'], $options['panel']);
 		foreach ($options as $key => $val) {
 			$this->{$key} = $val;
 		}
+		$this->panel = $panel;
 	}
 
 
@@ -259,7 +266,12 @@ class RedisClient extends Nette\Object
 			$cmd .= '$' . strlen($item) . "\r\n" . $item . "\r\n";
 		}
 
-		fwrite($this->session, $cmd);
+		if (!fwrite($this->session, $cmd)) {
+			@fclose($this->session);
+			$this->session = FALSE;
+			$this->connect();
+			fwrite($this->session, $cmd);
+		}
 		if (!$line = fgets($this->session)) {
 			throw new RedisClientException("Error while processing " . json_encode($args));
 		}
@@ -267,6 +279,11 @@ class RedisClient extends Nette\Object
 		$result = substr($line, 1, strlen($line) - 3);
 		if ($line[0] == '-') {
 			throw new RedisClientException($result);
+
+		} elseif (!in_array($line[0], array('+', ':', '$', '*', '-'))) {
+			$e = new RedisClientException("Invalid answer for " . json_encode($args));
+			$e->data = $line;
+			throw $e;
 		}
 
 		return array($line[0], $result);
@@ -275,19 +292,13 @@ class RedisClient extends Nette\Object
 
 
 	/**
-	 * @param string $method
-	 * @param array $args
+	 * @param string $type
+	 * @param string $result
 	 *
-	 * @throws RedisClientException
 	 * @return array|null|string
 	 */
-	public function __call($method, $args)
+	private function parseResponse($type, $result)
 	{
-		$this->connect();
-
-		array_unshift($args, str_replace('_', ' ', strtoupper($method)));
-		list($type, $result) = $this->message($args);
-
 		if ($type == '$') {
 			if ($result == -1)
 				$result = null;
@@ -306,6 +317,41 @@ class RedisClient extends Nette\Object
 				$line = fread($this->session, $length + 2);
 				$result[] = substr($line, 0, strlen($line) - 2);
 			}
+		}
+
+		return $result;
+	}
+
+
+
+	/**
+	 * @param string $method
+	 * @param array $args
+	 *
+	 * @throws RedisClientException
+	 * @return array|null|string
+	 */
+	public function __call($method, $args)
+	{
+		$this->connect();
+
+		if ($this->panel) {
+			$this->panel->begin();
+		}
+
+		try {
+			array_unshift($args, str_replace('_', ' ', strtoupper($method)));
+			list($type, $result) = $this->message($args);
+			$result = $this->parseResponse($type, $result);
+
+		} catch (RedisClientException $e) { }
+
+		if ($this->panel) {
+			$this->panel->end();
+		}
+
+		if (isset($e)) {
+			throw $e;
 		}
 
 		return $result;
@@ -374,5 +420,10 @@ class RedisClient extends Nette\Object
  */
 class RedisClientException extends \RuntimeException
 {
+
+	/**
+	 * @var string
+	 */
+	public $data;
 
 }
