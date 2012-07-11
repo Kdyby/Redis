@@ -12,6 +12,8 @@ namespace Kdyby\Extension\Redis\DI;
 
 use Kdyby;
 use Nette;
+use Nette\Config\Configurator;
+use Nette\Config\Compiler;
 use Nette\DI\ContainerBuilder;
 use Nette\Utils\Validators;
 
@@ -66,6 +68,18 @@ class RedisExtension extends Nette\Config\CompilerExtension
 
 		$builder->addDefinition($this->prefix('panel'))
 			->setFactory('Kdyby\Extension\Redis\Diagnostics\Panel::register');
+	}
+
+
+
+	/**
+	 * @param \Nette\Config\Configurator $config
+	 */
+	public static function register(Configurator $config)
+	{
+		$config->onCompile[] = function (Configurator $config, Compiler $compiler) {
+			$compiler->addExtension('redis', new RedisExtension());
+		};
 	}
 
 }
