@@ -185,12 +185,22 @@ class RedisClient extends Nette\Object
 	/**
 	 * @var string
 	 */
-	private $host = 'localhost:6379';
+	private $host = 'localhost';
+
+	/**
+	 * @var string
+	 */
+	private $port = 6379;
 
 	/**
 	 * @var int
 	 */
 	private $timeout = 10;
+
+	/**
+	 * @var int
+	 */
+	private $database = 0;
 
 
 
@@ -199,11 +209,9 @@ class RedisClient extends Nette\Object
 	 */
 	public function __construct(array $options = array())
 	{
-		if (isset($options['host'])) {
-			$this->host = $options['host'];
-		}
-		if (isset($options['timeout'])) {
-			$this->timeout = $options['timeout'];
+		unset($options['session']);
+		foreach ($options as $key => $val) {
+			$this->{$key} = $val;
 		}
 	}
 
@@ -218,10 +226,11 @@ class RedisClient extends Nette\Object
 			return;
 		}
 
-		$this->session = stream_socket_client($this->host, $errno, $errstr, $this->timeout);
+		$this->session = stream_socket_client($this->host . ':' . $this->port, $errno, $errstr, $this->timeout);
 		if (!$this->session) {
 			throw new RedisClientException('Cannot connect to server: ' . $errstr, $errno);
 		}
+		$this->select($this->database);
 	}
 
 
