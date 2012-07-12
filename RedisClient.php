@@ -334,11 +334,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	private function sendMessage($message)
 	{
 		fwrite($this->session, $message);
-		if (!$line = fgets($this->session)) {
+		if (!$line = $this->readLine(TRUE)) {
 			throw new RedisClientException("Request failed");
 		}
 
-		$result = substr($line, 1, strlen($line) - 3);
+		$result = substr($line, 1);
 		if ($line[0] == '-') {
 			throw new RedisClientException($result);
 
@@ -392,7 +392,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			$count = (int)$response->result;
 			$result = array();
 			for ($i = 0; $i < $count; $i++) {
-				$line = fgets($this->session);
+				$line = $this->readLine();
 				$length = (int)substr($line, 1, strlen($line) - 3);
 				$line = $this->readResponse($length + 2);
 				$result[] = substr($line, 0, strlen($line) - 2);
@@ -400,6 +400,18 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		return $result;
+	}
+
+
+
+	/**
+	 * @param bool $trimmed
+	 *
+	 * @return string
+	 */
+	private function readLine($trimmed = FALSE)
+	{
+		return stream_get_line($this->session, 4096, "\r\n") . ($trimmed ? '' : "\r\n");
 	}
 
 
