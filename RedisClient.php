@@ -411,7 +411,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	private function readLine($trimmed = FALSE)
 	{
-		return stream_get_line($this->session, 4096, "\r\n") . ($trimmed ? '' : "\r\n");
+		$line = stream_get_line($this->session, 4096, "\r\n") . ($trimmed ? '' : "\r\n");
+		if ($this->panel) {
+			$this->panel->dataSize(strlen($line));
+		}
+		return $line;
 	}
 
 
@@ -423,6 +427,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	private function readResponse($length)
 	{
+		if ($this->panel) {
+			$this->panel->dataSize($length);
+		}
+
 		if ($length <= self::MAX_BUFFER_SIZE) {
 			return fread($this->session, $length);
 		}
