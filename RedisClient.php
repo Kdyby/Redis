@@ -282,7 +282,9 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		$this->connect();
 
 		if ($this->panel) {
-			$this->panel->begin();
+			$request = $args;
+			array_unshift($request, $cmd);
+			$this->panel->begin($request);
 		}
 
 		$result = FALSE;
