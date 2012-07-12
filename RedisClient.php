@@ -305,17 +305,19 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				array_unshift($request, $cmd);
 				$e->request = $request;
 				Debugger::log($e, 'redis-error');
+				if ($this->panel) {
+					$this->panel->error($e);
+				}
 			}
 
-		} while (isset($e) && --$i < 0);
+		} while (isset($e) && --$i > 0);
 
 		if ($this->panel) {
 			$this->panel->end();
 		}
 
 		if (isset($e)) {
-			Debugger::log("Communication failed", 'redis-error');
-			throw $e;
+			throw new Nette\InvalidStateException("Communication with Redis failed", 0, $e);
 		}
 
 		return $result;
