@@ -44,26 +44,28 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$config = $this->getConfig($this->defaults);
 
-		if ($config !== $this->defaults) {
-			$builder->addDefinition($this->prefix('client'))
-				->setClass('Kdyby\Extension\Redis\RedisClient', array(array(
-					'host' => $config['host'],
-					'port' => $config['port'],
-					'timeout' => $config['timeout'],
-					'database' => $config['database']
-				)));
+		$client = $builder->addDefinition($this->prefix('client'))
+			->setClass('Kdyby\Extension\Redis\RedisClient', array(
+				'host' => $config['host'],
+				'port' => $config['port'],
+				'database' => $config['database'],
+				'timeout' => $config['timeout']
+			));
 
-			if ($config['journal']) {
-				$builder->removeDefinition('nette.cacheJournal');
-				$builder->addDefinition('nette.cacheJournal')
-					->setClass('Kdyby\Extension\Redis\RedisJournal');
-			}
+		if ($builder->parameters['debugMode']) {
+			$client->addSetup('setPanel');
+		}
 
-			if ($config['storage']) {
-				$builder->removeDefinition('cacheStorage');
-				$builder->addDefinition('cacheStorage')
-					->setClass('Kdyby\Extension\Redis\RedisStorage');
-			}
+		if ($config['journal']) {
+			$builder->removeDefinition('nette.cacheJournal');
+			$builder->addDefinition('nette.cacheJournal')
+				->setClass('Kdyby\Extension\Redis\RedisJournal');
+		}
+
+		if ($config['storage']) {
+			$builder->removeDefinition('cacheStorage');
+			$builder->addDefinition('cacheStorage')
+				->setClass('Kdyby\Extension\Redis\RedisStorage');
 		}
 
 		$builder->addDefinition($this->prefix('panel'))

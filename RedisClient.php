@@ -124,7 +124,7 @@ use Nette\Diagnostics\Debugger;
  * @method script_load(string $script) Load the specified Lua script into the script cache.
  * @method sDiff(string $key1, string $key2 = NULL) Subtract multiple sets
  * @method sDiffStore(string $destination, string $key1, string $key2 = NULL) Subtract multiple sets and store the resulting set in a key
- * @method select(string $index) Change the selected database for the current connection
+ * @method select(int $index) Change the selected database for the current connection
  * @method set(string $key, string $value) Set the string value of a key
  * @method setBit(string $key, int $offset, string $value) Sets or clears the bit at offset in the string value stored at key
  * @method setEX(string $key, int $seconds, string $value) Set the value and expiration of a key
@@ -173,11 +173,12 @@ use Nette\Diagnostics\Debugger;
  * @author ptrofimov https://github.com/ptrofimov
  * @author Filip Procházka <filip.prochazka@kdyby.org>
  */
-class RedisClient extends Nette\Object
+class RedisClient extends Nette\Object implements \ArrayAccess
 {
 
 	/** @internal */
 	const MAX_BUFFER_SIZE = 8192;
+	const MAX_ATTEMPTS = 3;
 
 	/** commands */
 	const WITH_SCORES = 'WITHSCORES';
@@ -195,36 +196,37 @@ class RedisClient extends Nette\Object
 	/**
 	 * @var string
 	 */
-	private $host = 'localhost';
+	private $host;
 
 	/**
 	 * @var string
 	 */
-	private $port = 6379;
+	private $port;
 
 	/**
 	 * @var int
 	 */
-	private $timeout = 10;
+	private $timeout;
 
 	/**
 	 * @var int
 	 */
-	private $database = 0;
+	private $database;
 
 
 
 	/**
-	 * @param array $options
-	 * @param Diagnostics\Panel $panel
+	 * @param string $host
+	 * @param int $port
+	 * @param int $database
+	 * @param int $timeout
 	 */
-	public function __construct(array $options = array(), Diagnostics\Panel $panel = NULL)
+	public function __construct($host = 'localhost', $port = 6379, $database = 0, $timeout = 10)
 	{
-		unset($options['session'], $options['panel']);
-		foreach ($options as $key => $val) {
-			$this->{$key} = $val;
-		}
-		$this->panel = $panel;
+		$this->host = $host;
+		$this->port = $port;
+		$this->database = $database;
+		$this->timeout = $timeout;
 	}
 
 
@@ -253,31 +255,85 @@ class RedisClient extends Nette\Object
 	public function close()
 	{
 		@fclose($this->session);
+		$this->session = FALSE;
 	}
 
 
 
 	/**
+	 * @param Diagnostics\Panel $panel
+	 */
+	public function setPanel(Diagnostics\Panel $panel)
+	{
+		$this->panel = $panel;
+	}
+
+
+
+	/**
+	 * @param string $cmd
 	 * @param array $args
 	 *
+	 * @return mixed
 	 * @throws RedisClientException
-	 * @return array
 	 */
-	private function message(array $args)
+	protected function send($cmd, array $args)
 	{
-		$cmd = '*' . count($args) . "\r\n";
-		foreach ($args as $item) {
-			$cmd .= '$' . strlen($item) . "\r\n" . $item . "\r\n";
+		$this->connect();
+
+		if ($this->panel) {
+			$this->panel->begin();
 		}
 
-		if (!fwrite($this->session, $cmd)) {
-			@fclose($this->session);
-			$this->session = FALSE;
-			$this->connect();
-			fwrite($this->session, $cmd);
+		$result = FALSE;
+		$message = $this->buildMessage($cmd, $args);
+
+		$i = self::MAX_ATTEMPTS;
+		do {
+			if (isset($e)) { // reconnect
+				$this->close();
+				$this->connect();
+				unset($e);
+			}
+
+			try {
+				$response = $this->sendMessage($message);
+				$result = $this->parseResponse($response);
+
+			} catch (RedisClientException $e) {
+				$request = $args;
+				array_unshift($request, $cmd);
+				$e->request = $request;
+				Debugger::log($e, 'redis-error');
+			}
+
+		} while (isset($e) && --$i < 0);
+
+		if ($this->panel) {
+			$this->panel->end();
 		}
+
+		if (isset($e)) {
+			Debugger::log("Communication failed", 'redis-error');
+			throw $e;
+		}
+
+		return $result;
+	}
+
+
+
+	/**
+	 * @param string $message
+	 *
+	 * @throws RedisClientException
+	 * @return object|\stdClass
+	 */
+	private function sendMessage($message)
+	{
+		fwrite($this->session, $message);
 		if (!$line = fgets($this->session)) {
-			throw new RedisClientException("Error while processing " . json_encode($args));
+			throw new RedisClientException("Request failed");
 		}
 
 		$result = substr($line, 1, strlen($line) - 3);
@@ -285,35 +341,53 @@ class RedisClient extends Nette\Object
 			throw new RedisClientException($result);
 
 		} elseif (!in_array($line[0], array('+', ':', '$', '*', '-'))) {
-			$e = new RedisClientException("Invalid answer for " . json_encode($args));
-			$e->data = $line;
+			$e = new RedisClientException("Invalid answer");
+			$e->response = $line;
 			throw $e;
 		}
 
-		return array($line[0], $result);
+		return (object)array('type' => $line[0], 'result' => $result);
 	}
 
 
 
 	/**
-	 * @param string $type
-	 * @param string $result
+	 * @param string $method
+	 * @param array $args
+	 *
+	 * @return string
+	 */
+	private function buildMessage($method, array $args)
+	{
+		array_unshift($args, str_replace('_', ' ', strtoupper($method)));
+		$cmd = '*' . count($args) . "\r\n";
+		foreach ($args as $item) {
+			$cmd .= '$' . strlen($item) . "\r\n" . $item . "\r\n";
+		}
+		return $cmd;
+	}
+
+
+
+	/**
+	 * @param object|\stdClass $response
 	 *
 	 * @return array|null|string
 	 */
-	private function parseResponse($type, $result)
+	private function parseResponse($response)
 	{
-		if ($type == '$') {
-			if ($result == -1)
+		$result = $response->result;
+		if ($response->type == '$') {
+			if ($response->result == -1)
 				$result = null;
 
 			else {
-				$line = $this->readResponse($result + 2);
+				$line = $this->readResponse($response->result + 2);
 				$result = substr($line, 0, strlen($line) - 2);
 			}
 
-		} elseif ($type == '*') {
-			$count = (int)$result;
+		} elseif ($response->type == '*') {
+			$count = (int)$response->result;
 			$result = array();
 			for ($i = 0; $i < $count; $i++) {
 				$line = fgets($this->session);
@@ -330,6 +404,7 @@ class RedisClient extends Nette\Object
 
 	/**
 	 * @param int $length
+	 *
 	 * @return null|string
 	 */
 	private function readResponse($length)
@@ -342,7 +417,8 @@ class RedisClient extends Nette\Object
 		while ($length > self::MAX_BUFFER_SIZE) {
 			$buffer .= fread($this->session, self::MAX_BUFFER_SIZE);
 			$length -= self::MAX_BUFFER_SIZE;
-		};
+		}
+		;
 		$buffer .= fread($this->session, $length);
 
 		return $buffer;
@@ -351,41 +427,28 @@ class RedisClient extends Nette\Object
 
 
 	/**
-	 * @param string $method
+	 * Magic method for sending redis messages.
+	 *
+	 * <code>
+	 * $redisClient->command($argument);
+	 * </code>
+	 *
+	 * @param string $name
 	 * @param array $args
 	 *
 	 * @throws RedisClientException
 	 * @return array|null|string
 	 */
-	public function __call($method, $args)
+	public function __call($name, $args)
 	{
-		$this->connect();
-
-		if ($this->panel) {
-			$this->panel->begin();
-		}
-
-		try {
-			array_unshift($args, str_replace('_', ' ', strtoupper($method)));
-			list($type, $result) = $this->message($args);
-			$result = $this->parseResponse($type, $result);
-
-		} catch (RedisClientException $e) { }
-
-		if ($this->panel) {
-			$this->panel->end();
-		}
-
-		if (isset($e)) {
-			throw $e;
-		}
-
-		return $result;
+		return $this->send($name, $args);
 	}
 
 
 
 	/**
+	 * Magic method as alias for get command.
+	 *
 	 * @param string $name
 	 * @return mixed
 	 */
@@ -397,6 +460,8 @@ class RedisClient extends Nette\Object
 
 
 	/**
+	 * Magic method as alias for set command.
+	 *
 	 * @param string $name
 	 * @param mixed $value
 	 */
@@ -408,6 +473,8 @@ class RedisClient extends Nette\Object
 
 
 	/**
+	 * Magic method as alias for exists command.
+	 *
 	 * @param string $name
 	 *
 	 * @return bool|void
@@ -420,11 +487,64 @@ class RedisClient extends Nette\Object
 
 
 	/**
+	 * Magic method as alias for del command.
+	 *
 	 * @param string $name
 	 */
 	public function __unset($name)
 	{
 		return $this->del($name);
+	}
+
+
+
+	/**
+	 * ArrayAccess method as alias for exists command.
+	 *
+	 * @param mixed $offset
+	 * @return bool
+	 */
+	public function offsetExists($offset)
+	{
+		return $this->__isset($offset);
+	}
+
+
+
+	/**
+	 * ArrayAccess method as alias for get command.
+	 *
+	 * @param string $offset
+	 * @return mixed
+	 */
+	public function offsetGet($offset)
+	{
+		return $this->__get($offset);
+	}
+
+
+
+	/**
+	 * ArrayAccess method as alias for set command.
+	 *
+	 * @param string $offset
+	 * @param mixed $value
+	 */
+	public function offsetSet($offset, $value)
+	{
+		$this->__set($offset, $value);
+	}
+
+
+
+	/**
+	 * ArrayAccess method as alias for del command.
+	 *
+	 * @param string $offset
+	 */
+	public function offsetUnset($offset)
+	{
+		$this->__unset($offset);
 	}
 
 
@@ -450,6 +570,11 @@ class RedisClientException extends \RuntimeException
 	/**
 	 * @var string
 	 */
-	public $data;
+	public $request;
+
+	/**
+	 * @var string
+	 */
+	public $response;
 
 }

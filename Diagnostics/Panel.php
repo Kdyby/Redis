@@ -22,6 +22,7 @@ use Nette\Diagnostics\Debugger;
  */
 class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 {
+	const TIMER_NAME = 'redis-client-timer';
 
 	/**
 	 * @var int
@@ -34,7 +35,7 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 */
 	public function begin()
 	{
-		Debugger::timer('redis-client-timer');
+		Debugger::timer(self::TIMER_NAME);
 	}
 
 
@@ -43,7 +44,7 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 */
 	public function end()
 	{
-		$this->totalTime += Debugger::timer('redis-client-timer');
+		$this->totalTime += Debugger::timer(self::TIMER_NAME);
 	}
 
 
@@ -79,17 +80,28 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 */
 	public static function renderException($e)
 	{
-		if ($e instanceof RedisClientException && $e->data) {
-			$maxLen = Debugger::$maxLen;
-			Debugger::$maxLen = 0;
-			$panel = array(
-				'tab' => 'Redis Response',
-				'panel' => '<h3>Redis Response (' . strlen($e->data) . ')</h3>' .
+		if ($e instanceof RedisClientException) {
+			$panel = NULL;
+			if ($e->request) {
+				$panel .= '<h3>Redis Request</h3>' .
 					'<pre class="nette-dump"><span class="php-string">' .
-					Nette\Templating\Helpers::escapeHtml($e->data) .
-					'</span></pre>'
-			);
-			Debugger::$maxLen = $maxLen;
+					nl2br(Nette\Templating\Helpers::escapeHtml(implode(' ', $e->request))) .
+					'</span></pre>';
+			}
+			if ($e->response) {
+				$panel .= '<h3>Redis Response (' . strlen($e->response) . ')</h3>' .
+					'<pre class="nette-dump"><span class="php-string">' .
+					Nette\Templating\Helpers::escapeHtml($e->response) .
+					'</span></pre>';
+			}
+
+			if ($panel !== NULL) {
+				$panel = array(
+					'tab' => 'Redis Response',
+					'panel' => $panel
+				);
+			}
+
 			return $panel;
 		}
 	}
