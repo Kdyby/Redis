@@ -10,6 +10,10 @@
             "homepage":"http://hosiplan.com"
         }
     ],
+    "support":{
+        "email":"hosiplan@kdyby.org",
+        "issues":"https://github.com/kdyby/framework/issues"
+    },
     "require":{
         "php":">=5.3.2",
         "nette/nette":"2.0.*"
