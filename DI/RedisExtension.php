@@ -15,6 +15,7 @@ use Nette;
 use Nette\Config\Configurator;
 use Nette\Config\Compiler;
 use Nette\DI\ContainerBuilder;
+use Nette\DI\Statement;
 use Nette\Utils\Validators;
 
 
@@ -31,6 +32,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 	public $defaults = array(
 		'journal' => FALSE,
 		'storage' => FALSE,
+		'session' => FALSE,
 		'host' => 'localhost',
 		'port' => 6379,
 		'timeout' => 10,
@@ -66,6 +68,11 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			$builder->removeDefinition('cacheStorage');
 			$builder->addDefinition('cacheStorage')
 				->setClass('Kdyby\Extension\Redis\RedisStorage');
+		}
+
+		if ($config['session']) {
+			$builder->getDefinition('session')
+				->addSetup('setStorage', array(new Statement('Kdyby\Extension\Redis\RedisSessionHandler')));
 		}
 
 		$builder->addDefinition($this->prefix('panel'))
