@@ -17,6 +17,12 @@ use Nette;
 
 
 /**
+ * Redis session handler allows to store session in redis using Nette\Http\Session.
+ *
+ * <code>
+ * $session->setStorage(new Kdyby\Extension\Redis\RedisSessionHandler($redisClient));
+ * </code>
+ *
  * @author Filip Procházka <filip.prochazka@kdyby.org>
  */
 class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionStorage
