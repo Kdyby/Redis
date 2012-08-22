@@ -16,6 +16,7 @@ use Nette\Diagnostics\Debugger;
 use Nette;
 
 
+
 /**
  * Redis session handler allows to store session in redis using Nette\Http\Session.
  *
