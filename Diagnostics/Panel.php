@@ -24,6 +24,7 @@ use Nette\Utils\PhpGenerator as Code;
 class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 {
 
+	/** @internal */
 	const TIMER_NAME = 'redis-client-timer';
 
 	/**
