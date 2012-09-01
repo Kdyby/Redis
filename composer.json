@@ -7,11 +7,11 @@
     "authors":[
         {
             "name":"Filip Procházka",
-            "homepage":"http://hosiplan.com"
+            "homepage":"http://filip-prochazka.com"
         }
     ],
     "support":{
-        "email":"hosiplan@kdyby.org",
+        "email":"filip@prochazka.su",
         "issues":"https://github.com/kdyby/framework/issues"
     },
     "require":{

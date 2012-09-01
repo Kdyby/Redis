@@ -3,7 +3,7 @@
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
- * Copyright (c) 2008, 2011 Filip Procházka (filip.prochazka@kdyby.org)
+ * Copyright (c) 2008, 2012 Filip Procházka (filip@prochazka.su)
  *
  * For the full copyright and license information, please view the file license.txt that was distributed with this source code.
  */
@@ -171,7 +171,7 @@ use Nette\Diagnostics\Debugger;
  * @method zUnionStore(string $destination, string $numkeys, string $key1, string $key2 = NULL, $option1 = NULL, $option2 = NULL) Add multiple sorted sets and store the resulting sorted set in a new key</ul>
  *
  * @author ptrofimov https://github.com/ptrofimov
- * @author Filip Procházka <filip.prochazka@kdyby.org>
+ * @author Filip Procházka <filip@prochazka.su>
  */
 class RedisClient extends Nette\Object implements \ArrayAccess
 {
@@ -586,7 +586,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 /**
- * @author Filip Procházka <filip.prochazka@kdyby.org>
+ * @author Filip Procházka <filip@prochazka.su>
  */
 class RedisClientException extends \RuntimeException
 {
