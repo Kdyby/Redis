@@ -14,7 +14,7 @@ use Kdyby;
 use Kdyby\Extension\Redis\RedisClientException;
 use Nette;
 use Nette\Diagnostics\Debugger;
-use Nette\Utils\PhpGenerator as Code;
+use Nette\PhpGenerator as Code;
 
 
 
