@@ -55,28 +55,36 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			));
 
 		if ($builder->parameters['debugMode']) {
+			$builder->addDefinition($this->prefix('panel'))
+				->setFactory('Kdyby\Extension\Redis\Diagnostics\Panel::register');
+
 			$client->addSetup('setPanel');
 		}
 
 		if ($config['journal']) {
-			$builder->removeDefinition('nette.cacheJournal');
-			$builder->addDefinition('nette.cacheJournal')
+			$builder->addDefinition($this->prefix('cacheJournal'))
 				->setClass('Kdyby\Extension\Redis\RedisJournal');
+
+			// overwrite
+			$builder->removeDefinition('nette.cacheJournal');
+			$builder->addDefinition('nette.cacheJournal')->setFactory($this->prefix('@cacheJournal'));
 		}
 
 		if ($config['storage']) {
-			$builder->removeDefinition('cacheStorage');
-			$builder->addDefinition('cacheStorage')
+			$builder->addDefinition($this->prefix('cacheStorage'))
 				->setClass('Kdyby\Extension\Redis\RedisStorage');
+
+			$builder->removeDefinition('cacheStorage');
+			$builder->addDefinition('cacheStorage')->setFactory($this->prefix('@cacheStorage'));
 		}
 
 		if ($config['session']) {
-			$builder->getDefinition('session')
-				->addSetup('setStorage', array(new Statement('Kdyby\Extension\Redis\RedisSessionHandler')));
-		}
+			$builder->addDefinition($this->prefix('sessionHandler'))
+				->setClass('Kdyby\Extension\Redis\RedisSessionHandler');
 
-		$builder->addDefinition($this->prefix('panel'))
-			->setFactory('Kdyby\Extension\Redis\Diagnostics\Panel::register');
+			$builder->getDefinition('session')
+				->addSetup('setStorage', array($this->prefix('@sessionHandler')));
+		}
 	}
 
 
