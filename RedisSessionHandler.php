@@ -58,12 +58,15 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	 * @param RedisClient $redisClient
 	 * @param string $tempDir
 	 */
-	public function __construct(RedisClient $redisClient, $tempDir)
+	public function __construct(RedisClient $redisClient, $tempDir = NULL)
 	{
 		$this->client = $redisClient;
-		$this->locksDir = $tempDir . '/session';
-		if (!file_exists($this->locksDir)) {
-			@mkdir($this->locksDir, 0777);
+
+		if ($tempDir !== NULL) {
+			$this->locksDir = $tempDir . '/session';
+			if (!file_exists($this->locksDir)) {
+				@mkdir($this->locksDir, 0777);
+			}
 		}
 	}
 
@@ -155,7 +158,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	 */
 	protected function lock($key, $mode = 'r+')
 	{
-		if (isset($this->locks[$key])) {
+		if (isset($this->locks[$key]) || $this->locksDir = NULL) {
 			return;
 		}
 

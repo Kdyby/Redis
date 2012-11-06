@@ -33,6 +33,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		'journal' => FALSE,
 		'storage' => FALSE,
 		'session' => FALSE,
+		'disableLocking' => FALSE,
 		'host' => 'localhost',
 		'port' => 6379,
 		'timeout' => 10,
@@ -79,8 +80,12 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		}
 
 		if ($config['session']) {
-			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass('Kdyby\Extension\Redis\RedisSessionHandler', array(1 => '%tempDir%'));
+			$sessionHandler = $builder->addDefinition($this->prefix('sessionHandler'))
+				->setClass('Kdyby\Extension\Redis\RedisSessionHandler');
+
+			if ($config['disableLocking'] !== TRUE) {
+				$sessionHandler->setArguments(array(1 => '%tempDir%'));
+			}
 
 			$builder->getDefinition('session')
 				->addSetup('setStorage', array($this->prefix('@sessionHandler')));
