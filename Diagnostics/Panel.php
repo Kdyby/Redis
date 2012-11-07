@@ -58,7 +58,10 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 */
 	public function begin($cmd)
 	{
-		Debugger::timer(self::TIMER_NAME);
+		if (Debugger::timer(self::TIMER_NAME)) {
+			Debugger::timer(self::TIMER_NAME); // reset timer
+		}
+
 		$this->queries[] = (object)array(
 			'errors' => array(),
 			'cmd' => implode(' ', (array)$cmd),
@@ -83,7 +86,7 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 	/**
-	 * @param string $size
+	 * @param int $size
 	 */
 	public function dataSize($size)
 	{

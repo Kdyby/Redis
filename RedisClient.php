@@ -93,7 +93,6 @@ use Nette\Diagnostics\Debugger;
  * @method move(string $key, string $db) Move a key to another database
  * @method mSet(string $key1, string $value1, string $key2 = NULL, string $value2 = NULL) Set multiple keys to multiple values
  * @method mSetNX(string $key1, string $value1, string $key2 = NULL, string $value2 = NULL) Set multiple keys to multiple values, only if none of the keys exist
- * @method multi() Mark the start of a transaction block
  * @method object(string $subCommand, $arg1 = NULL, $arg2 = NULL) Inspect the internals of Redis objects
  * @method persist(string $key) Remove the expiration from a key
  * @method pExpire(string $key, int $milliseconds) Set a key's time to live in milliseconds
@@ -243,7 +242,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			throw new RedisClientException('Cannot connect to server: ' . $errstr, $errno);
 		}
 		stream_set_blocking($this->session, 1);
-		$this->select($this->database);
+		stream_set_timeout($this->session, $this->timeout); // ?
+
+		if ($this->database > 0) {
+			$this->select($this->database);
+		}
 	}
 
 
@@ -279,6 +282,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	protected function send($cmd, array $args = array())
 	{
 		$this->connect();
+		$cmd = strtolower($cmd);
 
 		if ($this->panel) {
 			$request = $args;
@@ -289,7 +293,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		$result = FALSE;
 		$message = $this->buildMessage($cmd, $args);
 
-		$i = self::MAX_ATTEMPTS;
+		$i = in_array($cmd, array('exec', 'discard')) ? 1 : self::MAX_ATTEMPTS;
 		do {
 			if (isset($e)) { // reconnect
 				$this->close();
@@ -318,7 +322,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		if (isset($e)) {
-			throw new Nette\InvalidStateException("Communication with Redis failed", 0, $e);
+			throw $e;
 		}
 
 		return $result;
@@ -335,21 +339,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	private function sendMessage($message)
 	{
 		fwrite($this->session, $message);
-		if (!$line = $this->readLine(TRUE)) {
-			throw new RedisClientException("Request failed");
-		}
-
-		$result = substr($line, 1);
-		if ($line[0] == '-') {
-			throw new RedisClientException($result);
-
-		} elseif (!in_array($line[0], array('+', ':', '$', '*', '-'))) {
-			$e = new RedisClientException("Invalid answer");
-			$e->response = $line;
-			throw $e;
-		}
-
-		return (object)array('type' => $line[0], 'result' => $result);
+		return $this->readLine(TRUE);
 	}
 
 
@@ -380,23 +370,18 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	private function parseResponse($response)
 	{
 		$result = $response->result;
-		if ($response->type == '$') {
-			if ($response->result == -1)
-				$result = null;
+		if ($response->result == -1) {
+			$result = null;
 
-			else {
-				$line = $this->readResponse($response->result + 2);
-				$result = substr($line, 0, strlen($line) - 2);
-			}
+		} elseif ($response->type == '$') {
+			$line = $this->readResponse($response->result + 2);
+			$result = substr($line, 0, strlen($line) - 2);
 
 		} elseif ($response->type == '*') {
 			$count = (int)$response->result;
 			$result = array();
 			for ($i = 0; $i < $count; $i++) {
-				$line = $this->readLine();
-				$length = (int)substr($line, 1, strlen($line) - 3);
-				$line = $this->readResponse($length + 2);
-				$result[] = substr($line, 0, strlen($line) - 2);
+				$result[] = $this->parseResponse($this->readLine());
 			}
 		}
 
@@ -406,17 +391,34 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 	/**
-	 * @param bool $trimmed
-	 *
-	 * @return string
+	 * @param bool $first
+	 * @return object
+	 * @throws RedisClientException
 	 */
-	private function readLine($trimmed = FALSE)
+	private function readLine($first = FALSE)
 	{
-		$line = stream_get_line($this->session, 4096, "\r\n") . ($trimmed ? '' : "\r\n");
-		if ($this->panel) {
-			$this->panel->dataSize(strlen($line));
+		if (!$line = stream_get_line($this->session, 4096, "\r\n")) {
+			throw new RedisClientException("Request failed");
 		}
-		return $line;
+
+		if ($this->panel) {
+			$this->panel->dataSize(strlen($line) + 2);
+		}
+
+		$result = substr($line, 1);
+		if ($line[0] == '-') {
+			$result = $e = new RedisClientException($result);
+
+		} elseif (!in_array($line[0], array('+', ':', '$', '*', '-'))) {
+			$result = $e = new RedisClientException("Invalid answer");
+			$e->response = $line;
+		}
+
+		if (isset($e) && $first) {
+			throw $e;
+		}
+
+		return (object)array('type' => $line[0], 'result' => $result);
 	}
 
 
@@ -432,16 +434,21 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			$this->panel->dataSize($length);
 		}
 
+		$buffer = NULL;
 		if ($length <= self::MAX_BUFFER_SIZE) {
-			return fread($this->session, $length);
+			$buffer = fread($this->session, $length);
+
+		} else {
+			while ($length > self::MAX_BUFFER_SIZE) {
+				$buffer .= fread($this->session, self::MAX_BUFFER_SIZE);
+				$length -= self::MAX_BUFFER_SIZE;
+			}
+			$buffer .= fread($this->session, $length);
 		}
 
-		$buffer = NULL;
-		while ($length > self::MAX_BUFFER_SIZE) {
-			$buffer .= fread($this->session, self::MAX_BUFFER_SIZE);
-			$length -= self::MAX_BUFFER_SIZE;
+		if (empty($buffer) && $length) {
+			throw new RedisClientException("Timeout");
 		}
-		$buffer .= fread($this->session, $length);
 
 		return $buffer;
 	}
@@ -479,6 +486,39 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		return $info;
+	}
+
+
+
+	/**
+	 * Mark the start of a transaction block
+	 *
+	 * @param callable $callback
+	 * @throws RedisClientException
+	 * @throws \Exception
+	 * @return array|bool|mixed|null|string
+	 */
+	public function multi($callback = NULL)
+	{
+		$ok = $this->send('multi');
+
+		if ($callback === NULL) {
+			return $ok;
+		}
+
+		try {
+			callback($callback)->invoke($this);
+			return $this->exec();
+
+		} catch (RedisClientException $e) {
+			throw $e;
+
+		} catch (\Exception $e) {
+			$this->discard();
+			throw $e;
+		}
+
+		return $ok;
 	}
 
 
