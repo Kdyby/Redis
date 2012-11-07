@@ -137,8 +137,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function lock($key)
 	{
-		$this->client->getLock()
-			->acquireLock($this->formatEntryKey($key));
+		$this->client->lock($this->formatEntryKey($key));
 	}
 
 
@@ -149,8 +148,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function unlock($key)
 	{
-		$this->client->getLock()
-			->release($this->formatEntryKey($key));
+		$this->client->unlock($this->formatEntryKey($key));
 	}
 
 
