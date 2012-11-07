@@ -500,6 +500,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 	/**
 	 * @internal
+	 * @throws Nette\Utils\AssertionException
 	 */
 	public function assertVersion()
 	{
