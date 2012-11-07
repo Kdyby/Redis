@@ -38,14 +38,14 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	private $savePath;
 
 	/**
+	 * @var array
+	 */
+	private $ssIds = array();
+
+	/**
 	 * @var RedisClient
 	 */
 	private $client;
-
-	/**
-	 * @var string
-	 */
-	private $lock;
 
 
 
@@ -82,6 +82,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	{
 		try {
 			$key = $this->formatKey($id);
+			$this->ssIds[$key] = $this->client->lock($key);
 			return (string) $this->client->get($key);
 
 		} catch (Nette\InvalidStateException $e) {
@@ -102,6 +103,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	{
 		try {
 			$key = $this->formatKey($id);
+			$this->ssIds[$key] = $this->client->lock($key);
 			$this->client->setex($key, ini_get("session.gc_maxlifetime"), $data);
 			return true;
 
@@ -122,7 +124,11 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	{
 		try {
 			$key = $this->formatKey($id);
+			$this->client->multi();
 			$this->client->del($key);
+			$this->client->unlock($key);
+			unset($this->ssIds[$key]);
+			$this->client->exec();
 			return true;
 
 		} catch (Nette\InvalidStateException $e) {
@@ -150,6 +156,11 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	 */
 	public function close()
 	{
+		foreach ($this->ssIds as $key => $yes) {
+			$this->client->unlock($key);
+		}
+		$this->ssIds = array();
+
 		return true;
 	}
 

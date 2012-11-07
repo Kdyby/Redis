@@ -210,6 +210,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	private $database;
 
+	/**
+	 * @var ExclusiveLock
+	 */
+	private $lock;
+
 
 
 	/**
@@ -256,6 +261,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function close()
 	{
+		$this->getLock()->releaseAll();
 		@fclose($this->session);
 		$this->session = FALSE;
 	}
@@ -426,6 +432,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	/**
 	 * @param int $length
 	 *
+	 * @throws RedisClientException
 	 * @return null|string
 	 */
 	private function readResponse($length)
@@ -534,6 +541,41 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			throw new TransactionException("Transaction was aborted");
 		}
 		return $response;
+	}
+
+
+
+	/**
+	 * @return ExclusiveLock
+	 */
+	protected function getLock()
+	{
+		if ($this->lock === NULL) {
+			$this->lock = new ExclusiveLock($this);
+		}
+
+		return $this->lock;
+	}
+
+
+
+	/**
+	 * @param string $key
+	 * @return bool
+	 */
+	public function lock($key)
+	{
+		return $this->getLock()->acquireLock($key);
+	}
+
+
+
+	/**
+	 * @param string $key
+	 */
+	public function unlock($key)
+	{
+		$this->getLock()->release($key);
 	}
 
 

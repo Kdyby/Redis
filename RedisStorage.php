@@ -137,7 +137,20 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function lock($key)
 	{
-		// TODO: http://redis.io/topics/transactions ?
+		$this->client->getLock()
+			->acquireLock($this->formatEntryKey($key));
+	}
+
+
+
+	/**
+	 * @internal
+	 * @param string $key
+	 */
+	public function unlock($key)
+	{
+		$this->client->getLock()
+			->release($this->formatEntryKey($key));
 	}
 
 
@@ -194,6 +207,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 		$meta = Json::encode($meta);
 
 		try {
+			$this->client->multi();
 			if (isset($dp[Cache::EXPIRATION])) {
 				$this->client->setEX($this->formatMetaKey($key), $dp[Cache::EXPIRATION], $meta);
 				$this->client->setEX($this->formatEntryKey($key), $dp[Cache::EXPIRATION], $data);
@@ -204,6 +218,8 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 					$this->formatEntryKey($key), $data
 				);
 			}
+			$this->unlock($key);
+			$this->client->exec();
 
 		} catch (RedisClientException $e) {
 			$this->remove($key);

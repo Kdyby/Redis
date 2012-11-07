@@ -61,6 +61,8 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	{
 		$this->cleanEntry($key);
 
+		$this->client->multi();
+
 		// add entry to each tag & tag to entry
 		$tags = empty($dp[Cache::TAGS]) ? array() : (array)$dp[Cache::TAGS];
 		foreach (array_unique($tags) as $tag) {
@@ -71,6 +73,8 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 		if (isset($dp[Cache::PRIORITY])) {
 			$this->client->zAdd($this->formatKey(self::PRIORITY), $dp[Cache::PRIORITY], $key);
 		}
+
+		$this->client->exec();
 	}
 
 
@@ -82,7 +86,10 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function cleanEntry($key)
 	{
-		foreach ($this->entryTags($key) as $tag) {
+		$entries = $this->entryTags($key);
+
+		$this->client->multi();
+		foreach ($entries as $tag) {
 			$this->client->lRem($this->formatKey($tag, self::KEYS), 0, $key);
 		}
 
@@ -90,6 +97,8 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 		$this->client->del($this->formatKey($key, self::TAGS));
 		$this->client->del($this->formatKey($key, self::PRIORITY));
 		$this->client->zRem($this->formatKey(self::PRIORITY), $key);
+
+		$this->client->exec();
 	}
 
 
@@ -104,12 +113,15 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	public function clean(array $conds)
 	{
 		if (!empty($conds[Cache::ALL])) {
-			foreach ($this->client->keys(self::NS_NETTE . ':*') as $entry) {
+			$all = $this->client->keys(self::NS_NETTE . ':*');
+
+			$this->client->multi();
+			foreach ($all as $entry) {
 				$this->client->del($entry);
 			}
+			$this->client->exec();
 			return NULL;
 		}
-
 
 		$entries = array();
 		if (!empty($conds[Cache::TAGS])) {
