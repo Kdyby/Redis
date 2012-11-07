@@ -64,12 +64,12 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 		// add entry to each tag & tag to entry
 		$tags = empty($dp[Cache::TAGS]) ? array() : (array)$dp[Cache::TAGS];
 		foreach (array_unique($tags) as $tag) {
-			$this->client->rPush($this->getEntryKey($tag, self::KEYS), $key);
-			$this->client->rPush($this->getEntryKey($key, self::TAGS), $tag);
+			$this->client->rPush($this->formatKey($tag, self::KEYS), $key);
+			$this->client->rPush($this->formatKey($key, self::TAGS), $tag);
 		}
 
 		if (isset($dp[Cache::PRIORITY])) {
-			$this->client->zAdd($this->getEntryKey(self::PRIORITY), $dp[Cache::PRIORITY], $key);
+			$this->client->zAdd($this->formatKey(self::PRIORITY), $dp[Cache::PRIORITY], $key);
 		}
 	}
 
@@ -83,13 +83,13 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	private function cleanEntry($key)
 	{
 		foreach ($this->entryTags($key) as $tag) {
-			$this->client->lRem($this->getEntryKey($tag, self::KEYS), 0, $key);
+			$this->client->lRem($this->formatKey($tag, self::KEYS), 0, $key);
 		}
 
 		// drop tags of entry and priority, in case there are some
-		$this->client->del($this->getEntryKey($key, self::TAGS));
-		$this->client->del($this->getEntryKey($key, self::PRIORITY));
-		$this->client->zRem($this->getEntryKey(self::PRIORITY), $key);
+		$this->client->del($this->formatKey($key, self::TAGS));
+		$this->client->del($this->formatKey($key, self::PRIORITY));
+		$this->client->zRem($this->formatKey(self::PRIORITY), $key);
 	}
 
 
@@ -139,7 +139,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function priorityEntries($priority)
 	{
-		return $this->client->zRangeByScore($this->getEntryKey(self::PRIORITY), 0, (int)$priority) ?: array();
+		return $this->client->zRangeByScore($this->formatKey(self::PRIORITY), 0, (int)$priority) ?: array();
 	}
 
 
@@ -151,7 +151,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function entryTags($key)
 	{
-		return $this->client->lRange($this->getEntryKey($key, self::TAGS), 0, -1) ? : array();
+		return $this->client->lRange($this->formatKey($key, self::TAGS), 0, -1) ? : array();
 	}
 
 
@@ -163,7 +163,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function tagEntries($tag)
 	{
-		return $this->client->lRange($this->getEntryKey($tag, self::KEYS), 0, -1) ? : array();
+		return $this->client->lRange($this->formatKey($tag, self::KEYS), 0, -1) ? : array();
 	}
 
 
@@ -174,7 +174,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 *
 	 * @return string
 	 */
-	protected function getEntryKey($key, $suffix = NULL)
+	protected function formatKey($key, $suffix = NULL)
 	{
 		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key) . ($suffix ? ':' . $suffix : NULL);
 	}

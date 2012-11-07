@@ -81,7 +81,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	public function read($id)
 	{
 		try {
-			$key = $this->getKeyId($id);
+			$key = $this->formatKey($id);
 			return (string) $this->client->get($key);
 
 		} catch (Nette\InvalidStateException $e) {
@@ -101,7 +101,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	public function write($id, $data)
 	{
 		try {
-			$key = $this->getKeyId($id);
+			$key = $this->formatKey($id);
 			$this->client->setex($key, ini_get("session.gc_maxlifetime"), $data);
 			return true;
 
@@ -121,7 +121,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	public function remove($id)
 	{
 		try {
-			$key = $this->getKeyId($id);
+			$key = $this->formatKey($id);
 			$this->client->del($key);
 			return true;
 
@@ -138,7 +138,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	 *
 	 * @return string
 	 */
-	private function getKeyId($id)
+	private function formatKey($id)
 	{
 		return self::NS_NETTE . ':' . substr(md5($this->savePath), 0, 10) . ':' . $id;
 	}

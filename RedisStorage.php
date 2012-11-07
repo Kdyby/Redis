@@ -75,7 +75,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	public function read($key)
 	{
 		if (($meta = $this->readMeta($key)) && $this->verify($meta)) {
-			$data = $this->client->get($this->getEntryKey($key));
+			$data = $this->client->get($this->formatEntryKey($key));
 
 		} else {
 			return NULL;
@@ -102,8 +102,8 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	{
 		do {
 			if (!empty($meta[self::META_DELTA])) {
-				$this->client->expire($this->getEntryKey($meta[self::KEY]), $meta[self::META_DELTA]);
-				$this->client->expire($this->getMetaKey($meta[self::KEY]), $meta[self::META_DELTA]);
+				$this->client->expire($this->formatEntryKey($meta[self::KEY]), $meta[self::META_DELTA]);
+				$this->client->expire($this->formatMetaKey($meta[self::KEY]), $meta[self::META_DELTA]);
 
 			} elseif (!empty($meta[self::META_EXPIRE]) && $meta[self::META_EXPIRE] < time()) {
 				break;
@@ -195,13 +195,13 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 
 		try {
 			if (isset($dp[Cache::EXPIRATION])) {
-				$this->client->setEX($this->getMetaKey($key), $dp[Cache::EXPIRATION], $meta);
-				$this->client->setEX($this->getEntryKey($key), $dp[Cache::EXPIRATION], $data);
+				$this->client->setEX($this->formatMetaKey($key), $dp[Cache::EXPIRATION], $meta);
+				$this->client->setEX($this->formatEntryKey($key), $dp[Cache::EXPIRATION], $data);
 
 			} else {
 				$this->client->mSet(
-					$this->getMetaKey($key), $meta,
-					$this->getEntryKey($key), $data
+					$this->formatMetaKey($key), $meta,
+					$this->formatEntryKey($key), $data
 				);
 			}
 
@@ -221,8 +221,8 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	public function remove($key)
 	{
 		$this->client->del(
-			$this->getEntryKey($key),
-			$this->getMetaKey($key)
+			$this->formatEntryKey($key),
+			$this->formatMetaKey($key)
 		);
 	}
 
@@ -263,7 +263,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 * @param string $key
 	 * @return string
 	 */
-	protected function getMetaKey($key)
+	protected function formatMetaKey($key)
 	{
 		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key) . ':' . self::NS_META;
 	}
@@ -274,7 +274,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 * @param string $key
 	 * @return string
 	 */
-	protected function getEntryKey($key)
+	protected function formatEntryKey($key)
 	{
 		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
 	}
@@ -288,7 +288,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	protected function readMeta($key)
 	{
-		if ($meta = $this->client->get($this->getMetaKey($key))) {
+		if ($meta = $this->client->get($this->formatMetaKey($key))) {
 			try {
 				$meta = Json::decode($meta, JSON::FORCE_ARRAY);
 			} catch (Nette\Utils\JsonException $e) {
