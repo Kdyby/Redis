@@ -50,7 +50,6 @@ use Nette\Diagnostics\Debugger;
  * @method echo(string $message) Echo the given string
  * @method eval(string $script, int $numkeys, string $key1, string $key2 = NULL, string $arg1 = NULL, string $arg2 = NULL) Execute a Lua script server side
  * @method evalSha(string $sha1, int $numkeys, string $key1, string $key2 = NULL, string $arg1 = NULL, string $arg2 = NULL) Execute a Lua script server side
- * @method exec() Execute all commands issued after MULTI
  * @method exists(string $key) Determine if a key exists
  * @method expire(string $key, int $seconds) Set a key's time to live in seconds
  * @method expireAt(string $key, int $timestamp) Set the expiration for a key as a UNIX timestamp
@@ -76,7 +75,6 @@ use Nette\Diagnostics\Debugger;
  * @method incr(string $key) Increment the integer value of a key by one
  * @method incrBy(string $key, int $increment) Increment the integer value of a key by the given amount
  * @method incrByFloat(string $key, float $increment) Increment the float value of a key by the given amount
- * @method info() Get information and statistics about the server
  * @method keys(string $pattern) Find all keys matching the given pattern
  * @method lastSave() Get the UNIX time stamp of the last successful save to disk
  * @method lIndex(string $key, int $index) Get an element from a list by its index
@@ -244,6 +242,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		if (!$this->session) {
 			throw new RedisClientException('Cannot connect to server: ' . $errstr, $errno);
 		}
+		stream_set_blocking($this->session, 1);
 		$this->select($this->database);
 	}
 
@@ -274,10 +273,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * @param string $cmd
 	 * @param array $args
 	 *
+	 * @throws \Nette\InvalidStateException
 	 * @return mixed
-	 * @throws RedisClientException
 	 */
-	protected function send($cmd, array $args)
+	protected function send($cmd, array $args = array())
 	{
 		$this->connect();
 
@@ -442,11 +441,89 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			$buffer .= fread($this->session, self::MAX_BUFFER_SIZE);
 			$length -= self::MAX_BUFFER_SIZE;
 		}
-		;
 		$buffer .= fread($this->session, $length);
 
 		return $buffer;
 	}
+
+
+
+	/**
+	 * Get information and statistics about the server
+	 *
+	 * @param string $returnKey
+	 * @return array
+	 */
+	public function info($returnKey = NULL)
+	{
+		$info = array();
+		foreach (explode("\r\n", $this->send('info')) as $row) {
+			if (empty($row) || substr($row, 0, 1) === '#') {
+				continue;
+			}
+
+			list($key, $value) = explode(':', $row, 2) + array(1 => NULL);
+			if (strpos($value, ',') === FALSE) {
+				$info[$key] = $value;
+				continue;
+			}
+
+			foreach (explode(',', $value) as $item) {
+				list($k, $v) = explode('=', $item, 2) + array(1 => NULL);
+				$info[$key][$k] = $v;
+			}
+		}
+
+		if ($returnKey !== NULL) {
+			return $info[$returnKey];
+		}
+
+		return $info;
+	}
+
+
+
+	/**
+	 * @return array|bool|null|string
+	 * @throws TransactionException
+	 */
+	public function exec()
+	{
+		$response = $this->send('exec');
+		if ($response === NULL) {
+			throw new TransactionException("Transaction was aborted");
+		}
+		return $response;
+	}
+
+
+
+	/**
+	 * @internal
+	 */
+	public function assertVersion()
+	{
+		$version = $this->info('redis_version');
+		if (version_compare($version, '2.2.0', '<')) {
+			throw new Nette\Utils\AssertionException(
+				"Minimum required version for this Redis client is 2.2.0, your version is $version. Please upgrade your software."
+			);
+		}
+	}
+
+
+
+	/**
+	 * Close the connection
+	 */
+	public function __destruct()
+	{
+		$this->close();
+	}
+
+
+
+	/************************ syntax sugar ************************/
 
 
 
@@ -571,16 +648,6 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		$this->__unset($offset);
 	}
 
-
-
-	/**
-	 * Close the connection
-	 */
-	public function __destruct()
-	{
-		$this->close();
-	}
-
 }
 
 
@@ -600,5 +667,15 @@ class RedisClientException extends \RuntimeException
 	 * @var string
 	 */
 	public $response;
+
+}
+
+
+
+/**
+ * @author Filip Procházka <filip@prochazka.su>
+ */
+class TransactionException extends RedisClientException
+{
 
 }

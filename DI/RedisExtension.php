@@ -11,6 +11,7 @@
 namespace Kdyby\Extension\Redis\DI;
 
 use Kdyby;
+use Kdyby\Extension\Redis\RedisClient;
 use Nette;
 use Nette\Config\Configurator;
 use Nette\Config\Compiler;
@@ -85,6 +86,16 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			$builder->getDefinition('session')
 				->addSetup('setStorage', array($this->prefix('@sessionHandler')));
 		}
+	}
+
+
+
+	public function beforeCompile()
+	{
+		$config = $this->getConfig($this->defaults);
+		$client = new RedisClient($config['host'], $config['port'], $config['database'], $config['timeout']);
+		$client->assertVersion();
+		$client->close();
 	}
 
 
