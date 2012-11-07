@@ -43,31 +43,18 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	private $client;
 
 	/**
-	 * @var array
-	 */
-	private $locks = array();
-
-	/**
 	 * @var string
 	 */
-	private $locksDir;
+	private $lock;
 
 
 
 	/**
 	 * @param RedisClient $redisClient
-	 * @param string $tempDir
 	 */
-	public function __construct(RedisClient $redisClient, $tempDir = NULL)
+	public function __construct(RedisClient $redisClient)
 	{
 		$this->client = $redisClient;
-
-		if ($tempDir !== NULL) {
-			$this->locksDir = $tempDir . '/session';
-			if (!file_exists($this->locksDir)) {
-				@mkdir($this->locksDir, 0777);
-			}
-		}
 	}
 
 
@@ -95,7 +82,6 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	{
 		try {
 			$key = $this->getKeyId($id);
-			$this->lock($key, 'r+');
 			return (string) $this->client->get($key);
 
 		} catch (Nette\InvalidStateException $e) {
@@ -116,7 +102,6 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	{
 		try {
 			$key = $this->getKeyId($id);
-			$this->lock($key, 'w+');
 			$this->client->setex($key, ini_get("session.gc_maxlifetime"), $data);
 			return true;
 
@@ -138,32 +123,11 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 		try {
 			$key = $this->getKeyId($id);
 			$this->client->del($key);
-			if (isset($this->locks[$key])) {
-				flock($this->locks[$key], LOCK_UN);
-				fclose($this->locks[$key]);
-			}
 			return true;
 
 		} catch (Nette\InvalidStateException $e) {
 			Debugger::log($e);
 			return false;
-		}
-	}
-
-
-
-	/**
-	 * @param string $key
-	 * @param string $mode
-	 */
-	protected function lock($key, $mode = 'r+')
-	{
-		if (isset($this->locks[$key]) || $this->locksDir = NULL) {
-			return;
-		}
-
-		if ($fp = @fopen($this->locksDir . '/' . $key, $mode)) {
-			flock($this->locks[$key] = $fp, LOCK_EX);
 		}
 	}
 
@@ -186,10 +150,6 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	 */
 	public function close()
 	{
-		while ($lock = array_shift($this->locks)) {
-			flock($lock, LOCK_UN);
-			fclose($lock);
-		}
 		return true;
 	}
 

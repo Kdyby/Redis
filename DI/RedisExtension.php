@@ -80,7 +80,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 
 		if ($config['session'] && FALSE) {
 			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass('Kdyby\Extension\Redis\RedisSessionHandler', array(1 => '%tempDir%'));
+				->setClass('Kdyby\Extension\Redis\RedisSessionHandler');
 
 			$builder->getDefinition('session')
 				->addSetup('setStorage', array($this->prefix('@sessionHandler')));
