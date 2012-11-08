@@ -35,7 +35,7 @@ class ExclusiveLock extends Nette\Object
 	/**
 	 * @var int
 	 */
-	public $timeout = 15;
+	public $duration = 15;
 
 
 
@@ -52,15 +52,15 @@ class ExclusiveLock extends Nette\Object
 	/**
 	 * @return int
 	 */
-	public function getTimeout()
+	public function calculateTimeout()
 	{
-		return time() + $this->timeout + 1;
+		return time() + abs((int)$this->duration) + 1;
 	}
 
 
 
 	/**
-	 * Acquires an indexing lock if possible.
+	 * Tries to acquire a key lock, otherwise waits until it's released and repeats.
 	 *
 	 * @param string $key
 	 * @throws LockException
@@ -69,59 +69,76 @@ class ExclusiveLock extends Nette\Object
 	public function acquireLock($key)
 	{
 		if (isset($this->keys[$key])) {
-			return true;
+			return $this->increaseLockTimeout($key);
 		}
 
 		$lockKey = $this->formatLock($key);
+		$maxAttempts = 10;
 		do {
-			if ($this->client->setNX($lockKey, $this->getTimeout())) {
-				$this->keys[$key] = $lockKey;
+			do {
+				if ($this->client->setNX($lockKey, $timeout = $this->calculateTimeout())) {
+					$this->keys[$key] = $timeout;
+					return true;
+				}
+
+				$lockExpiration = $this->client->get($lockKey);
+			} while (empty($lockExpiration) || ($lockExpiration >= time() && !usleep(10000)));
+
+			$oldExpiration = $this->client->getSet($lockKey, $timeout = $this->calculateTimeout());
+			if ($oldExpiration === $lockExpiration) {
+				$this->keys[$key] = $timeout;
 				return true;
 			}
 
-			$lockExpiration = $this->client->get($lockKey);
-		} while (empty($lockExpiration) || ($lockExpiration >= time() && !usleep(10000)));
+		} while (--$maxAttempts > 0);
 
-		throw new LockException('Deadlock');
-
-//		$this->client->watch($lockKey);
-//		if (($lockExpiration = $this->client->get($lockKey)) < time()) {
-//			try {
-//				$this->client->multi();
-//				$this->updateLockTimeout($key);
-//				$this->client->exec();
-//
-//				$this->keys[] = $key;
-//				return true;
-//
-//			} catch (TransactionException $e) {
-//				throw new LockException($e->getMessage(), 0, $e);
-//			}
-//		}
-//
-//		$this->client->unwatch();
-//		throw new LockException("Lock could not be acquired.");
+		throw new LockException("Lock couldn't be acquired. Concurrency is too high.");
 	}
 
 
 
 	/**
 	 * @param string $key
+	 * @param $key
 	 */
 	public function release($key)
 	{
+		if (!isset($this->keys[$key])) {
+			return false;
+		}
+
+		if ($this->keys[$key] <= time()) {
+			unset($this->keys[$key]);
+			return false;
+		}
+
 		$this->client->del($this->formatLock($key));
 		unset($this->keys[$key]);
+		return true;
 	}
 
 
 
 	/**
 	 * @param string $key
+	 * @throws LockException
 	 */
-	public function updateLockTimeout($key)
+	public function increaseLockTimeout($key)
 	{
-		$this->client->set($this->formatLock($key), $this->getTimeout());
+		if (!isset($this->keys[$key])) {
+			return false;
+		}
+
+		if ($this->keys[$key] <= time()) {
+			throw new LockException("Process ran too long. Increase lock duration, or extend lock regularly.");
+		}
+
+		$oldTimeout = $this->client->getSet($this->formatLock($key), $timeout = $this->calculateTimeout());
+		if ((int)$oldTimeout !== (int)$this->keys[$key]) {
+			throw new LockException("Some rude client have messed up the lock duration.");
+		}
+		$this->keys[$key] = $timeout;
+		return true;
 	}
 
 
@@ -131,7 +148,7 @@ class ExclusiveLock extends Nette\Object
 	 */
 	public function releaseAll()
 	{
-		foreach ((array)$this->keys as $key => $lockKey) {
+		foreach ((array)$this->keys as $key => $timeout) {
 			$this->release($key);
 		}
 	}
@@ -141,11 +158,26 @@ class ExclusiveLock extends Nette\Object
 	/**
 	 * Updates the indexing locks timeout.
 	 */
-	public function updateLocksTimeout()
+	public function increaseLocksTimeout()
 	{
-		foreach ($this->keys as $key => $lockKey) {
-			$this->updateLockTimeout($key);
+		foreach ($this->keys as $key => $timeout) {
+			$this->increaseLockTimeout($key);
 		}
+	}
+
+
+
+	/**
+	 * @param string $key
+	 * @return int
+	 */
+	public function getLockTimeout($key)
+	{
+		if (!isset($this->keys[$key])) {
+			return 0;
+		}
+
+		return $this->keys[$key] - time();
 	}
 
 

@@ -560,6 +560,17 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 	/**
+	 * @internal
+	 * @param int $timeout
+	 */
+	public function setupLockDuration($timeout)
+	{
+		$this->getLock()->duration = abs((int)$timeout);
+	}
+
+
+
+	/**
 	 * @param string $key
 	 * @return bool
 	 */

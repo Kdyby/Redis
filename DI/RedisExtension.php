@@ -34,6 +34,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		'journal' => FALSE,
 		'storage' => FALSE,
 		'session' => FALSE,
+		'lockDuration' => 15,
 		'host' => 'localhost',
 		'port' => 6379,
 		'timeout' => 10,
@@ -53,7 +54,8 @@ class RedisExtension extends Nette\Config\CompilerExtension
 				'port' => $config['port'],
 				'database' => $config['database'],
 				'timeout' => $config['timeout']
-			));
+			))
+			->addSetup('setupLockDuration', array($config['lockDuration']));
 
 		if ($builder->parameters['debugMode']) {
 			$builder->addDefinition($this->prefix('panel'))
