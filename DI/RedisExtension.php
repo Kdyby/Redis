@@ -81,7 +81,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			$builder->addDefinition('cacheStorage')->setFactory($this->prefix('@cacheStorage'));
 		}
 
-		if ($config['session'] && FALSE) {
+		if ($config['session']) {
 			$builder->addDefinition($this->prefix('sessionHandler'))
 				->setClass('Kdyby\Extension\Redis\RedisSessionHandler');
 
