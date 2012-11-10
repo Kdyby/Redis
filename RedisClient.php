@@ -242,7 +242,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			return;
 		}
 
-		$this->session = stream_socket_client($this->host . ':' . $this->port, $errno, $errstr, $this->timeout);
+		$this->session = @stream_socket_client($this->host . ':' . $this->port, $errno, $errstr, $this->timeout);
 		if (!$this->session) {
 			throw new RedisClientException('Cannot connect to server: ' . $errstr, $errno);
 		}
