@@ -11,6 +11,7 @@
 namespace Kdyby\Extension\Redis\DI;
 
 use Kdyby;
+use NetteModule\ErrorPresenter;
 use Kdyby\Extension\Redis\RedisClient;
 use Nette;
 use Nette\Config\Configurator;
@@ -58,10 +59,9 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			->addSetup('setupLockDuration', array($config['lockDuration']));
 
 		if ($builder->parameters['debugMode']) {
-			$builder->addDefinition($this->prefix('panel'))
-				->setFactory('Kdyby\Extension\Redis\Diagnostics\Panel::register');
-
-			$client->addSetup('setPanel');
+			$client->addSetup('setPanel', array(
+				new Statement('Kdyby\Extension\Redis\Diagnostics\Panel::register')
+			));
 		}
 
 		if ($config['journal']) {
@@ -92,12 +92,17 @@ class RedisExtension extends Nette\Config\CompilerExtension
 
 
 
+	/**
+	 * Verify, that redis is installed, working and has the right version.
+	 */
 	public function beforeCompile()
 	{
 		$config = $this->getConfig($this->defaults);
-		$client = new RedisClient($config['host'], $config['port'], $config['database'], $config['timeout']);
-		$client->assertVersion();
-		$client->close();
+		if ($config['journal'] || $config['storage'] || $config['session']) {
+			$client = new RedisClient($config['host'], $config['port'], $config['database'], $config['timeout']);
+			$client->assertVersion();
+			$client->close();
+		}
 	}
 
 
