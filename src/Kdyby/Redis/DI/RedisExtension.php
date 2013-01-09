@@ -11,7 +11,6 @@
 namespace Kdyby\Extension\Redis\DI;
 
 use Kdyby;
-use NetteModule\ErrorPresenter;
 use Kdyby\Extension\Redis\RedisClient;
 use Nette;
 use Nette\Config\Configurator;

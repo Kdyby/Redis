@@ -1,5 +1,5 @@
 {
-    "name":"kdyby/redis-extension",
+    "name":"kdyby/redis",
     "type":"library",
     "description":"Redis storage for Nette Framework",
     "keywords":["nette", "kdyby", "redis", "client", "cache"],
@@ -13,18 +13,14 @@
     ],
     "support":{
         "email":"filip@prochazka.su",
-        "issues":"https://github.com/kdyby/framework/issues"
+        "issues":"https://github.com/kdyby/redis/issues"
     },
     "require":{
         "nette/nette":"*"
     },
-    "conflict":{
-        "kdyby/framework":"self.version"
-    },
     "autoload":{
         "psr-0":{
-            "Kdyby\\Extension\\Redis":""
+            "Kdyby\\Redis":"src/"
         }
-    },
-    "target-dir":"Kdyby/Extension/Redis"
+    }
 }
