@@ -21,6 +21,7 @@
 	"require-dev": {
 		"nette/tester": "@dev"
 	},
+	"minimum-stability": "dev",
     "autoload":{
         "psr-0":{
             "Kdyby\\Redis":"src/"
