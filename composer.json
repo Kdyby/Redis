@@ -18,6 +18,9 @@
     "require":{
         "nette/nette":"*"
     },
+	"require-dev": {
+		"nette/tester": "@dev"
+	},
     "autoload":{
         "psr-0":{
             "Kdyby\\Redis":"src/"
