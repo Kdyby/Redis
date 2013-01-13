@@ -8,7 +8,7 @@
  * For the full copyright and license information, please view the file license.md that was distributed with this source code.
  */
 
-namespace Kdyby\Extension\Redis;
+namespace Kdyby\Redis;
 
 use Kdyby;
 use Nette;
@@ -20,7 +20,7 @@ use Nette\Diagnostics\Debugger;
  * TinyRedisClient - the most lightweight Redis client written in PHP
  *
  * <code>
- * $client = new Kdyby\Extension\Redis\RedisClient();
+ * $client = new Kdyby\Redis\RedisClient();
  * $client->set('key', 'value');
  * $value = $client->get('key');
  * </code>
@@ -377,7 +377,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	{
 		$result = $response->result;
 		if ($response->result == -1) {
-			$result = null;
+			$result = NULL;
 
 		} elseif ($response->type == '$') {
 			$line = $this->readResponse($response->result + 2);
@@ -501,8 +501,8 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * Mark the start of a transaction block
 	 *
 	 * @param callable $callback
-	 * @throws RedisClientException
 	 * @throws \Exception
+	 * @throws RedisClientException
 	 * @return array|bool|mixed|null|string
 	 */
 	public function multi($callback = NULL)
@@ -524,8 +524,6 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			$this->discard();
 			throw $e;
 		}
-
-		return $ok;
 	}
 
 

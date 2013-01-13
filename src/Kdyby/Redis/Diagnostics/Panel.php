@@ -8,10 +8,10 @@
  * For the full copyright and license information, please view the file license.md that was distributed with this source code.
  */
 
-namespace Kdyby\Extension\Redis\Diagnostics;
+namespace Kdyby\Redis\Diagnostics;
 
 use Kdyby;
-use Kdyby\Extension\Redis\RedisClientException;
+use Kdyby\Redis\RedisClientException;
 use Nette;
 use Nette\Diagnostics\Debugger;
 use Nette\PhpGenerator as Code;
@@ -194,7 +194,7 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 	/**
-	 * @return \Kdyby\Extension\Redis\Diagnostics\Panel
+	 * @return \Kdyby\Redis\Diagnostics\Panel
 	 */
 	public static function register()
 	{

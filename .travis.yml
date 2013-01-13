@@ -1,0 +1,13 @@
+language: php
+
+php:
+  - 5.3.3
+  - 5.4
+
+services:
+  - redis-server
+
+before_script:
+  - composer install --no-interaction --quiet --dev
+
+script: php tests/lint.php src/Kdyby/ tests/KdybyTests/ && VERBOSE=true ./tests/run-tests.sh -s tests/

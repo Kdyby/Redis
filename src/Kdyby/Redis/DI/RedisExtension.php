@@ -8,10 +8,10 @@
  * For the full copyright and license information, please view the file license.md that was distributed with this source code.
  */
 
-namespace Kdyby\Extension\Redis\DI;
+namespace Kdyby\Redis\DI;
 
 use Kdyby;
-use Kdyby\Extension\Redis\RedisClient;
+use Kdyby\Redis\RedisClient;
 use Nette;
 use Nette\Config\Configurator;
 use Nette\Config\Compiler;
@@ -49,7 +49,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		$config = $this->getConfig($this->defaults);
 
 		$client = $builder->addDefinition($this->prefix('client'))
-			->setClass('Kdyby\Extension\Redis\RedisClient', array(
+			->setClass('Kdyby\Redis\RedisClient', array(
 				'host' => $config['host'],
 				'port' => $config['port'],
 				'database' => $config['database'],
@@ -59,13 +59,13 @@ class RedisExtension extends Nette\Config\CompilerExtension
 
 		if ($builder->parameters['debugMode']) {
 			$client->addSetup('setPanel', array(
-				new Statement('Kdyby\Extension\Redis\Diagnostics\Panel::register')
+				new Statement('Kdyby\Redis\Diagnostics\Panel::register')
 			));
 		}
 
 		if ($config['journal']) {
 			$builder->addDefinition($this->prefix('cacheJournal'))
-				->setClass('Kdyby\Extension\Redis\RedisJournal');
+				->setClass('Kdyby\Redis\RedisJournal');
 
 			// overwrite
 			$builder->removeDefinition('nette.cacheJournal');
@@ -74,7 +74,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 
 		if ($config['storage']) {
 			$builder->addDefinition($this->prefix('cacheStorage'))
-				->setClass('Kdyby\Extension\Redis\RedisStorage');
+				->setClass('Kdyby\Redis\RedisStorage');
 
 			$builder->removeDefinition('cacheStorage');
 			$builder->addDefinition('cacheStorage')->setFactory($this->prefix('@cacheStorage'));
@@ -82,7 +82,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 
 		if ($config['session']) {
 			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass('Kdyby\Extension\Redis\RedisSessionHandler');
+				->setClass('Kdyby\Redis\RedisSessionHandler');
 
 			$builder->getDefinition('session')
 				->addSetup('setStorage', array($this->prefix('@sessionHandler')));

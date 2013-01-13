@@ -8,7 +8,7 @@
  * For the full copyright and license information, please view the file license.md that was distributed with this source code.
  */
 
-namespace Kdyby\Extension\Redis;
+namespace Kdyby\Redis;
 
 use Kdyby;
 use Kdyby\Application\UI\Form;
@@ -21,7 +21,7 @@ use Nette;
  * Redis session handler allows to store session in redis using Nette\Http\Session.
  *
  * <code>
- * $session->setStorage(new Kdyby\Extension\Redis\RedisSessionHandler($redisClient));
+ * $session->setStorage(new Kdyby\Redis\RedisSessionHandler($redisClient));
  * </code>
  *
  * @author Filip Procházka <filip@prochazka.su>
