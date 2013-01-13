@@ -8,6 +8,7 @@ Requirements
 Kdyby/Redis requires PHP 5.3.2 or higher.
 
 - [Nette Framework 2.0.x](https://github.com/nette/nette)
+- [Redis](http://redis.io)
 
 
 Installation
