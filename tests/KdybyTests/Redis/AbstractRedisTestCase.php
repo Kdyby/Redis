@@ -26,11 +26,16 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 	 */
 	protected $client;
 
+	/**
+	 * @var resource
+	 */
+	private static $lock;
+
 
 
 	protected function setUp()
 	{
-		Tester\Helpers::lock('redis', dirname(TEMP_DIR));
+		flock(self::$lock = fopen(dirname(TEMP_DIR) . '/lock-redis', 'w'), LOCK_EX);
 
 		$this->client = new RedisClient();
 		try {
@@ -52,6 +57,17 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 
 		} catch (RedisClientException $e) {
 			Tester\Assert::fail($e->getMessage());
+		}
+	}
+
+
+
+	protected function tearDown()
+	{
+		if (self::$lock) {
+			@flock(self::$lock, LOCK_UN);
+			@fclose(self::$lock);
+			self::$lock = NULL;
 		}
 	}
 
