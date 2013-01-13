@@ -403,7 +403,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	private function readLine($first = FALSE)
 	{
-		if (!$line = stream_get_line($this->session, 4096, "\r\n")) {
+		if (!$line = self::streamGetLine($this->session, "\r\n")) {
 			throw new RedisClientException("Request failed");
 		}
 
@@ -611,6 +611,37 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	public function __destruct()
 	{
 		$this->close();
+	}
+
+
+
+	/**
+	 * @param resource $stream
+	 * @param string $ending
+	 * @param int $length
+	 * @return string
+	 */
+	private static function streamGetLine($stream, $ending = PHP_EOL, $length = self::MAX_BUFFER_SIZE)
+	{
+		if (PHP_VERSION_ID >= 50400) {
+			return stream_get_line($stream, $length, $ending);
+		}
+
+		$line = "";
+		while (FALSE !== ($char = fgetc($stream))) {
+			$line .= $char;
+
+			if (strlen($line) >= $length) {
+				break;
+			}
+
+			if (substr($line, -strlen($ending)) === $ending) {
+				$line = substr($line, 0, -strlen($ending));
+				break;
+			}
+		}
+
+		return $line;
 	}
 
 
