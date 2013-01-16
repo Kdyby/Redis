@@ -3,13 +3,12 @@
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
- * Copyright (c) 2008, 2012 Filip Procházka (filip@prochazka.su)
+ * Copyright (c) 2008 Filip Procházka (filip@prochazka.su)
  *
  * For the full copyright and license information, please view the file license.md that was distributed with this source code.
  */
 
 namespace Kdyby\Redis;
-
 use Kdyby;
 use Kdyby\Application\UI\Form;
 use Nette\Diagnostics\Debugger;
@@ -68,7 +67,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	public function open($savePath, $sessionName)
 	{
 		$this->savePath = $savePath;
-		return true;
+		return TRUE;
 	}
 
 
@@ -87,7 +86,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 
 		} catch (Nette\InvalidStateException $e) {
 			Debugger::log($e);
-			return false;
+			return FALSE;
 		}
 	}
 
@@ -105,11 +104,11 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 			$key = $this->formatKey($id);
 			$this->ssIds[$key] = $this->client->lock($key);
 			$this->client->setex($key, ini_get("session.gc_maxlifetime"), $data);
-			return true;
+			return TRUE;
 
 		} catch (Nette\InvalidStateException $e) {
 			Debugger::log($e);
-			return false;
+			return FALSE;
 		}
 	}
 
@@ -129,11 +128,11 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 			$this->client->unlock($key);
 			unset($this->ssIds[$key]);
 			$this->client->exec();
-			return true;
+			return TRUE;
 
 		} catch (Nette\InvalidStateException $e) {
 			Debugger::log($e);
-			return false;
+			return FALSE;
 		}
 	}
 
@@ -161,7 +160,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 		}
 		$this->ssIds = array();
 
-		return true;
+		return TRUE;
 	}
 
 
@@ -173,7 +172,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	 */
 	public function clean($maxLifeTime)
 	{
-		return true;
+		return TRUE;
 	}
 
 

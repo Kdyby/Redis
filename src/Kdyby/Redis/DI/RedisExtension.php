@@ -3,18 +3,17 @@
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
- * Copyright (c) 2008, 2012 Filip Procházka (filip@prochazka.su)
+ * Copyright (c) 2008 Filip Procházka (filip@prochazka.su)
  *
  * For the full copyright and license information, please view the file license.md that was distributed with this source code.
  */
 
 namespace Kdyby\Redis\DI;
-
 use Kdyby;
 use Kdyby\Redis\RedisClient;
 use Nette;
-use Nette\Config\Configurator;
 use Nette\Config\Compiler;
+use Nette\Config\Configurator;
 use Nette\DI\ContainerBuilder;
 use Nette\DI\Statement;
 use Nette\Utils\Validators;

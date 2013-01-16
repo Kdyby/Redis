@@ -3,13 +3,12 @@
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
- * Copyright (c) 2008, 2012 Filip Procházka (filip@prochazka.su)
+ * Copyright (c) 2008 Filip Procházka (filip@prochazka.su)
  *
  * For the full copyright and license information, please view the file license.txt that was distributed with this source code.
  */
 
 namespace Kdyby\Redis;
-
 use Kdyby;
 use Nette;
 
@@ -78,7 +77,7 @@ class ExclusiveLock extends Nette\Object
 			do {
 				if ($this->client->setNX($lockKey, $timeout = $this->calculateTimeout())) {
 					$this->keys[$key] = $timeout;
-					return true;
+					return TRUE;
 				}
 
 				$lockExpiration = $this->client->get($lockKey);
@@ -87,7 +86,7 @@ class ExclusiveLock extends Nette\Object
 			$oldExpiration = $this->client->getSet($lockKey, $timeout = $this->calculateTimeout());
 			if ($oldExpiration === $lockExpiration) {
 				$this->keys[$key] = $timeout;
-				return true;
+				return TRUE;
 			}
 
 		} while (--$maxAttempts > 0);
@@ -104,17 +103,17 @@ class ExclusiveLock extends Nette\Object
 	public function release($key)
 	{
 		if (!isset($this->keys[$key])) {
-			return false;
+			return FALSE;
 		}
 
 		if ($this->keys[$key] <= time()) {
 			unset($this->keys[$key]);
-			return false;
+			return FALSE;
 		}
 
 		$this->client->del($this->formatLock($key));
 		unset($this->keys[$key]);
-		return true;
+		return TRUE;
 	}
 
 
@@ -126,7 +125,7 @@ class ExclusiveLock extends Nette\Object
 	public function increaseLockTimeout($key)
 	{
 		if (!isset($this->keys[$key])) {
-			return false;
+			return FALSE;
 		}
 
 		if ($this->keys[$key] <= time()) {
@@ -138,7 +137,7 @@ class ExclusiveLock extends Nette\Object
 			throw new LockException("Some rude client have messed up the lock duration.");
 		}
 		$this->keys[$key] = $timeout;
-		return true;
+		return TRUE;
 	}
 
 
