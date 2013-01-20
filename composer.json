@@ -16,15 +16,14 @@
 		"issues": "https://github.com/kdyby/redis/issues"
 	},
 	"require": {
-		"nette/nette": "*"
+		"nette/nette": "2.0.*"
 	},
 	"require-dev": {
 		"nette/tester": "@dev"
 	},
-	"minimum-stability": "dev",
 	"autoload": {
 		"psr-0": {
-			"Kdyby\\Redis": "src/"
+			"Kdyby\\Redis\\": "src/"
 		}
 	}
 }
