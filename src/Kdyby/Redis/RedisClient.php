@@ -214,6 +214,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	private $lock;
 
+	/**
+	 * @var int
+	 */
+	private $transaction = 0;
+
 
 
 	/**
@@ -289,6 +294,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		$this->connect();
 		$cmd = strtolower($cmd);
 
+		if ($cmd === 'multi') {
+			$this->transaction += 1;
+		}
+
 		if ($this->panel) {
 			$request = $args;
 			array_unshift($request, $cmd);
@@ -298,7 +307,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		$result = FALSE;
 		$message = $this->buildMessage($cmd, $args);
 
-		$i = in_array($cmd, array('exec', 'discard')) ? 1 : self::MAX_ATTEMPTS;
+		$i = $this->transaction ? 1 : self::MAX_ATTEMPTS;
+		if (in_array($cmd, array('exec', 'discard'))) {
+			$this->transaction = max(0, $this->transaction - 1);
+		}
+
 		do {
 			if (isset($e)) { // reconnect
 				$this->close($e);
