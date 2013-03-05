@@ -123,11 +123,11 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	{
 		try {
 			$key = $this->formatKey($id);
-			$this->client->multi();
-			$this->client->del($key);
-			$this->client->unlock($key);
+			$this->client->multi(function (RedisClient $client) use ($key) {
+				$client->del($key);
+				$client->unlock($key);
+			});
 			unset($this->ssIds[$key]);
-			$this->client->exec();
 			return TRUE;
 
 		} catch (Nette\InvalidStateException $e) {
