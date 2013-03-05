@@ -180,7 +180,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	const WITH_SCORES = 'WITHSCORES';
 
 	/**
-	 * @var resource
+	 * @var resource|boolean
 	 */
 	private $session;
 
