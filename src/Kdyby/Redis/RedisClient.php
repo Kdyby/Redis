@@ -301,7 +301,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		$i = in_array($cmd, array('exec', 'discard')) ? 1 : self::MAX_ATTEMPTS;
 		do {
 			if (isset($e)) { // reconnect
-				$this->close();
+				$this->close($e);
 				$this->connect();
 				unset($e);
 			}
