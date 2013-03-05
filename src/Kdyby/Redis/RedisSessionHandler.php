@@ -85,7 +85,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 			return (string) $this->client->get($key);
 
 		} catch (Nette\InvalidStateException $e) {
-			Debugger::log($e);
+			Debugger::log($e, 'redis-session');
 			return FALSE;
 		}
 	}
@@ -107,7 +107,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 			return TRUE;
 
 		} catch (Nette\InvalidStateException $e) {
-			Debugger::log($e);
+			Debugger::log($e, 'redis-session');
 			return FALSE;
 		}
 	}
@@ -131,7 +131,7 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 			return TRUE;
 
 		} catch (Nette\InvalidStateException $e) {
-			Debugger::log($e);
+			Debugger::log($e, 'redis-session');
 			return FALSE;
 		}
 	}
