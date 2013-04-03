@@ -5,7 +5,7 @@ namespace KdybyTests\Redis;
 use Kdyby;
 use Kdyby\Redis\RedisClient;
 use Kdyby\Redis\RedisClientException;
-use Nette\PhpGenerator as Code;
+use Nette\Utils\PhpGenerator as Code;
 use Nette\Reflection\ClassType;
 use Nette\Reflection\GlobalFunction;
 use Nette\Utils\AssertionException;
