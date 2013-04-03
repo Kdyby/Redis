@@ -24,6 +24,9 @@
 	"autoload": {
 		"psr-0": {
 			"Kdyby\\Redis\\": "src/"
-		}
+		},
+		"files": [
+			"src/Nette/compatibility.php"
+		]
 	}
 }
