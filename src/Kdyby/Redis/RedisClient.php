@@ -259,8 +259,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function close()
 	{
-		$this->getLock()->releaseAll();
-		$this->driver->close();
+		if ($this->driver) {
+			$this->getLock()->releaseAll();
+			$this->driver->close();
+		}
 	}
 
 
