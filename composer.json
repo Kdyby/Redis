@@ -16,7 +16,8 @@
 		"issues": "https://github.com/kdyby/redis/issues"
 	},
 	"require": {
-		"nette/nette": "@dev"
+		"nette/nette": "@dev",
+		"ext-redis": "*"
 	},
 	"require-dev": {
 		"nette/tester": "@dev"
