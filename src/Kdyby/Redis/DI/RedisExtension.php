@@ -9,9 +9,11 @@
  */
 
 namespace Kdyby\Redis\DI;
+
 use Kdyby;
 use Kdyby\Redis\RedisClient;
 use Nette;
+use Nette\Config;
 use Nette\Config\Compiler;
 use Nette\Config\Configurator;
 use Nette\DI\ContainerBuilder;
@@ -25,6 +27,8 @@ use Nette\Utils\Validators;
  */
 class RedisExtension extends Nette\Config\CompilerExtension
 {
+
+	const DEFAULT_SESSION_PREFIX = 'Nette.Session:';
 
 	/**
 	 * @var array
@@ -80,11 +84,23 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		}
 
 		if ($config['session']) {
-			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass('Kdyby\Redis\RedisSessionHandler');
+			$session = Config\Helpers::merge((array)$config['session'], array(
+				'host' => $config['host'],
+				'port' => $config['port'],
+				'weight' => 1,
+				'timeout' => $config['timeout'],
+				'database' => $config['database'],
+				'prefix' => self::DEFAULT_SESSION_PREFIX,
+			));
+
+			$params = array_diff_key($session, array_flip(array('host', 'port')));
+			$savePath = sprintf('tcp://%s:%d', $session['host'], $session['port']);
 
 			$builder->getDefinition('session')
-				->addSetup('setStorage', array($this->prefix('@sessionHandler')));
+				->addSetup('setOptions', array(array(
+					'saveHandler' => 'redis',
+					'savePath' => $savePath . ($params ? '?' . http_build_query($params, '', '&') : ''),
+				)));
 		}
 	}
 

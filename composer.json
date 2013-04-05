@@ -25,6 +25,9 @@
 	"autoload": {
 		"psr-0": {
 			"Kdyby\\Redis\\": "src/"
-		}
+		},
+		"classmap": [
+			"src/Kdyby/Redis/exceptions.php"
+		]
 	}
 }

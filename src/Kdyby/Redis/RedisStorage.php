@@ -210,10 +210,10 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 				$this->client->setEX($this->formatEntryKey($key), $dp[Cache::EXPIRATION], $data);
 
 			} else {
-				$this->client->mSet(
-					$this->formatMetaKey($key), $meta,
-					$this->formatEntryKey($key), $data
-				);
+				$this->client->mSet(array(
+					$this->formatMetaKey($key) => $meta,
+					$this->formatEntryKey($key) => $data,
+				));
 			}
 			$this->unlock($key);
 			$this->client->exec();

@@ -64,15 +64,15 @@ class RedisClientTest extends AbstractRedisTestCase
 
 	public function testNullReply()
 	{
-		Assert::null($this->client->get('nonexistingkey'));
+		Assert::false($this->client->get('nonexistingkey'));
 	}
 
 
 
 	public function testExec()
 	{
-		Assert::equal('1', $this->client->sadd('test:key', 'item1'));
-		Assert::equal('1', $this->client->sadd('test:key', 'item2'));
+		Assert::equal(1, $this->client->sadd('test:key', 'item1'));
+		Assert::equal(1, $this->client->sadd('test:key', 'item2'));
 
 		Assert::equal('OK', $this->client->multi());
 		Assert::equal('QUEUED', $this->client->sMembers('test:key'));
@@ -89,8 +89,8 @@ class RedisClientTest extends AbstractRedisTestCase
 
 	public function testExecWithClosure()
 	{
-		Assert::equal('1', $this->client->sadd('test:key', 'item1'));
-		Assert::equal('1', $this->client->sadd('test:key', 'item2'));
+		Assert::equal(1, $this->client->sadd('test:key', 'item1'));
+		Assert::equal(1, $this->client->sadd('test:key', 'item2'));
 
 		list($first, $second) = $this->client->multi(function (RedisClient $client) {
 			$client->sMembers('test:key');
