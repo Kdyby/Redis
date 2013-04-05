@@ -8,6 +8,7 @@ services:
   - redis-server
 
 before_script:
+  - ./.travis.redis.sh
   - composer self-update
   - composer install --no-interaction --prefer-dist --dev
 
