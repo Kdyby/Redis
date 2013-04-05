@@ -784,33 +784,3 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	}
 
 }
-
-
-
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class RedisClientException extends \RuntimeException
-{
-
-	/**
-	 * @var string
-	 */
-	public $request;
-
-	/**
-	 * @var string
-	 */
-	public $response;
-
-}
-
-
-
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class TransactionException extends RedisClientException
-{
-
-}
