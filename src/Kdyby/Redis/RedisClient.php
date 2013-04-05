@@ -9,6 +9,7 @@
  */
 
 namespace Kdyby\Redis;
+
 use Kdyby;
 use Nette;
 use Nette\Diagnostics\Debugger;
@@ -16,8 +17,6 @@ use Nette\Diagnostics\Debugger;
 
 
 /**
- * TinyRedisClient - the most lightweight Redis client written in PHP
- *
  * <code>
  * $client = new Kdyby\Redis\RedisClient();
  * $client->set('key', 'value');
@@ -83,14 +82,14 @@ use Nette\Diagnostics\Debugger;
  * @method lPush(string $key, string $value1, string $value2 = NULL) Prepend one or multiple values to a list
  * @method lPushX(string $key, string $value) Prepend a value to a list, only if the list exists
  * @method lRange(string $key, int $start, int $stop) Get a range of elements from a list
- * @method lRem(string $key, int $count = 0, string $value) Remove elements from a list
+ * @method lRem(string $key, string $value, int $count = 0) Remove elements from a list
  * @method lSet(string $key, int $index, string $value) Set the value of an element in a list by its index
  * @method lTrim(string $key, int $start, int $stop) Trim a list to the specified range
  * @method mGet(string $key1, string $key2 = NULL) Get the values of all the given keys
  * @method migrate(string $host, int $port, string $key, string $destinationDb, int $timeout) Atomically transfer a key from a Redis instance to another one.
  * @method monitor() Listen for all requests received by the server in real time
  * @method move(string $key, string $db) Move a key to another database
- * @method mSet(string $key1, string $value1, string $key2 = NULL, string $value2 = NULL) Set multiple keys to multiple values
+ * @method mSet(array $values) Set multiple keys to multiple values
  * @method mSetNX(string $key1, string $value1, string $key2 = NULL, string $value2 = NULL) Set multiple keys to multiple values, only if none of the keys exist
  * @method object(string $subCommand, $arg1 = NULL, $arg2 = NULL) Inspect the internals of Redis objects
  * @method persist(string $key) Remove the expiration from a key
@@ -166,23 +165,18 @@ use Nette\Diagnostics\Debugger;
  * @method zScore(string $key, string $member) Get the score associated with the given member in a sorted set
  * @method zUnionStore(string $destination, string $numkeys, string $key1, string $key2 = NULL, $option1 = NULL, $option2 = NULL) Add multiple sorted sets and store the resulting sorted set in a new key</ul>
  *
- * @author ptrofimov https://github.com/ptrofimov
  * @author Filip Procházka <filip@prochazka.su>
  */
 class RedisClient extends Nette\Object implements \ArrayAccess
 {
 
-	/** @internal */
-	const MAX_BUFFER_SIZE = 8192;
-	const MAX_ATTEMPTS = 3;
-
 	/** commands */
 	const WITH_SCORES = 'WITHSCORES';
 
 	/**
-	 * @var resource|boolean
+	 * @var \Redis
 	 */
-	private $session;
+	private $driver;
 
 	/**
 	 * @var Diagnostics\Panel
@@ -214,11 +208,6 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	private $lock;
 
-	/**
-	 * @var int
-	 */
-	private $transaction = 0;
-
 
 
 	/**
@@ -226,9 +215,14 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * @param int $port
 	 * @param int $database
 	 * @param int $timeout
+	 * @throws MissingExtensionException
 	 */
 	public function __construct($host = 'localhost', $port = 6379, $database = 0, $timeout = 10)
 	{
+		if (!extension_loaded('redis')) {
+			throw new MissingExtensionException("Please install and enable the redis extension. \nhttps://github.com/nicolasff/phpredis/");
+		}
+
 		$this->host = $host;
 		$this->port = $port;
 		$this->database = $database;
@@ -238,24 +232,24 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 	/**
-	 * @throws RedisClientException
+	 * Close the connection
 	 */
+	public function __destruct()
+	{
+		$this->close();
+	}
+
+
+
 	public function connect()
 	{
-		if (is_resource($this->session)) {
+		if ($this->driver !== NULL) {
 			return;
 		}
 
-		$this->session = @stream_socket_client($this->host . ':' . $this->port, $errno, $errstr, $this->timeout);
-		if (!$this->session) {
-			throw new RedisClientException('Cannot connect to server: ' . $errstr, $errno);
-		}
-		stream_set_blocking($this->session, 1);
-		stream_set_timeout($this->session, $this->timeout); // ?
-
-		if ($this->database > 0) {
-			$this->select($this->database);
-		}
+		$this->driver = new \Redis();
+		$this->driver->connect($this->host, $this->port, $this->timeout);
+		$this->driver->select($this->database);
 	}
 
 
@@ -266,8 +260,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	public function close()
 	{
 		$this->getLock()->releaseAll();
-		@fclose($this->session);
-		$this->session = FALSE;
+		$this->driver->close();
 	}
 
 
@@ -286,190 +279,46 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * @param string $cmd
 	 * @param array $args
 	 *
-	 * @throws \Nette\InvalidStateException
+	 * @throws RedisClientException
 	 * @return mixed
 	 */
 	protected function send($cmd, array $args = array())
 	{
 		$this->connect();
-		$cmd = strtolower($cmd);
 
-		if ($cmd === 'multi') {
-			$this->transaction += 1;
-		}
-
-		if ($this->panel) {
-			$request = $args;
-			array_unshift($request, $cmd);
-			$this->panel->begin($request);
-		}
-
-		$result = FALSE;
-		$message = $this->buildMessage($cmd, $args);
-
-		$i = $this->transaction ? 1 : self::MAX_ATTEMPTS;
-		if (in_array($cmd, array('exec', 'discard'))) {
-			$this->transaction = max(0, $this->transaction - 1);
-		}
-
-		do {
-			if (isset($e)) { // reconnect
-				$this->close($e);
-				$this->connect();
-				unset($e);
-			}
-
-			try {
-				$response = $this->sendMessage($message);
-				$result = $this->parseResponse($response);
-
-			} catch (RedisClientException $e) {
+		try {
+			if ($this->panel) {
 				$request = $args;
 				array_unshift($request, $cmd);
-				$e->request = $request;
-				Debugger::log($e, 'redis-error');
-				if ($this->panel) {
-					$this->panel->error($e);
-				}
+				$this->panel->begin($request);
 			}
 
-		} while (isset($e) && --$i > 0);
+			set_error_handler(function ($severenity, $message) {
+				restore_error_handler();
+				throw new \ErrorException($message);
+			});
 
-		if ($this->panel) {
-			$this->panel->end();
+			$result = call_user_func_array(array($this->driver, $cmd), $args);
+
+			restore_error_handler();
+
+			if ($result instanceof \Redis) {
+				$result = strtolower($cmd) === 'multi' ? 'OK' : 'QUEUED';
+			}
+
+			if ($this->panel) {
+				$this->panel->end();
+			}
+
+		} catch (\Exception $e) {
+			if ($this->panel) {
+				$this->panel->error($e);
+			}
+			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
 		}
 
-		if (isset($e)) {
-			throw $e;
-		}
 
 		return $result;
-	}
-
-
-
-	/**
-	 * @param string $message
-	 *
-	 * @throws RedisClientException
-	 * @return object|\stdClass
-	 */
-	private function sendMessage($message)
-	{
-		fwrite($this->session, $message);
-		return $this->readLine(TRUE);
-	}
-
-
-
-	/**
-	 * @param string $method
-	 * @param array $args
-	 *
-	 * @return string
-	 */
-	private function buildMessage($method, array $args)
-	{
-		array_unshift($args, str_replace('_', ' ', strtoupper($method)));
-		$cmd = '*' . count($args) . "\r\n";
-		foreach ($args as $item) {
-			$cmd .= '$' . strlen($item) . "\r\n" . $item . "\r\n";
-		}
-		return $cmd;
-	}
-
-
-
-	/**
-	 * @param object|\stdClass $response
-	 *
-	 * @return array|null|string
-	 */
-	private function parseResponse($response)
-	{
-		$result = $response->result;
-		if ($response->result == -1) {
-			$result = NULL;
-
-		} elseif ($response->type == '$') {
-			$line = $this->readResponse($response->result + 2);
-			$result = substr($line, 0, strlen($line) - 2);
-
-		} elseif ($response->type == '*') {
-			$count = (int)$response->result;
-			$result = array();
-			for ($i = 0; $i < $count; $i++) {
-				$result[] = $this->parseResponse($this->readLine());
-			}
-		}
-
-		return $result;
-	}
-
-
-
-	/**
-	 * @param bool $first
-	 * @return object
-	 * @throws RedisClientException
-	 */
-	private function readLine($first = FALSE)
-	{
-		if (!$line = self::streamGetLine($this->session, "\r\n")) {
-			throw new RedisClientException("Request failed");
-		}
-
-		if ($this->panel) {
-			$this->panel->dataSize(strlen($line) + 2);
-		}
-
-		$result = substr($line, 1);
-		if ($line[0] == '-') {
-			$result = $e = new RedisClientException($result);
-
-		} elseif (!in_array($line[0], array('+', ':', '$', '*', '-'))) {
-			$result = $e = new RedisClientException("Invalid answer");
-			$e->response = $line;
-		}
-
-		if (isset($e) && $first) {
-			throw $e;
-		}
-
-		return (object)array('type' => $line[0], 'result' => $result);
-	}
-
-
-
-	/**
-	 * @param int $length
-	 *
-	 * @throws RedisClientException
-	 * @return null|string
-	 */
-	private function readResponse($length)
-	{
-		if ($this->panel) {
-			$this->panel->dataSize($length);
-		}
-
-		$buffer = NULL;
-		if ($length <= self::MAX_BUFFER_SIZE) {
-			$buffer = fread($this->session, $length);
-
-		} else {
-			while ($length > self::MAX_BUFFER_SIZE) {
-				$buffer .= fread($this->session, self::MAX_BUFFER_SIZE);
-				$length -= self::MAX_BUFFER_SIZE;
-			}
-			$buffer .= fread($this->session, $length);
-		}
-
-		if (empty($buffer) && $length) {
-			throw new RedisClientException("Timeout");
-		}
-
-		return $buffer;
 	}
 
 
@@ -482,26 +331,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function info($returnKey = NULL)
 	{
-		$info = array();
-		foreach (explode("\r\n", $this->send('info')) as $row) {
-			if (empty($row) || substr($row, 0, 1) === '#') {
-				continue;
-			}
-
-			list($key, $value) = explode(':', $row, 2) + array(1 => NULL);
-			if (strpos($value, ',') === FALSE) {
-				$info[$key] = $value;
-				continue;
-			}
-
-			foreach (explode(',', $value) as $item) {
-				list($k, $v) = explode('=', $item, 2) + array(1 => NULL);
-				$info[$key][$k] = $v;
-			}
-		}
+		$info = $this->send('info');
 
 		if ($returnKey !== NULL) {
-			return $info[$returnKey];
+			return array_key_exists($returnKey, $info) ? $info[$returnKey] : NULL;
 		}
 
 		return $info;
@@ -513,9 +346,9 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * Mark the start of a transaction block
 	 *
 	 * @param callable $callback
+	 * @throws \Exception|RedisClientException
 	 * @throws \Exception
-	 * @throws RedisClientException
-	 * @return array|bool|mixed|null|string
+	 * @return mixed
 	 */
 	public function multi($callback = NULL)
 	{
@@ -533,7 +366,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			throw $e;
 
 		} catch (\Exception $e) {
-			$this->discard();
+			$this->send('discard');
 			throw $e;
 		}
 	}
@@ -547,7 +380,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	public function exec()
 	{
 		$response = $this->send('exec');
-		if ($response === NULL) {
+		if ($response === NULL || $response === FALSE) {
 			throw new TransactionException("Transaction was aborted");
 		}
 		return $response;
@@ -617,47 +450,6 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 
-	/**
-	 * Close the connection
-	 */
-	public function __destruct()
-	{
-		$this->close();
-	}
-
-
-
-	/**
-	 * @param resource $stream
-	 * @param string $ending
-	 * @param int $length
-	 * @return string
-	 */
-	private static function streamGetLine($stream, $ending = PHP_EOL, $length = self::MAX_BUFFER_SIZE)
-	{
-		if (PHP_VERSION_ID >= 50400) {
-			return stream_get_line($stream, $length, $ending);
-		}
-
-		$line = "";
-		while (FALSE !== ($char = fgetc($stream))) {
-			$line .= $char;
-
-			if (strlen($line) >= $length) {
-				break;
-			}
-
-			if (substr($line, -strlen($ending)) === $ending) {
-				$line = substr($line, 0, -strlen($ending));
-				break;
-			}
-		}
-
-		return $line;
-	}
-
-
-
 	/************************ syntax sugar ************************/
 
 
@@ -690,7 +482,8 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function &__get($name)
 	{
-		return $this->get($name);
+		$res = $this->send('get', array($name));
+		return $res;
 	}
 
 
@@ -703,7 +496,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function __set($name, $value)
 	{
-		return $this->set($name, $value);
+		return $this->send('set', array($value));
 	}
 
 
@@ -717,7 +510,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function __isset($name)
 	{
-		return $this->exists($name);
+		return $this->send('exists', array($name));
 	}
 
 
@@ -729,8 +522,12 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function __unset($name)
 	{
-		return $this->del($name);
+		return $this->send('del', array($name));
 	}
+
+
+
+	/********************************* \ArrayAccess *********************************/
 
 
 
@@ -782,35 +579,5 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	{
 		$this->__unset($offset);
 	}
-
-}
-
-
-
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class RedisClientException extends \RuntimeException
-{
-
-	/**
-	 * @var string
-	 */
-	public $request;
-
-	/**
-	 * @var string
-	 */
-	public $response;
-
-}
-
-
-
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class TransactionException extends RedisClientException
-{
 
 }

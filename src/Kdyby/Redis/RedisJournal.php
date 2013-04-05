@@ -89,7 +89,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 
 		$this->client->multi();
 		foreach ($entries as $tag) {
-			$this->client->lRem($this->formatKey($tag, self::KEYS), 0, $key);
+			$this->client->lRem($this->formatKey($tag, self::KEYS), $key, 0);
 		}
 
 		// drop tags of entry and priority, in case there are some
