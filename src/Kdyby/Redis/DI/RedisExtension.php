@@ -84,7 +84,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		}
 
 		if ($config['session']) {
-			$session = Config\Helpers::merge((array)$config['session'], array(
+			$session = Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
 				'host' => $config['host'],
 				'port' => $config['port'],
 				'weight' => 1,
@@ -96,11 +96,23 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			$params = array_diff_key($session, array_flip(array('host', 'port')));
 			$savePath = sprintf('tcp://%s:%d', $session['host'], $session['port']);
 
-			$builder->getDefinition('session')
-				->addSetup('setOptions', array(array(
-					'saveHandler' => 'redis',
-					'savePath' => $savePath . ($params ? '?' . http_build_query($params, '', '&') : ''),
-				)));
+			$options = array(
+				'saveHandler' => 'redis',
+				'savePath' => $savePath . ($params ? '?' . http_build_query($params, '', '&') : ''),
+			);
+
+			foreach ($builder->getDefinition('session')->setup as $statement) {
+				if ($statement->entity === 'setOptions') {
+					$statement->arguments[0] = Config\Helpers::merge($options, $statement->arguments[0]);
+					unset($options);
+					break;
+				}
+			}
+
+			if (isset($options)) {
+				$builder->getDefinition('session')
+					->addSetup('setOptions', array($options));
+			}
 		}
 	}
 
