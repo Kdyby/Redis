@@ -23,9 +23,6 @@ Installation
 $ composer require kdyby/redis:~2.0
 ```
 
-4. Profit
-
-
 If you like to live on the edge, you can install dev version of kdyby/redis, that is compatible with dev version of Nette Framework
 
 ```sh
