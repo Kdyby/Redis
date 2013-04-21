@@ -217,7 +217,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * @param int $timeout
 	 * @throws MissingExtensionException
 	 */
-	public function __construct($host = 'localhost', $port = 6379, $database = 0, $timeout = 10)
+	public function __construct($host = '127.0.0.1', $port = NULL, $database = 0, $timeout = 10)
 	{
 		if (!extension_loaded('redis')) {
 			throw new MissingExtensionException("Please install and enable the redis extension. \nhttps://github.com/nicolasff/phpredis/");
