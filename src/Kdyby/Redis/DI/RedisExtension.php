@@ -38,8 +38,8 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		'storage' => FALSE,
 		'session' => FALSE,
 		'lockDuration' => 15,
-		'host' => 'localhost',
-		'port' => 6379,
+		'host' => '127.0.0.1',
+		'port' => NULL,
 		'timeout' => 10,
 		'database' => 0
 	);
@@ -94,7 +94,12 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			));
 
 			$params = array_diff_key($session, array_flip(array('host', 'port')));
-			$savePath = sprintf('tcp://%s:%d', $session['host'], $session['port']);
+			if (substr($session['host'], 0, 1) === '/') {
+				$savePath = $session['host'];
+
+			} else {
+				$savePath = sprintf('tcp://%s:%d', $session['host'], $session['port']);
+			}
 
 			$options = array(
 				'saveHandler' => 'redis',
@@ -129,6 +134,21 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			$client->assertVersion();
 			$client->close();
 		}
+	}
+
+
+
+	/**
+	 * @param array $defaults
+	 * @param bool $expand
+	 * @return array
+	 */
+	public function getConfig(array $defaults = NULL, $expand = TRUE)
+	{
+		$config = parent::getConfig($defaults, $expand);
+		$config['port'] = ($config['host'][0] !== '/' && !$config['port']) ? 6379 : $config['port'];
+
+		return $config;
 	}
 
 
