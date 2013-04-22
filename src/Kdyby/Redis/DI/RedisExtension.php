@@ -41,7 +41,8 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		'host' => '127.0.0.1',
 		'port' => NULL,
 		'timeout' => 10,
-		'database' => 0
+		'database' => 0,
+		'debugger' => '%debugMode%'
 	);
 
 
@@ -60,7 +61,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 			))
 			->addSetup('setupLockDuration', array($config['lockDuration']));
 
-		if ($builder->parameters['debugMode']) {
+		if ($config['debugger']) {
 			$client->addSetup('setPanel', array(
 				new Statement('Kdyby\Redis\Diagnostics\Panel::register')
 			));
