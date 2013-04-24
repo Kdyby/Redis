@@ -459,8 +459,9 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 		} else {
 			while ($length > self::MAX_BUFFER_SIZE) {
-				$buffer .= fread($this->session, self::MAX_BUFFER_SIZE);
-				$length -= self::MAX_BUFFER_SIZE;
+				$readBuffer = fread($this->session, self::MAX_BUFFER_SIZE);
+				$buffer .= $readBuffer;
+				$length -= strlen($readBuffer);
 			}
 			$buffer .= fread($this->session, $length);
 		}
