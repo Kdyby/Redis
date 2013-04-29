@@ -248,8 +248,15 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		$this->driver = new \Redis();
-		$this->driver->connect($this->host, $this->port, $this->timeout);
-		$this->driver->select($this->database);
+
+		try {
+			$this->driver->connect($this->host, $this->port, $this->timeout);
+			$this->driver->select($this->database);
+
+		} catch (\RedisException $e) {
+			$this->driver = NULL;
+			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
+		}
 	}
 
 
