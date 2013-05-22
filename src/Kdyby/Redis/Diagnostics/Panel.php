@@ -47,10 +47,13 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 */
 	private $errors = array();
 
-
-
 	/**
+	 * @var bool
 	 */
+	public $renderPanel = TRUE;
+
+
+
 	public function begin($args)
 	{
 		if (Debugger::timer(self::TIMER_NAME)) {
@@ -58,8 +61,10 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		}
 
 		$cmd = array();
-		foreach ($args as $arg) {
-			$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
+		if ($this->renderPanel) {
+			foreach ($args as $arg) {
+				$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
+			}
 		}
 
 		$this->queries[] = (object)array(
@@ -84,8 +89,6 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 
-	/**
-	 */
 	public function end()
 	{
 		$time = Debugger::timer(self::TIMER_NAME);
@@ -119,6 +122,10 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 */
 	public function getPanel()
 	{
+		if (!$this->renderPanel) {
+			return '';
+		}
+
 		$s = '';
 		$h = 'htmlSpecialChars';
 		foreach ($this->queries as $query) {

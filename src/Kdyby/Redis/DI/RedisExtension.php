@@ -52,20 +52,20 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$config = $this->getConfig($this->defaults);
 
-		$client = $builder->addDefinition($this->prefix('client'))
+		$builder->addDefinition($this->prefix('client'))
 			->setClass('Kdyby\Redis\RedisClient', array(
 				'host' => $config['host'],
 				'port' => $config['port'],
 				'database' => $config['database'],
 				'timeout' => $config['timeout']
 			))
-			->addSetup('setupLockDuration', array($config['lockDuration']));
+			->addSetup('setupLockDuration', array($config['lockDuration']))
+			->addSetup('setPanel', array($this->prefix('@panel')));
 
-		if ($config['debugger']) {
-			$client->addSetup('setPanel', array(
-				new Statement('Kdyby\Redis\Diagnostics\Panel::register')
-			));
-		}
+		$builder->addDefinition($this->prefix('panel'))
+			->setClass('Kdyby\Redis\Diagnostics\Panel')
+			->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
+			->addSetup('$renderPanel', array($config['debugger']));
 
 		if ($config['journal']) {
 			$builder->addDefinition($this->prefix('cacheJournal'))
