@@ -1,0 +1,4 @@
+redis:
+	journal: on
+	storage: on
+	session: on
