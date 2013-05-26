@@ -13,19 +13,23 @@ namespace Kdyby\Redis\DI;
 use Kdyby;
 use Kdyby\Redis\RedisClient;
 use Nette;
-use Nette\Config;
-use Nette\Config\Compiler;
-use Nette\Config\Configurator;
+use Nette\DI\Compiler;
 use Nette\DI\ContainerBuilder;
-use Nette\DI\Statement;
 use Nette\Utils\Validators;
 
 
 
+if (!class_exists('Nette\DI\CompilerExtension')) {
+	class_alias('Nette\Config\CompilerExtension', 'Nette\DI\CompilerExtension');
+	class_alias('Nette\Config\Configurator', 'Nette\Configurator');
+	class_alias('Nette\Config\Compiler', 'Nette\DI\Compiler');
+	class_alias('Nette\Config\Helpers', 'Nette\DI\Config\Helpers');
+}
+
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisExtension extends Nette\Config\CompilerExtension
+class RedisExtension extends Nette\DI\CompilerExtension
 {
 
 	const DEFAULT_SESSION_PREFIX = 'Nette.Session:';
@@ -85,7 +89,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 		}
 
 		if ($config['session']) {
-			$session = Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
+			$session = Nette\DI\Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
 				'host' => $config['host'],
 				'port' => $config['port'],
 				'weight' => 1,
@@ -109,7 +113,7 @@ class RedisExtension extends Nette\Config\CompilerExtension
 
 			foreach ($builder->getDefinition('session')->setup as $statement) {
 				if ($statement->entity === 'setOptions') {
-					$statement->arguments[0] = Config\Helpers::merge($options, $statement->arguments[0]);
+					$statement->arguments[0] = Nette\DI\Config\Helpers::merge($options, $statement->arguments[0]);
 					unset($options);
 					break;
 				}
@@ -155,11 +159,11 @@ class RedisExtension extends Nette\Config\CompilerExtension
 
 
 	/**
-	 * @param \Nette\Config\Configurator $config
+	 * @param \Nette\Configurator $config
 	 */
-	public static function register(Configurator $config)
+	public static function register(Nette\Configurator $config)
 	{
-		$config->onCompile[] = function (Configurator $config, Compiler $compiler) {
+		$config->onCompile[] = function ($config, Compiler $compiler) {
 			$compiler->addExtension('redis', new RedisExtension());
 		};
 	}
