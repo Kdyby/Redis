@@ -252,9 +252,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	{
 		// cleaning using file iterator
 		if (!empty($conds[Cache::ALL])) {
-			foreach ($this->client->keys(self::NS_NETTE . ':*') as $entry) {
-				$this->client->del($entry);
-			}
+			call_user_func_array(array($this->client, 'del'), $this->client->keys(self::NS_NETTE . ':*'));
 
 			if ($this->journal) {
 				$this->journal->clean($conds);

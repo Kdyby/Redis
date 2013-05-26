@@ -81,23 +81,25 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	/**
 	 * Deletes all keys from associated tags and all priorities
 	 *
-	 * @param string $key
+	 * @todo optimize
+	 * @param string $keys
 	 */
-	private function cleanEntry($key)
+	private function cleanEntry($keys)
 	{
-		$entries = $this->entryTags($key);
+		foreach (is_array($keys) ? $keys : array($keys) as $key) {
+			$entries = $this->entryTags($key);
 
-		$this->client->multi();
-		foreach ($entries as $tag) {
-			$this->client->lRem($this->formatKey($tag, self::KEYS), $key, 0);
+			$this->client->multi();
+			foreach ($entries as $tag) {
+				$this->client->lRem($this->formatKey($tag, self::KEYS), $key, 0);
+			}
+
+			// drop tags of entry and priority, in case there are some
+			$this->client->del($this->formatKey($key, self::TAGS), $this->formatKey($key, self::PRIORITY));
+			$this->client->zRem($this->formatKey(self::PRIORITY), $key);
+
+			$this->client->exec();
 		}
-
-		// drop tags of entry and priority, in case there are some
-		$this->client->del($this->formatKey($key, self::TAGS));
-		$this->client->del($this->formatKey($key, self::PRIORITY));
-		$this->client->zRem($this->formatKey(self::PRIORITY), $key);
-
-		$this->client->exec();
 	}
 
 
@@ -115,9 +117,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 			$all = $this->client->keys(self::NS_NETTE . ':*');
 
 			$this->client->multi();
-			foreach ($all as $entry) {
-				$this->client->del($entry);
-			}
+			call_user_func_array(array($this->client, 'del'), $all);
 			$this->client->exec();
 			return NULL;
 		}
@@ -125,17 +125,13 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 		$entries = array();
 		if (!empty($conds[Cache::TAGS])) {
 			foreach ((array)$conds[Cache::TAGS] as $tag) {
-				foreach ($found = $this->tagEntries($tag) as $entry) {
-					$this->cleanEntry($entry);
-				}
+				$this->cleanEntry($found = $this->tagEntries($tag));
 				$entries = array_merge($entries, $found);
 			}
 		}
 
 		if (isset($conds[Cache::PRIORITY])) {
-			foreach ($found = $this->priorityEntries($conds[Cache::PRIORITY]) as $entry) {
-				$this->cleanEntry($entry);
-			}
+			$this->cleanEntry($found = $this->priorityEntries($conds[Cache::PRIORITY]));
 			$entries = array_merge($entries, $found);
 		}
 
