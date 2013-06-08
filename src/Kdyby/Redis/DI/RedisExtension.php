@@ -46,7 +46,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'port' => NULL,
 		'timeout' => 10,
 		'database' => 0,
-		'debugger' => '%debugMode%'
+		'debugger' => '%debugMode%',
+		'versionCheck' => TRUE,
 	);
 
 
@@ -134,7 +135,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	public function beforeCompile()
 	{
 		$config = $this->getConfig($this->defaults);
-		if ($config['journal'] || $config['storage'] || $config['session']) {
+		if ($config['versionCheck'] && ($config['journal'] || $config['storage'] || $config['session'])) {
 			$client = new RedisClient($config['host'], $config['port'], $config['database'], $config['timeout']);
 			$client->assertVersion();
 			$client->close();
