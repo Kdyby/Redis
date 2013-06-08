@@ -15,9 +15,9 @@ Kdyby/Redis requires PHP 5.3.2 or higher.
 Installation
 ------------
 
-1. Compile & Install [latest stable Redis](http://redis.io/download)
-2. Compile & Install [latest stable phpredis](https://github.com/nicolasff/phpredis/)
-3. Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
+* Compile & Install [latest stable Redis](http://redis.io/download)
+* Compile & Install [latest stable phpredis](https://github.com/nicolasff/phpredis/)
+* Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 
 ```sh
 $ composer require kdyby/redis:~2.0
@@ -28,6 +28,25 @@ If you like to live on the edge, you can install dev version of kdyby/redis, tha
 ```sh
 $ composer require kdyby/redis:@dev
 ```
+
+* Register Compiler extension in config.neon
+
+```yml
+extensions:
+  redis: Kdyby\Redis\DI\RedisExtension
+```
+
+* Configure the extension - enable Redis handlers
+
+```yml
+redis:
+  journal: on
+  session: on
+  storage: on
+  debugger: off
+```
+
+
 
 
 -----
