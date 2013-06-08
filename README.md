@@ -16,18 +16,34 @@ Installation
 ------------
 
 1. Compile & Install [latest stable Redis](http://redis.io/download)
-2. Compile & Install [latest stable phpredis](https://github.com/nicolasff/phpredis/)
-3. Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 
+2. Compile & Install [latest stable phpredis](https://github.com/nicolasff/phpredis/)
+
+3. Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 ```sh
 $ composer require kdyby/redis:~2.0
 ```
-
 If you like to live on the edge, you can install dev version of kdyby/redis, that is compatible with dev version of Nette Framework
-
 ```sh
 $ composer require kdyby/redis:@dev
 ```
+
+4. Register Compiler extension in config.neon
+```
+extensions:
+	redis: Kdyby\Redis\DI\RedisExtension
+```
+
+5. Configure the extension - enable Redis handlers
+```
+redis:
+    journal: on
+    session: on
+    storage: on
+    debugger: off
+```
+
+
 
 
 -----
