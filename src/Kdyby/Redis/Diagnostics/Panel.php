@@ -189,9 +189,29 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	 */
 	public static function register()
 	{
-		Debugger::$blueScreen->addPanel(array($panel = new static(), 'renderException'));
-		Debugger::$bar->addPanel($panel);
+		self::getDebuggerBlueScreen()->addPanel(array($panel = new static(), 'renderException'));
+		self::getDebuggerBar()->addPanel($panel);
 		return $panel;
+	}
+
+
+
+	/**
+	 * @return Nette\Diagnostics\Bar
+	 */
+	private static function getDebuggerBar()
+	{
+		return method_exists('Nette\Diagnostics\Debugger', 'getBar') ? Debugger::getBar() : Debugger::$bar;
+	}
+
+
+
+	/**
+	 * @return Nette\Diagnostics\BlueScreen
+	 */
+	private static function getDebuggerBlueScreen()
+	{
+		return method_exists('Nette\Diagnostics\Debugger', 'getBlueScreen') ? Debugger::getBlueScreen() : Debugger::$blueScreen;
 	}
 
 }
