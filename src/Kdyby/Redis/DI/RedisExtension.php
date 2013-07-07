@@ -78,7 +78,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		if ($config['journal']) {
 			$builder->addDefinition($this->prefix('cacheJournal'))
-				->setClass('Kdyby\Redis\RedisJournal');
+				->setClass('Kdyby\Redis\RedisLuaJournal');
 
 			// overwrite
 			$builder->removeDefinition('nette.cacheJournal');
