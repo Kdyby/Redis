@@ -33,31 +33,44 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 
 
 
-	protected function setUp()
+	protected function getClient()
 	{
+		if ($this->client) {
+			return $this->client;
+		}
+
 		flock(self::$lock = fopen(dirname(TEMP_DIR) . '/lock-redis', 'w'), LOCK_EX);
 
-		$this->client = new RedisClient();
+		$client = new RedisClient();
 		try {
-			$this->client->connect();
+			$client->connect();
 
 		} catch (RedisClientException $e) {
 			Tester\Helpers::skip($e->getMessage());
 		}
 
 		try {
-			$this->client->assertVersion();
+			$client->assertVersion();
 
 		} catch (AssertionException $e) {
 			Tester\Helpers::skip($e->getMessage());
 		}
 
 		try {
-			$this->client->flushDb();
+			$client->flushDb();
 
 		} catch (RedisClientException $e) {
 			Tester\Assert::fail($e->getMessage());
 		}
+
+		return $this->client = $client;
+	}
+
+
+
+	protected function setUp()
+	{
+		$this->getClient(); // make sure it's created
 	}
 
 
@@ -69,6 +82,8 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 			@fclose(self::$lock);
 			self::$lock = NULL;
 		}
+
+		$this->client = NULL;
 	}
 
 }

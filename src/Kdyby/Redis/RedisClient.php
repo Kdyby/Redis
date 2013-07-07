@@ -46,8 +46,6 @@ use Nette\Diagnostics\Debugger;
  * @method discard() Discard all commands issued after MULTI
  * @method dump(string $key) Return a serialized version of the value stored at the specified key.
  * @method echo(string $message) Echo the given string
- * @method eval(string $script, int $numkeys, string $key1, string $key2 = NULL, string $arg1 = NULL, string $arg2 = NULL) Execute a Lua script server side
- * @method evalSha(string $sha1, int $numkeys, string $key1, string $key2 = NULL, string $arg1 = NULL, string $arg2 = NULL) Execute a Lua script server side
  * @method exists(string $key) Determine if a key exists
  * @method expire(string $key, int $seconds) Set a key's time to live in seconds
  * @method expireAt(string $key, int $timestamp) Set the expiration for a key as a UNIX timestamp
@@ -208,6 +206,8 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	private $lock;
 
+	private static $exceptionCmd = array('evalsha' => 0);
+
 
 
 	/**
@@ -313,6 +313,14 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 			if ($result instanceof \Redis) {
 				$result = strtolower($cmd) === 'multi' ? 'OK' : 'QUEUED';
+
+			} elseif ($result === FALSE && ($msg = $this->driver->getLastError())) {
+				if (!isset(self::$exceptionCmd[strtolower($cmd)])) {
+					throw new \RedisException($msg);
+				}
+
+			} else {
+				$this->driver->clearLastError();
 			}
 
 			if ($this->panel) {
@@ -325,7 +333,6 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			}
 			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
 		}
-
 
 		return $result;
 	}
@@ -393,6 +400,25 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			throw new TransactionException("Transaction was aborted");
 		}
 		return $response;
+	}
+
+
+
+	/**
+	 * Execute a Lua script server side
+	 */
+	public function evalScript($script, array $keys = array(), array $args = array())
+	{
+		$script = trim($script);
+
+		$result = $this->send('evalsha', array(sha1($script), array_merge($keys, $args), count($keys)));
+		if ($result === FALSE && stripos($this->driver->getLastError(), 'NOSCRIPT') !== FALSE) {
+			$this->driver->clearLastError();
+			$sha = $this->driver->script('load', $script);
+			$result = $this->send('evalsha', array($sha, array_merge($keys, $args), count($keys)));
+		}
+
+		return $result;
 	}
 
 

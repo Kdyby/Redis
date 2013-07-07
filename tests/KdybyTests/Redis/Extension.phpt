@@ -44,8 +44,8 @@ class ExtensionTest extends Tester\TestCase
 	{
 		$dic = $this->createContainer();
 		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
-		Assert::true($dic->getService('redis.cacheJournal') instanceof Kdyby\Redis\RedisJournal);
-		Assert::true($dic->getService('nette.cacheJournal') instanceof Kdyby\Redis\RedisJournal);
+		Assert::true($dic->getService('redis.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);
+		Assert::true($dic->getService('nette.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);
 		Assert::true($dic->getService('redis.cacheStorage') instanceof Kdyby\Redis\RedisStorage);
 		Assert::true($dic->getService('cacheStorage') instanceof Kdyby\Redis\RedisStorage);
 		Assert::same(array(
