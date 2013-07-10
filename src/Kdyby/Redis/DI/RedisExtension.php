@@ -71,6 +71,10 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			->addSetup('setupLockDuration', array($config['lockDuration']))
 			->addSetup('setPanel', array($this->prefix('@panel')));
 
+		$builder->addDefinition($this->prefix('driver'))
+			->setClass('Redis')
+			->setFactory($this->prefix('@client') . '::getDriver');
+
 		$builder->addDefinition($this->prefix('panel'))
 			->setClass('Kdyby\Redis\Diagnostics\Panel')
 			->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
