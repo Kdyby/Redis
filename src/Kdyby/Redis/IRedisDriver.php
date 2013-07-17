@@ -5,31 +5,25 @@
  *
  * Copyright (c) 2008 Filip Procházka (filip@prochazka.su)
  *
- * For the full copyright and license information, please view the file license.md that was distributed with this source code.
+ * For the full copyright and license information, please view the file license.txt that was distributed with this source code.
  */
 
 namespace Kdyby\Redis;
 
 use Kdyby;
 use Nette;
-use Nette\Diagnostics\Debugger;
 
 
 
 /**
- * <code>
- * $client = new Kdyby\Redis\RedisClient();
- * $client->set('key', 'value');
- * $value = $client->get('key');
- * </code>
+ * @author Filip Procházka <filip@prochazka.su>
  *
- * Full list of commands you can see on http://redis.io/commands
  *
  * @method append(string $key, string $value) Append a value to a key
  * @method auth(string $password) Authenticate to the server
  * @method bgRewriteAof() Asynchronously rewrite the append-only file
  * @method bfSave() Asynchronously save the dataset to disk
- * @method bitCount(string $key, int $start , int $end) Count set bits in a string
+ * @method bitCount(string $key, int $start, int $end) Count set bits in a string
  * @method bitOp(string $operation, string $destKey, $key1, $key2 = NULL) Perform bitwise operations between strings
  * @method blPop(string $key1, $key2 = NULL, $timeout = NULL) Remove and get the first element in a list, or block until one is available
  * @method brPop(string $key1, $key2 = NULL, $timeout = NULL) Remove and get the last element in a list, or block until one is available
@@ -45,7 +39,7 @@ use Nette\Diagnostics\Debugger;
  * @method del(string $key1, string $key2 = NULL) Delete a key
  * @method discard() Discard all commands issued after MULTI
  * @method dump(string $key) Return a serialized version of the value stored at the specified key.
- * @method echo(string $message) Echo the given string
+ * @method echo (string $message) Echo the given string
  * @method exists(string $key) Determine if a key exists
  * @method expire(string $key, int $seconds) Set a key's time to live in seconds
  * @method expireAt(string $key, int $timestamp) Set the expiration for a key as a UNIX timestamp
@@ -111,13 +105,8 @@ use Nette\Diagnostics\Debugger;
  * @method sAdd(string $key, string $member1, string $member2 = NULL) Add one or more members to a set
  * @method save() Synchronously save the dataset to disk
  * @method sCard(string $key) Get the number of members in a set
- * @method script_exists(string $script1, string $script2 = NULL) Check existence of scripts in the script cache.
- * @method script_flush() Remove all the scripts from the script cache.
- * @method script_kill() Kill the script currently in execution.
- * @method script_load(string $script) Load the specified Lua script into the script cache.
  * @method sDiff(string $key1, string $key2 = NULL) Subtract multiple sets
  * @method sDiffStore(string $destination, string $key1, string $key2 = NULL) Subtract multiple sets and store the resulting set in a key
- * @method select(int $index) Change the selected database for the current connection
  * @method set(string $key, string $value) Set the string value of a key
  * @method setBit(string $key, int $offset, string $value) Sets or clears the bit at offset in the string value stored at key
  * @method setEX(string $key, int $seconds, string $value) Set the value and expiration of a key
@@ -162,468 +151,88 @@ use Nette\Diagnostics\Debugger;
  * @method zRevRang(string $key, string $member) Determine the index of a member in a sorted set, with scores ordered from high to low
  * @method zScore(string $key, string $member) Get the score associated with the given member in a sorted set
  * @method zUnionStore(string $destination, string $numkeys, string $key1, string $key2 = NULL, $option1 = NULL, $option2 = NULL) Add multiple sorted sets and store the resulting sorted set in a new key</ul>
- *
- * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisClient extends Nette\Object implements \ArrayAccess
+interface IRedisDriver
 {
 
-	/** commands */
-	const WITH_SCORES = 'WITHSCORES';
-
 	/**
-	 * @var Driver\PhpRedisDriver
+	 * A method to determine if a phpredis object thinks it's connected to a server
+	 *
+	 * @return bool
 	 */
-	private $driver;
+	function isConnected();
 
 	/**
-	 * @var Diagnostics\Panel
-	 */
-	private $panel;
-
-	/**
-	 * @var string
-	 */
-	private $host;
-
-	/**
-	 * @var string
-	 */
-	private $port;
-
-	/**
-	 * @var int
-	 */
-	private $timeout;
-
-	/**
-	 * @var int
-	 */
-	private $database;
-
-	/**
-	 * @var ExclusiveLock
-	 */
-	private $lock;
-
-	private static $exceptionCmd = array('evalsha' => 0);
-
-
-
-	/**
-	 * @param string $host
+	 * Connects to a Redis instance or reuse a connection already established with pconnect/popen.
+	 *
+	 * The connection will not be closed on close or end of request until the php process ends.
+	 * So be patient on to many open FD's (specially on redis server side)
+	 * when using persistent connections on many servers connecting to one redis server.
+	 *
+	 * Also more than one persistent connection can be made identified
+	 * by either host + port + timeout or host + persistent_id or unix socket + timeout.
+	 *
+	 * This feature is not available in threaded versions.
+	 * pconnect and popen then working like their non persistent equivalents.
+	 *
+	 * @param string $host can be a host, or the path to a unix domain socket
 	 * @param int $port
+	 * @param int $timeout value in seconds (optional, default is 0 meaning unlimited)
+	 * @return bool
+	 */
+	function connect($host, $port = NULL, $timeout = 0);
+
+	/**
+	 * Change the selected database for the current connection.
+	 *
 	 * @param int $database
-	 * @param int $timeout
-	 * @throws MissingExtensionException
-	 */
-	public function __construct($host = '127.0.0.1', $port = NULL, $database = 0, $timeout = 10)
-	{
-		if (!extension_loaded('redis')) {
-			throw new MissingExtensionException("Please install and enable the redis extension. \nhttps://github.com/nicolasff/phpredis/");
-		}
-
-		$this->host = $host;
-		$this->port = $port;
-		$this->database = $database;
-		$this->timeout = $timeout;
-
-		$this->driver = new Driver\PhpRedisDriver();
-	}
-
-
-
-	/**
-	 * Close the connection
-	 */
-	public function __destruct()
-	{
-		$this->close();
-	}
-
-
-
-	/**
-	 * @return \Kdyby\Redis\IRedisDriver
-	 */
-	public function getDriver()
-	{
-		$this->connect();
-		return $this->driver;
-	}
-
-
-
-	public function connect()
-	{
-		if ($this->driver->isConnected()) {
-			return;
-		}
-
-		try {
-			$this->driver->connect($this->host, $this->port, $this->timeout);
-			$this->driver->select($this->database);
-
-		} catch (\Exception $e) {
-			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
-		}
-	}
-
-
-
-	/**
-	 * Close the connection
-	 */
-	public function close()
-	{
-		if ($this->driver->isConnected()) {
-			$this->getLock()->releaseAll();
-			$this->driver->close();
-		}
-	}
-
-
-
-	/**
-	 * @param Diagnostics\Panel $panel
-	 */
-	public function setPanel(Diagnostics\Panel $panel)
-	{
-		$this->panel = $panel;
-	}
-
-
-
-	/**
-	 * @param string $cmd
-	 * @param array $args
-	 *
-	 * @throws \RedisException
-	 * @throws RedisClientException
-	 * @return mixed
-	 */
-	protected function send($cmd, array $args = array())
-	{
-		$this->connect();
-
-		try {
-			if ($this->panel) {
-				$request = $args;
-				array_unshift($request, $cmd);
-				$this->panel->begin($request);
-			}
-
-			set_error_handler(function ($severenity, $message) {
-				restore_error_handler();
-				throw new \ErrorException($message);
-			});
-
-			$result = call_user_func_array(array($this->driver, $cmd), $args);
-
-			restore_error_handler();
-
-			if ($result instanceof \Redis) {
-				$result = strtolower($cmd) === 'multi' ? 'OK' : 'QUEUED';
-
-			} elseif ($result === FALSE && ($msg = $this->driver->getLastError())) {
-				if (!isset(self::$exceptionCmd[strtolower($cmd)])) {
-					throw new \RedisException($msg);
-				}
-
-			} else {
-				$this->driver->clearLastError();
-			}
-
-			if ($this->panel) {
-				$this->panel->end();
-			}
-
-		} catch (\Exception $e) {
-			if ($this->panel) {
-				$this->panel->error($e);
-			}
-			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
-		}
-
-		return $result;
-	}
-
-
-
-	/**
-	 * Get information and statistics about the server
-	 *
-	 * @param string $returnKey
-	 * @return array
-	 */
-	public function info($returnKey = NULL)
-	{
-		$info = $this->send('info');
-
-		if ($returnKey !== NULL) {
-			return array_key_exists($returnKey, $info) ? $info[$returnKey] : NULL;
-		}
-
-		return $info;
-	}
-
-
-
-	/**
-	 * Mark the start of a transaction block
-	 *
-	 * @param callable $callback
-	 * @throws \Exception|RedisClientException
-	 * @throws \Exception
-	 * @return mixed
-	 */
-	public function multi($callback = NULL)
-	{
-		$ok = $this->send('multi');
-
-		if ($callback === NULL) {
-			return $ok;
-		}
-
-		try {
-			callback($callback)->invoke($this);
-			return $this->exec();
-
-		} catch (RedisClientException $e) {
-			throw $e;
-
-		} catch (\Exception $e) {
-			$this->send('discard');
-			throw $e;
-		}
-	}
-
-
-
-	/**
-	 * @return array|bool|null|string
-	 * @throws TransactionException
-	 */
-	public function exec()
-	{
-		$response = $this->send('exec');
-		if ($response === NULL || $response === FALSE) {
-			throw new TransactionException("Transaction was aborted");
-		}
-		return $response;
-	}
-
-
-
-	/**
-	 * Execute a Lua script server side
-	 */
-	public function evalScript($script, array $keys = array(), array $args = array())
-	{
-		$script = trim($script);
-
-		$result = $this->send('evalsha', array(sha1($script), array_merge($keys, $args), count($keys)));
-		if ($result === FALSE && stripos($this->driver->getLastError(), 'NOSCRIPT') !== FALSE) {
-			$this->driver->clearLastError();
-			$sha = $this->driver->script('load', $script);
-			$result = $this->send('evalsha', array($sha, array_merge($keys, $args), count($keys)));
-		}
-
-		return $result;
-	}
-
-
-
-	/**
-	 * @return ExclusiveLock
-	 */
-	protected function getLock()
-	{
-		if ($this->lock === NULL) {
-			$this->lock = new ExclusiveLock($this);
-		}
-
-		return $this->lock;
-	}
-
-
-
-	/**
-	 * @internal
-	 * @param int $timeout
-	 */
-	public function setupLockDuration($timeout)
-	{
-		$this->getLock()->duration = abs((int)$timeout);
-	}
-
-
-
-	/**
-	 * @param string $key
 	 * @return bool
 	 */
-	public function lock($key)
-	{
-		return $this->getLock()->acquireLock($key);
-	}
+	function select($database);
 
 
 
 	/**
-	 * @param string $key
+	 * Disconnects from the Redis instance, except when pconnect is used.
 	 */
-	public function unlock($key)
-	{
-		$this->getLock()->release($key);
-	}
+	function close();
 
 
 
 	/**
-	 * @internal
-	 * @throws Nette\Utils\AssertionException
+	 * The last error message (if any)
+	 *
+	 * @return string|NULL
 	 */
-	public function assertVersion()
-	{
-		$version = $this->info('redis_version');
-		if (version_compare($version, '2.2.0', '<')) {
-			throw new Nette\Utils\AssertionException(
-				"Minimum required version for this Redis client is 2.2.0, your version is $version. Please upgrade your software."
-			);
-		}
-	}
-
-
-
-	/************************ syntax sugar ************************/
+	function getLastError();
 
 
 
 	/**
-	 * Magic method for sending redis messages.
-	 *
-	 * <code>
-	 * $redisClient->command($argument);
-	 * </code>
-	 *
-	 * @param string $name
-	 * @param array $args
-	 *
-	 * @throws RedisClientException
-	 * @return array|null|string
+	 * Clear the last error message
 	 */
-	public function __call($name, $args)
-	{
-		return $this->send($name, $args);
-	}
+	function clearLastError();
 
 
 
 	/**
-	 * Magic method as alias for get command.
+	 * Execute the Redis SCRIPT command to perform various operations on the scripting subsystem.
 	 *
-	 * @param string $name
+	 * @param $command
+	 * @param $script
 	 * @return mixed
 	 */
-	public function &__get($name)
-	{
-		$res = $this->send('get', array($name));
-		return $res;
-	}
+	function script($command, $script = NULL);
 
 
 
 	/**
-	 * Magic method as alias for set command.
-	 *
-	 * @param string $name
-	 * @param mixed $value
-	 */
-	public function __set($name, $value)
-	{
-		return $this->send('set', array($value));
-	}
-
-
-
-	/**
-	 * Magic method as alias for exists command.
-	 *
-	 * @param string $name
-	 *
-	 * @return bool|void
-	 */
-	public function __isset($name)
-	{
-		return $this->send('exists', array($name));
-	}
-
-
-
-	/**
-	 * Magic method as alias for del command.
-	 *
-	 * @param string $name
-	 */
-	public function __unset($name)
-	{
-		return $this->send('del', array($name));
-	}
-
-
-
-	/********************************* \ArrayAccess *********************************/
-
-
-
-	/**
-	 * ArrayAccess method as alias for exists command.
-	 *
-	 * @param mixed $offset
-	 * @return bool
-	 */
-	public function offsetExists($offset)
-	{
-		return $this->__isset($offset);
-	}
-
-
-
-	/**
-	 * ArrayAccess method as alias for get command.
-	 *
-	 * @param string $offset
+	 * @param string $scriptSha The sha1 encoded hash of the script you want to run.
+	 * @param array $argsArray Arguments to pass to the LUA script.
+	 * @param int $numKeys The number of arguments that should go into the KEYS array, vs. the ARGV array when Redis spins the script
 	 * @return mixed
 	 */
-	public function offsetGet($offset)
-	{
-		return $this->__get($offset);
-	}
-
-
-
-	/**
-	 * ArrayAccess method as alias for set command.
-	 *
-	 * @param string $offset
-	 * @param mixed $value
-	 */
-	public function offsetSet($offset, $value)
-	{
-		$this->__set($offset, $value);
-	}
-
-
-
-	/**
-	 * ArrayAccess method as alias for del command.
-	 *
-	 * @param string $offset
-	 */
-	public function offsetUnset($offset)
-	{
-		$this->__unset($offset);
-	}
+	function evalsha($scriptSha, $argsArray = array(), $numKeys = 0);
 
 }
+

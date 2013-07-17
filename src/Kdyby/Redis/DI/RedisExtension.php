@@ -72,7 +72,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			->addSetup('setPanel', array($this->prefix('@panel')));
 
 		$builder->addDefinition($this->prefix('driver'))
-			->setClass('Redis')
+			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
 			->setFactory($this->prefix('@client') . '::getDriver');
 
 		$builder->addDefinition($this->prefix('panel'))
