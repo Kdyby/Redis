@@ -52,6 +52,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'database' => 0,
 		'debugger' => '%debugMode%',
 		'versionCheck' => TRUE,
+		'auth' => NULL,
 	);
 
 
@@ -66,7 +67,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'host' => $config['host'],
 				'port' => $config['port'],
 				'database' => $config['database'],
-				'timeout' => $config['timeout']
+				'timeout' => $config['timeout'],
+				'auth' => $config['auth']
 			))
 			->addSetup('setupLockDuration', array($config['lockDuration']))
 			->addSetup('setPanel', array($this->prefix('@panel')));
@@ -105,6 +107,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'timeout' => $config['timeout'],
 				'database' => $config['database'],
 				'prefix' => self::DEFAULT_SESSION_PREFIX,
+				'auth' => $config['auth'],
 			));
 
 			$params = array_diff_key($session, array_flip(array('host', 'port')));
@@ -144,7 +147,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	{
 		$config = $this->getConfig($this->defaults);
 		if ($config['versionCheck'] && ($config['journal'] || $config['storage'] || $config['session'])) {
-			$client = new RedisClient($config['host'], $config['port'], $config['database'], $config['timeout']);
+			$client = new RedisClient($config['host'], $config['port'], $config['database'], $config['timeout'], $config['auth']);
 			$client->assertVersion();
 			$client->close();
 		}
