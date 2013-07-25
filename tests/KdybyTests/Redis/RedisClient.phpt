@@ -122,6 +122,18 @@ class RedisClientTest extends AbstractRedisTestCase
 		}, 'Kdyby\Redis\TransactionException');
 	}
 
+
+
+	public function testMagicAccessors()
+	{
+		Assert::false(isset($this->client->nemam));
+		$this->client->nemam = "nemam";
+		Assert::true(isset($this->client->nemam));
+		Assert::same("nemam", $this->client->nemam);
+		unset($this->client->nemam);
+		Assert::false(isset($this->client->nemam));
+	}
+
 }
 
 \run(new RedisClientTest());

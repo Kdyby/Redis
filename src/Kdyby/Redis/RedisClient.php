@@ -552,7 +552,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function __set($name, $value)
 	{
-		return $this->send('set', array($value));
+		return $this->send('set', array($name, $value));
 	}
 
 
