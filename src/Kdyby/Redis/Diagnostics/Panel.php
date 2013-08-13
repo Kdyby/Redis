@@ -131,7 +131,7 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		foreach ($this->queries as $query) {
 			$s .= '<tr><td>' . sprintf('%0.3f', $query->time * 1000000);
 			$s .= '</td><td class="kdyby-RedisClientPanel-cmd">' .
-				$h(self::$maxLength ? Nette\Utils\Strings::truncate($query->cmd, self::$maxLength) : $query->cmd);
+				substr(Code\Helpers::dump(self::$maxLength ? substr($query->cmd, 0, self::$maxLength) : $query->cmd), 1, -1);
 			$s .= '</td></tr>';
 		}
 
