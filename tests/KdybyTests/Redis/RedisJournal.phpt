@@ -323,7 +323,94 @@ class RedisJournalTest extends AbstractRedisTestCase
 
 		$result2 = $journal->clean(array(Cache::TAGS => 'test:all'));
 		Assert::true(empty($result2));
+	}
 
+
+
+	/**
+	 * @dataProvider dataJournals
+	 */
+	public function testBigCache(IJournal $journal)
+	{
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+			Tester\Helpers::skip("Linux only");
+		}
+
+		$script = $this->cacheGeneratorScripts();
+		$script .= <<<LUA
+for i in range(1, 100) do
+	local key = "test." .. i
+	for i in range(1, 5000) do
+		local tag = "test." .. i
+		redis.call('rPush', formatKey(tag, "keys") , key)
+		redis.call('rPush', formatKey(key, "tags") , tag)
+	end
+end
+
+return redis.status_reply("Ok")
+LUA;
+
+		Assert::true($this->getClient()->evalScript($script));
+		Assert::same(5000, $this->getClient()->lLen('Nette.Journal:test.5:tags'));
+
+		$journal->clean(array(Cache::TAGS => 'test.4356'));
+	}
+
+
+
+	/**
+	 * @dataProvider dataJournals
+	 */
+	public function testBigCache_ShitloadOfEntries(IJournal $journal)
+	{
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+			Tester\Helpers::skip("Linux only");
+		}
+
+		$script = $this->cacheGeneratorScripts();
+		$script .= <<<LUA
+for i in range(1, 200000) do
+	local key = "test." .. i
+	local tag = "kdyby"
+	redis.call('rPush', formatKey(tag, "keys") , key)
+	redis.call('rPush', formatKey(key, "tags") , tag)
+end
+
+return redis.status_reply("Ok")
+LUA;
+
+		Assert::true($this->getClient()->evalScript($script));
+		Assert::same(200000, $this->getClient()->lLen('Nette.Journal:kdyby:keys'));
+
+		$journal->clean(array(Cache::TAGS => 'kdyby'));
+	}
+
+
+
+	private function cacheGeneratorScripts()
+	{
+		$script = file_get_contents(__DIR__ . '/../../../src/Kdyby/Redis/scripts/common.lua');
+		$script .= <<<LUA
+local range = function (from, to, step)
+	step = step or 1
+	local f =
+		step > 0 and
+			function(_, lastvalue)
+				local nextvalue = lastvalue + step
+				if nextvalue <= to then return nextvalue end
+			end or
+		step < 0 and
+			function(_, lastvalue)
+				local nextvalue = lastvalue + step
+				if nextvalue >= to then return nextvalue end
+			end or
+			function(_, lastvalue) return lastvalue end
+	return f, nil, from - step
+end
+
+
+LUA;
+		return $script;
 	}
 
 }
