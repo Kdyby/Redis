@@ -86,13 +86,21 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 	 *
 	 * @return array of removed items or NULL when performing a full cleanup
 	 */
-	public function clean(array $conds)
+	public function clean(array $conds, Nette\Caching\IStorage $storage = NULL)
 	{
+		if ($storage instanceof RedisStorage) {
+			$conds['delete-entries'] = TRUE;
+		}
+
 		$args = self::flattenDp($conds);
 
 		$result = $this->client->evalScript($this->getScript('clean'), array(), $args);
 		if (!is_array($result) && $result !== TRUE) {
 			throw new RedisClientException("Failed to successfully execute lua script journal.clean()");
+		}
+
+		if ($storage instanceof RedisStorage) {
+			return array();
 		}
 
 		return is_array($result) ? array_unique($result) : NULL;
