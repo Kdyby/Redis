@@ -262,7 +262,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 
 		// cleaning using journal
 		if ($this->journal) {
-			foreach ($this->journal->clean($conds) as $key) {
+			foreach ($this->journal->clean($conds, $this) as $key) {
 				$this->remove($key);
 			}
 		}

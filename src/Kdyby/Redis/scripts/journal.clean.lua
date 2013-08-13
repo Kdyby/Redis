@@ -17,8 +17,13 @@ if conds["tags"] ~= nil then
         local found = tagEntries(tag)
         if #found > 0 then
             cleanEntry(found)
+
             for i, key in pairs(found) do
-                entries[#entries + 1] = key
+                if conds["delete-entries"] ~= nil then
+                    redis.call("del", formatKey(key, "meta"), formatKey(key))
+                else
+                    entries[#entries + 1] = key
+                end
             end
         end
     end
@@ -28,8 +33,13 @@ if conds["priority"] ~= nil then
     local found = priorityEntries(conds["priority"])
     if #found > 0 then
         cleanEntry(found)
+
         for i, key in pairs(found) do
-            entries[#entries + 1] = key
+            if conds["delete-entries"] ~= nil then
+                redis.call("del", formatKey(key, "meta"), formatKey(key))
+            else
+                entries[#entries + 1] = key
+            end
         end
     end
 end
