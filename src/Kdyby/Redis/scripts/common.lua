@@ -26,7 +26,7 @@ local cleanEntry = function (keys)
 
         -- redis.call('multi')
         for i, tag in pairs(tags) do
-            redis.call('lRem', formatKey(tag, "keys"), 0, key)
+            redis.call('lRem', formatKey(tag, "keys"), 1, key)
         end
 
         -- drop tags of entry and priority, in case there are some
