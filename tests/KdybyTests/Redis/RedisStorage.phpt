@@ -10,7 +10,7 @@
 
 namespace KdybyTests\Redis;
 
-use Kdyby\Redis\RedisJournal;
+use Kdyby\Redis\RedisLuaJournal;
 use Kdyby\Redis\RedisStorage;
 use Nette;
 use Nette\Caching\Cache;
@@ -294,7 +294,37 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 	public function testPriority()
 	{
-		$storage = new RedisStorage($this->client, new RedisJournal($this->client));
+		$storage = new RedisStorage($this->client, new Nette\Caching\Storages\FileJournal(TEMP_DIR));
+		$cache = new Cache($storage);
+
+		// Writing cache...
+		$cache->save('key1', 'value1', array(
+			Cache::PRIORITY => 100,
+		));
+		$cache->save('key2', 'value2', array(
+			Cache::PRIORITY => 200,
+		));
+		$cache->save('key3', 'value3', array(
+			Cache::PRIORITY => 300,
+		));
+		$cache['key4'] = 'value4';
+
+		// Cleaning by priority...
+		$cache->clean(array(
+			Cache::PRIORITY => '200',
+		));
+
+		Assert::false(isset($cache['key1']), 'Is cached key1?');
+		Assert::false(isset($cache['key2']), 'Is cached key2?');
+		Assert::true(isset($cache['key3']), 'Is cached key3?');
+		Assert::true(isset($cache['key4']), 'Is cached key4?');
+	}
+
+
+
+	public function testPriority_Optimized()
+	{
+		$storage = new RedisStorage($this->client, new RedisLuaJournal($this->client));
 		$cache = new Cache($storage);
 
 		// Writing cache...
@@ -324,7 +354,37 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 	public function testTags()
 	{
-		$storage = new RedisStorage($this->client, new RedisJournal($this->client));
+		$storage = new RedisStorage($this->client, new Nette\Caching\Storages\FileJournal(TEMP_DIR));
+		$cache = new Cache($storage);
+
+		// Writing cache...
+		$cache->save('key1', 'value1', array(
+			Cache::TAGS => array('one', 'two'),
+		));
+		$cache->save('key2', 'value2', array(
+			Cache::TAGS => array('one', 'three'),
+		));
+		$cache->save('key3', 'value3', array(
+			Cache::TAGS => array('two', 'three'),
+		));
+		$cache['key4'] = 'value4';
+
+		// Cleaning by tags...
+		$cache->clean(array(
+			Cache::TAGS => 'one',
+		));
+
+		Assert::false(isset($cache['key1']), 'Is cached key1?');
+		Assert::false(isset($cache['key2']), 'Is cached key2?');
+		Assert::true(isset($cache['key3']), 'Is cached key3?');
+		Assert::true(isset($cache['key4']), 'Is cached key4?');
+	}
+
+
+
+	public function testTags_Optimized()
+	{
+		$storage = new RedisStorage($this->client, new RedisLuaJournal($this->client));
 		$cache = new Cache($storage);
 
 		// Writing cache...

@@ -32,6 +32,8 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 		TAGS = 'tags',
 		KEYS = 'keys';
 
+	const DELETE_ENTRIES = 'delete-entries';
+
 	/**
 	 * @var RedisClient
 	 */
@@ -70,8 +72,9 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 	public function write($key, array $dp)
 	{
 		$args = self::flattenDp($dp);
+		$key = str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
 
-		$result = $this->client->evalScript($this->getScript('write'), array($key), $args);
+		$result = $this->client->evalScript($this->getScript('write'), array($key), array($args));
 		if ($result !== TRUE) {
 			throw new RedisClientException("Failed to successfully execute lua script journal.write($key)");
 		}
@@ -89,12 +92,12 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 	public function clean(array $conds, Nette\Caching\IStorage $storage = NULL)
 	{
 		if ($storage instanceof RedisStorage) {
-			$conds['delete-entries'] = TRUE;
+			$conds[self::DELETE_ENTRIES] = '1';
 		}
 
 		$args = self::flattenDp($conds);
 
-		$result = $this->client->evalScript($this->getScript('clean'), array(), $args);
+		$result = $this->client->evalScript($this->getScript('clean'), array(), array($args));
 		if (!is_array($result) && $result !== TRUE) {
 			throw new RedisClientException("Failed to successfully execute lua script journal.clean()");
 		}
@@ -113,23 +116,9 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 		if (isset($array[Cache::TAGS])) {
 			$array[Cache::TAGS] = (array) $array[Cache::TAGS];
 		}
+		$filtered = array_intersect_key($array, array_flip(array(Cache::TAGS, Cache::PRIORITY, Cache::ALL, self::DELETE_ENTRIES)));
 
-		$res = array();
-		foreach (array_intersect_key($array, array_flip(array(Cache::TAGS, Cache::PRIORITY, Cache::ALL))) as $key => $value) {
-			$res[] = $key;
-			if (is_array($value)) {
-				$res[] = count($value);
-				foreach ($value as $item) {
-					$res[] = $item;
-				}
-
-			} else {
-				$res[] = -1;
-				$res[] = $value;
-			}
-		}
-
-		return $res;
+		return Nette\Utils\Json::encode($filtered);
 	}
 
 
