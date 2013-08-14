@@ -76,7 +76,7 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 
 		$result = $this->client->evalScript($this->getScript('write'), array($key), array($args));
 		if ($result !== TRUE) {
-			throw new RedisClientException("Failed to successfully execute lua script journal.write($key)");
+			throw new RedisClientException("Failed to successfully execute lua script journal.write($key): " . $this->client->getDriver()->getLastError());
 		}
 	}
 
@@ -99,7 +99,7 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 
 		$result = $this->client->evalScript($this->getScript('clean'), array(), array($args));
 		if (!is_array($result) && $result !== TRUE) {
-			throw new RedisClientException("Failed to successfully execute lua script journal.clean()");
+			throw new RedisClientException("Failed to successfully execute lua script journal.clean(): " . $this->client->getDriver()->getLastError());
 		}
 
 		if ($storage instanceof RedisStorage) {
