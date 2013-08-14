@@ -340,8 +340,8 @@ class RedisJournalTest extends AbstractRedisTestCase
 		$script .= <<<LUA
 for i in range(1, 100) do
 	local key = "test." .. i
-	for i in range(1, 5000) do
-		local tag = "test." .. i
+	for l in range(1, 5000) do
+		local tag = "test." .. l
 		redis.call('rPush', formatKey(tag, "keys") , key)
 		redis.call('rPush', formatKey(key, "tags") , tag)
 	end
