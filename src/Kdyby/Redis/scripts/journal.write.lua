@@ -1,5 +1,5 @@
 
-local dp = readArgs(ARGV)
+local dp = cjson.decode(ARGV[1])
 
 -- clean the entry key
 cleanEntry({KEYS[1]})

@@ -1,6 +1,15 @@
 
 local formatKey = function (key, suffix)
-    local res = "Nette.Journal:" .. key:gsub("\x00", ":")
+    local res = "Nette.Journal:" .. key
+    if suffix ~= nil then
+        res = res .. ":" .. suffix
+    end
+
+    return res
+end
+
+local formatStorageKey = function(key, suffix)
+    local res = "Nette.Storage:" .. key
     if suffix ~= nil then
         res = res .. ":" .. suffix
     end
@@ -35,33 +44,4 @@ local cleanEntry = function (keys)
 
         -- redis.call('exec')
     end
-end
-
--- builds table from serialized arguments
-local readArgs = function (args)
-    local res = {}
-    local counter = 0
-    local key
-    local tmp
-
-    for i, item in pairs(args) do
-        if counter > 0 then
-            if res[key] == nil then res[key] = {} end
-
-            tmp = res[key]
-            res[key][#tmp + 1] = item
-            counter = counter - 1
-
-            if counter == 0 then key = nil end
-
-        elseif counter < 0 then
-            res[key] = item
-            key = nil
-
-        else
-            if key == nil then key = item else counter = tonumber(item); end
-        end
-    end
-
-    return res
 end

@@ -1,5 +1,5 @@
 
-local conds = readArgs(ARGV)
+local conds = cjson.decode(ARGV[1])
 
 if conds["all"] ~= nil then
     -- redis.call('multi')
@@ -20,7 +20,7 @@ if conds["tags"] ~= nil then
 
             for i, key in pairs(found) do
                 if conds["delete-entries"] ~= nil then
-                    redis.call("del", formatKey(key, "meta"), formatKey(key))
+                    redis.call("del", formatStorageKey(key, "meta"), formatStorageKey(key))
                 else
                     entries[#entries + 1] = key
                 end
@@ -36,7 +36,7 @@ if conds["priority"] ~= nil then
 
         for i, key in pairs(found) do
             if conds["delete-entries"] ~= nil then
-                redis.call("del", formatKey(key, "meta"), formatKey(key))
+                redis.call("del", formatStorageKey(key, "meta"), formatStorageKey(key))
             else
                 entries[#entries + 1] = key
             end
