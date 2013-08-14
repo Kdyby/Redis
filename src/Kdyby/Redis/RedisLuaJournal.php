@@ -85,8 +85,9 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 	/**
 	 * Cleans entries from journal.
 	 *
-	 * @param  array  $conds
-	 *
+	 * @param  array $conds
+	 * @param \Nette\Caching\IStorage $storage
+	 * @throws RedisClientException
 	 * @return array of removed items or NULL when performing a full cleanup
 	 */
 	public function clean(array $conds, Nette\Caching\IStorage $storage = NULL)
