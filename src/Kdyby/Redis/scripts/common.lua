@@ -22,11 +22,11 @@ local priorityEntries = function (priority)
 end
 
 local entryTags = function (key)
-    return redis.call('lRange', formatKey(key, "tags"), 0, -1)
+    return redis.call('sMembers', formatKey(key, "tags"))
 end
 
 local tagEntries = function (tag)
-    return redis.call('lRange', formatKey(tag, "keys"), 0, -1)
+    return redis.call('sMembers', formatKey(tag, "keys"))
 end
 
 local cleanEntry = function (keys)
@@ -35,7 +35,7 @@ local cleanEntry = function (keys)
 
         -- redis.call('multi')
         for i, tag in pairs(tags) do
-            redis.call('lRem', formatKey(tag, "keys"), 1, key)
+            redis.call('sRem', formatKey(tag, "keys"), key)
         end
 
         -- drop tags of entry and priority, in case there are some
