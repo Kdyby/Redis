@@ -201,7 +201,8 @@ class RedisJournalTest extends AbstractRedisTestCase
 
 		$result = $journal->clean(array(Cache::TAGS => array('test:homepage')));
 		Assert::same(4, count($result), "clean other");
-		Assert::same('ok_test6_6', $result[0], "clean other");
+		sort($result);
+		Assert::same(array('ok_test6_10', 'ok_test6_6', 'ok_test6_8', 'ok_test6_9'), $result, "clean other");
 	}
 
 
@@ -342,8 +343,8 @@ for i in range(1, 100) do
 	local key = "test." .. i
 	for l in range(1, 5000) do
 		local tag = "test." .. l
-		redis.call('rPush', formatKey(tag, "keys") , key)
-		redis.call('rPush', formatKey(key, "tags") , tag)
+		redis.call('sAdd', formatKey(tag, "keys") , key)
+		redis.call('sAdd', formatKey(key, "tags") , tag)
 	end
 end
 
@@ -373,8 +374,8 @@ LUA;
 for i in range(1, 200000) do
 	local key = "test." .. i
 	local tag = "kdyby"
-	redis.call('rPush', formatKey(tag, "keys") , key)
-	redis.call('rPush', formatKey(key, "tags") , tag)
+	redis.call('sAdd', formatKey(tag, "keys") , key)
+	redis.call('sAdd', formatKey(key, "tags") , tag)
 end
 
 return redis.status_reply("Ok")
