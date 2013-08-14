@@ -351,9 +351,10 @@ return redis.status_reply("Ok")
 LUA;
 
 		Assert::true($this->getClient()->evalScript($script));
-		Assert::same(5000, $this->getClient()->lLen('Nette.Journal:test.5:tags'));
+		$this->assertKeysInDatabase(5100);
 
 		$journal->clean(array(Cache::TAGS => 'test.4356'));
+		$this->assertKeysInDatabase(0);
 	}
 
 
@@ -380,9 +381,25 @@ return redis.status_reply("Ok")
 LUA;
 
 		Assert::true($this->getClient()->evalScript($script));
-		Assert::same(200000, $this->getClient()->lLen('Nette.Journal:kdyby:keys'));
+		$this->assertKeysInDatabase(200001);
 
 		$journal->clean(array(Cache::TAGS => 'kdyby'));
+		$this->assertKeysInDatabase(0);
+	}
+
+
+
+	protected function assertKeysInDatabase($number)
+	{
+		$dbInfo = $this->getClient()->info('db' . $this->getClient()->getDriver()->getDBNum());
+		if ($dbInfo === NULL) {
+			$m = array('keys' => 0);
+
+		} elseif (!$m = Nette\Utils\Strings::match($dbInfo, '~keys\=(?P<keys>[^,]+),~')) {
+			Assert::fail("Number of keys in database couldn't be determined");
+		}
+
+		Assert::equal($number, (int) $m['keys']);
 	}
 
 
