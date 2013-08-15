@@ -10,8 +10,8 @@ cleanEntry({KEYS[1]})
 -- add entry to each tag & tag to entry
 if dp["tags"] ~= nil then
     for i, tag in pairs(dp["tags"]) do
-        redis.call('rPush', formatKey(tag, "keys") , KEYS[1])
-        redis.call('rPush', formatKey(KEYS[1], "tags") , tag)
+        redis.call('sAdd', formatKey(tag, "keys") , KEYS[1])
+        redis.call('sAdd', formatKey(KEYS[1], "tags") , tag)
     end
 end
 
