@@ -65,8 +65,8 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 		// add entry to each tag & tag to entry
 		$tags = empty($dp[Cache::TAGS]) ? array() : (array)$dp[Cache::TAGS];
 		foreach (array_unique($tags) as $tag) {
-			$this->client->rPush($this->formatKey($tag, self::KEYS), $key);
-			$this->client->rPush($this->formatKey($key, self::TAGS), $tag);
+			$this->client->sAdd($this->formatKey($tag, self::KEYS), $key);
+			$this->client->sAdd($this->formatKey($key, self::TAGS), $tag);
 		}
 
 		if (isset($dp[Cache::PRIORITY])) {
@@ -91,7 +91,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 
 			$this->client->multi();
 			foreach ($entries as $tag) {
-				$this->client->lRem($this->formatKey($tag, self::KEYS), $key, 0);
+				$this->client->sRem($this->formatKey($tag, self::KEYS), $key);
 			}
 
 			// drop tags of entry and priority, in case there are some
@@ -158,7 +158,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function entryTags($key)
 	{
-		return $this->client->lRange($this->formatKey($key, self::TAGS), 0, -1) ? : array();
+		return $this->client->sMembers($this->formatKey($key, self::TAGS)) ? : array();
 	}
 
 
@@ -170,7 +170,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function tagEntries($tag)
 	{
-		return $this->client->lRange($this->formatKey($tag, self::KEYS), 0, -1) ? : array();
+		return $this->client->sMembers($this->formatKey($tag, self::KEYS)) ? : array();
 	}
 
 
