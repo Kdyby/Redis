@@ -36,7 +36,7 @@ if (isset(Nette\Loaders\NetteLoader::getInstance()->renamed['Nette\Configurator'
 class RedisExtension extends Nette\DI\CompilerExtension
 {
 
-	const DEFAULT_SESSION_PREFIX = 'Nette.Session:';
+	const DEFAULT_SESSION_PREFIX = Kdyby\Redis\RedisSessionHandler::NS_NETTE;
 
 	/**
 	 * @var array
@@ -108,33 +108,60 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'database' => $config['database'],
 				'prefix' => self::DEFAULT_SESSION_PREFIX,
 				'auth' => $config['auth'],
+				'native' => TRUE,
 			));
 
-			$params = array_diff_key($session, array_flip(array('host', 'port')));
-			if (substr($session['host'], 0, 1) === '/') {
-				$savePath = $session['host'];
+			if ($session['native']) {
+				$this->loadNativeSessionHandler($session);
 
 			} else {
-				$savePath = sprintf('tcp://%s:%d', $session['host'], $session['port']);
-			}
+				$builder->addDefinition($this->prefix('sessionHandler'))
+					->setClass('Kdyby\Redis\RedisSessionHandler', array(
+						new Nette\DI\Statement('Kdyby\Redis\RedisClient', array(
+							'host' => $session['host'],
+							'port' => $session['port'],
+							'database' => $session['database'],
+							'timeout' => $session['timeout'],
+							'auth' => $session['auth']
+						))
+					));
 
-			$options = array(
-				'saveHandler' => 'redis',
-				'savePath' => $savePath . ($params ? '?' . http_build_query($params, '', '&') : ''),
-			);
-
-			foreach ($builder->getDefinition('session')->setup as $statement) {
-				if ($statement->entity === 'setOptions') {
-					$statement->arguments[0] = Nette\DI\Config\Helpers::merge($options, $statement->arguments[0]);
-					unset($options);
-					break;
-				}
-			}
-
-			if (isset($options)) {
 				$builder->getDefinition('session')
-					->addSetup('setOptions', array($options));
+					->addSetup('setStorage', array($this->prefix('@sessionHandler')));
 			}
+		}
+	}
+
+
+
+	protected function loadNativeSessionHandler(array $session)
+	{
+		$builder = $this->getContainerBuilder();
+
+		$params = array_diff_key($session, array_flip(array('host', 'port', 'native')));
+		if (substr($session['host'], 0, 1) === '/') {
+			$savePath = $session['host'];
+
+		} else {
+			$savePath = sprintf('tcp://%s:%d', $session['host'], $session['port']);
+		}
+
+		$options = array(
+			'saveHandler' => 'redis',
+			'savePath' => $savePath . ($params ? '?' . http_build_query($params, '', '&') : ''),
+		);
+
+		foreach ($builder->getDefinition('session')->setup as $statement) {
+			if ($statement->entity === 'setOptions') {
+				$statement->arguments[0] = Nette\DI\Config\Helpers::merge($options, $statement->arguments[0]);
+				unset($options);
+				break;
+			}
+		}
+
+		if (isset($options)) {
+			$builder->getDefinition('session')
+				->addSetup('setOptions', array($options));
 		}
 	}
 
