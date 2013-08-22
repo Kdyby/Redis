@@ -30,7 +30,7 @@ class ExtensionTest extends Tester\TestCase
 	 */
 	protected function createContainer()
 	{
-		$config = new Nette\Config\Configurator();
+		$config = new Nette\Configurator();
 		$config->setTempDirectory(TEMP_DIR);
 		Kdyby\Redis\DI\RedisExtension::register($config);
 		$config->addConfig(__DIR__ . '/files/config.neon', $config::NONE);
