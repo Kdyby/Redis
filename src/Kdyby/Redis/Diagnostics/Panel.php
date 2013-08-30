@@ -56,10 +56,6 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 	public function begin($args)
 	{
-		if (Debugger::timer(self::TIMER_NAME)) {
-			Debugger::timer(self::TIMER_NAME); // reset timer
-		}
-
 		$cmd = array();
 		if ($this->renderPanel) {
 			foreach ($args as $arg) {
@@ -72,6 +68,8 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 			'cmd' => implode(' ', $cmd),
 			'time' => 0
 		);
+
+		Debugger::timer(self::TIMER_NAME); // reset timer
 	}
 
 
