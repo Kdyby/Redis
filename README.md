@@ -47,8 +47,6 @@ redis:
 ```
 
 
-
-
 -----
 
 Homepage [http://www.kdyby.org](http://www.kdyby.org) and repository [http://github.com/kdyby/Redis](http://github.com/kdyby/Redis).
