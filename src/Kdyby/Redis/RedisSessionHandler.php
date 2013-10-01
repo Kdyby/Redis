@@ -32,11 +32,6 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	const NS_NETTE = 'Nette.Session:';
 
 	/**
-	 * @var string
-	 */
-	private $savePath;
-
-	/**
 	 * @var array
 	 */
 	private $ssIds = array();
@@ -66,7 +61,6 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 	 */
 	public function open($savePath, $sessionName)
 	{
-		$this->savePath = $savePath;
 		return TRUE;
 	}
 
