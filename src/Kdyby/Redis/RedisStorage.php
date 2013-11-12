@@ -9,6 +9,7 @@
  */
 
 namespace Kdyby\Redis;
+
 use Kdyby;
 use Nette;
 use Nette\Caching\Cache;
@@ -26,8 +27,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 {
 
 	/** @internal cache structure */
-	const NS_META = 'meta',
-		NS_NETTE = 'Nette.Storage';
+	const NS_NETTE = 'Nette.Storage';
 
 	/** @internal cache meta structure: array of */
 	const META_TIME = 'time', // timestamp
@@ -73,18 +73,15 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function read($key)
 	{
-		if (($meta = $this->readMeta($key)) && $this->verify($meta)) {
-			$data = $this->client->get($this->formatEntryKey($key));
-
-		} else {
+		if (!($stored = $this->doRead($key)) || !$this->verify($stored[0])) {
 			return NULL;
 		}
 
-		if (empty($meta[self::META_SERIALIZED])) {
-			return $data;
+		if (empty($stored[0][self::META_SERIALIZED])) {
+			return $stored[1];
 
 		} else {
-			return @unserialize($data); // intentionally @
+			return @unserialize($stored[1]); // intentionally @
 		}
 	}
 
@@ -102,7 +99,6 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 		do {
 			if (!empty($meta[self::META_DELTA])) {
 				$this->client->expire($this->formatEntryKey($meta[self::KEY]), $meta[self::META_DELTA]);
-				$this->client->expire($this->formatMetaKey($meta[self::KEY]), $meta[self::META_DELTA]);
 
 			} elseif (!empty($meta[self::META_EXPIRE]) && $meta[self::META_EXPIRE] < time()) {
 				break;
@@ -201,22 +197,17 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 			$meta[self::META_SERIALIZED] = TRUE;
 		}
 
-		$meta = Json::encode($meta);
+		$store = json_encode($meta) . Cache::NAMESPACE_SEPARATOR . $data;
 
 		try {
-			$this->client->multi();
 			if (isset($dp[Cache::EXPIRATION])) {
-				$this->client->setEX($this->formatMetaKey($key), $dp[Cache::EXPIRATION], $meta);
-				$this->client->setEX($this->formatEntryKey($key), $dp[Cache::EXPIRATION], $data);
+				$this->client->setEX($this->formatEntryKey($key), $dp[Cache::EXPIRATION], $store);
 
 			} else {
-				$this->client->mSet(array(
-					$this->formatMetaKey($key) => $meta,
-					$this->formatEntryKey($key) => $data,
-				));
+				$this->client->set($this->formatEntryKey($key), $store);
 			}
+
 			$this->unlock($key);
-			$this->client->exec();
 
 		} catch (RedisClientException $e) {
 			$this->remove($key);
@@ -233,10 +224,7 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function remove($key)
 	{
-		$this->client->del(
-			$this->formatEntryKey($key),
-			$this->formatMetaKey($key)
-		);
+		$this->client->del($this->formatEntryKey($key));
 	}
 
 
@@ -274,17 +262,6 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 * @param string $key
 	 * @return string
 	 */
-	protected function formatMetaKey($key)
-	{
-		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key) . ':' . self::NS_META;
-	}
-
-
-
-	/**
-	 * @param string $key
-	 * @return string
-	 */
 	protected function formatEntryKey($key)
 	{
 		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
@@ -299,18 +276,37 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	protected function readMeta($key)
 	{
-		if ($meta = $this->client->get($this->formatMetaKey($key))) {
-			try {
-				$meta = Json::decode($meta, JSON::FORCE_ARRAY);
-			} catch (Nette\Utils\JsonException $e) {
-				$meta = array();
-				Nette\Diagnostics\Debugger::log($e, 'redis-error');
-			}
-			$meta[self::KEY] = $key;
-			return $meta;
+		if (!$stored = $this->doRead($key)) {
+			return NULL;
+
 		}
 
-		return NULL;
+		return $stored[0];
+	}
+
+
+
+	/**
+	 * @param string $key
+	 * @return array|null
+	 */
+	private function doRead($key)
+	{
+		if (!$stored = $this->client->get($this->formatEntryKey($key))) {
+			return NULL;
+		}
+
+		list($meta, $data) = explode(Cache::NAMESPACE_SEPARATOR, $stored, 2) + array(NULL, NULL);
+
+		try {
+			$meta = Json::decode($meta, Json::FORCE_ARRAY);
+
+		} catch (Nette\Utils\JsonException $e) {
+			$meta = array();
+			Nette\Diagnostics\Debugger::log($e, 'redis-error');
+		}
+
+		return array(array(self::KEY => $key) + $meta, $data);
 	}
 
 }
