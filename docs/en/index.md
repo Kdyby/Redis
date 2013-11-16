@@ -7,10 +7,9 @@ This extension is here to provide cache storage service, using [Redis](http://re
 Installation
 -----------
 
-This extension requires you to install [Redis database](http://redis.io) at least at version 2.6
- and [PHP Redis extension](https://github.com/nicolasff/phpredis/), ideally the latest dev version.
-
-The best way to install Kdyby/Redis is using  [Composer](http://getcomposer.org/):
+* Compile & Install [latest stable Redis](http://redis.io/download)
+* Compile & Install [latest phpredis](https://github.com/nicolasff/phpredis/)
+* Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 
 For dev Nette, you can install the extension using this command
 

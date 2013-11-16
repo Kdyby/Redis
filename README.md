@@ -20,31 +20,16 @@ Installation
 * Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 
 ```sh
-$ composer require kdyby/redis:~2.0
+$ composer require kdyby/redis:~2.3
 ```
 
-If you like to live on the edge, you can install dev version of kdyby/redis, that is compatible with dev version of Nette Framework
+If you like to live on the edge, you can install dev version of Kdyby/Redis, that is compatible with dev version of Nette Framework
 
 ```sh
 $ composer require kdyby/redis:@dev
 ```
 
-* Register Compiler extension in config.neon
-
-```yml
-extensions:
-  redis: Kdyby\Redis\DI\RedisExtension
-```
-
-* Configure the extension - enable Redis handlers
-
-```yml
-redis:
-  journal: on
-  session: on
-  storage: on
-  debugger: off
-```
+Read more in the [detailed documentation](https://github.com/Kdyby/Redis/blob/master/docs/en/index.md)
 
 
 -----
