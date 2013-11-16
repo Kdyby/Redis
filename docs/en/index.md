@@ -7,7 +7,7 @@ This extension is here to provide cache storage service, using [Redis](http://re
 Installation
 -----------
 
-* Compile & Install [latest stable Redis](http://redis.io/download)
+* Compile & Install [latest stable Redis database](http://redis.io/download)
 * Compile & Install [latest phpredis](https://github.com/nicolasff/phpredis/)
 * Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 

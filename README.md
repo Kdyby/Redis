@@ -8,15 +8,15 @@ Requirements
 Kdyby/Redis requires PHP 5.3.2 or higher.
 
 - [Nette Framework 2.0.x](https://github.com/nette/nette)
-- [Redis](http://redis.io)
-- [php redis extension](https://github.com/nicolasff/phpredis/)
+- [Redis database](http://redis.io)
+- [php Redis extension](https://github.com/nicolasff/phpredis/)
 
 
 Installation
 ------------
 
 * Compile & Install [latest stable Redis](http://redis.io/download)
-* Compile & Install [latest stable phpredis](https://github.com/nicolasff/phpredis/)
+* Compile & Install [latest phpredis](https://github.com/nicolasff/phpredis/)
 * Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 
 ```sh
