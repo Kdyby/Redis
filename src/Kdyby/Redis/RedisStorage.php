@@ -50,6 +50,11 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	private $journal;
 
+	/**
+	 * @var bool
+	 */
+	private $useLocks = TRUE;
+
 
 
 	/**
@@ -60,6 +65,13 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	{
 		$this->client = $client;
 		$this->journal = $journal;
+	}
+
+
+
+	public function disableLocking()
+	{
+		$this->useLocks = FALSE;
 	}
 
 
@@ -132,7 +144,9 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function lock($key)
 	{
-		$this->client->lock($this->formatEntryKey($key));
+		if ($this->useLocks) {
+			$this->client->lock($this->formatEntryKey($key));
+		}
 	}
 
 
@@ -143,7 +157,9 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function unlock($key)
 	{
-		$this->client->unlock($this->formatEntryKey($key));
+		if ($this->useLocks) {
+			$this->client->unlock($this->formatEntryKey($key));
+		}
 	}
 
 
