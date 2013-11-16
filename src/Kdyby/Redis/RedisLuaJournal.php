@@ -42,11 +42,6 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 	/**
 	 * @var array
 	 */
-	private $scriptSha = array();
-
-	/**
-	 * @var array
-	 */
 	private $script = array();
 
 
