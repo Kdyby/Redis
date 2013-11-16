@@ -100,7 +100,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		}
 
 		if ($config['session']) {
-			$session = Nette\DI\Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
+			$sessionConfig = Nette\DI\Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
 				'host' => $config['host'],
 				'port' => $config['port'],
 				'weight' => 1,
@@ -111,18 +111,18 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'native' => TRUE,
 			));
 
-			if ($session['native']) {
-				$this->loadNativeSessionHandler($session);
+			if ($sessionConfig['native']) {
+				$this->loadNativeSessionHandler($sessionConfig);
 
 			} else {
 				$builder->addDefinition($this->prefix('sessionHandler'))
 					->setClass('Kdyby\Redis\RedisSessionHandler', array(
 						new Nette\DI\Statement('Kdyby\Redis\RedisClient', array(
-							'host' => $session['host'],
-							'port' => $session['port'],
-							'database' => $session['database'],
-							'timeout' => $session['timeout'],
-							'auth' => $session['auth']
+							'host' => $sessionConfig['host'],
+							'port' => $sessionConfig['port'],
+							'database' => $sessionConfig['database'],
+							'timeout' => $sessionConfig['timeout'],
+							'auth' => $sessionConfig['auth']
 						))
 					));
 
