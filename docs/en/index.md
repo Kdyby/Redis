@@ -12,18 +12,26 @@ This extension requires you to install [Redis database](http://redis.io) at leas
 
 The best way to install Kdyby/Redis is using  [Composer](http://getcomposer.org/):
 
+For dev Nette, you can install the extension using this command
+
 ```sh
 $ composer require kdyby/redis:@dev
 ```
 
-With dev Nette, you can enable the extension using your neon config.
+and enable the extension using your neon config.
 
 ```yml
 extensions:
 	redis: Kdyby\Redis\DI\RedisExtension
 ```
 
-If you're using stable Nette, you have to register it in `app/bootstrap.php`
+If you're using stable Nette, you can install the tagged release
+
+```sh
+$ composer require kdyby/redis:~2.3
+```
+
+and you have to register it in `app/bootstrap.php`
 
 ```php
 Kdyby\Redis\DI\RedisExtension::register($configurator);
