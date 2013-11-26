@@ -117,25 +117,28 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'prefix' => self::DEFAULT_SESSION_PREFIX,
 				'auth' => $config['auth'],
 				'native' => TRUE,
+				'lockDuration' => $config['lockDuration'],
 			));
 
 			if ($sessionConfig['native']) {
 				$this->loadNativeSessionHandler($sessionConfig);
 
 			} else {
-				$builder->addDefinition($this->prefix('sessionHandler'))
-					->setClass('Kdyby\Redis\RedisSessionHandler', array(
-						new Nette\DI\Statement('Kdyby\Redis\RedisClient', array(
-							'host' => $sessionConfig['host'],
-							'port' => $sessionConfig['port'],
-							'database' => $sessionConfig['database'],
-							'timeout' => $sessionConfig['timeout'],
-							'auth' => $sessionConfig['auth']
-						))
-					));
+				$builder->addDefinition($this->prefix('sessionHandler_client'))
+					->setClass('Kdyby\Redis\RedisClient', array(
+						'host' => $sessionConfig['host'],
+						'port' => $sessionConfig['port'],
+						'database' => $sessionConfig['database'],
+						'timeout' => $sessionConfig['timeout'],
+						'auth' => $sessionConfig['auth']
+					))
+					->addSetup('setupLockDuration', array($sessionConfig['lockDuration']))
+					->setAutowired(FALSE);
 
 				$builder->getDefinition('session')
-					->addSetup('setStorage', array($this->prefix('@sessionHandler')));
+					->addSetup('setStorage', array(
+						new Nette\DI\Statement('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')))
+					));
 			}
 		}
 	}
@@ -146,7 +149,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 
-		$params = array_diff_key($session, array_flip(array('host', 'port', 'native')));
+		$params = array_intersect_key($session, array_flip(array('weight', 'timeout', 'database', 'prefix', 'auth')));
 		if (substr($session['host'], 0, 1) === '/') {
 			$savePath = $session['host'];
 
