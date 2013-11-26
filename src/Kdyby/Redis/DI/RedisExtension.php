@@ -135,10 +135,11 @@ class RedisExtension extends Nette\DI\CompilerExtension
 					->addSetup('setupLockDuration', array($sessionConfig['lockDuration']))
 					->setAutowired(FALSE);
 
+				$builder->addDefinition($this->prefix('sessionHandler'))
+					->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
+
 				$builder->getDefinition('session')
-					->addSetup('setStorage', array(
-						new Nette\DI\Statement('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')))
-					));
+					->addSetup('setStorage', array($this->prefix('@sessionHandler')));
 			}
 		}
 	}
