@@ -5,7 +5,7 @@ namespace KdybyTests\Redis;
 use Kdyby;
 use Kdyby\Redis\RedisClient;
 use Kdyby\Redis\RedisClientException;
-use Nette\Utils\PhpGenerator as Code;
+use Nette\PhpGenerator as Code;
 use Nette\Reflection\ClassType;
 use Nette\Reflection\GlobalFunction;
 use Nette\Utils\AssertionException;
@@ -14,6 +14,9 @@ use Nette\Utils\Strings;
 use Tester;
 
 
+if (!class_exists('Nette\PhpGenerator\Helpers')) {
+	class_alias('Nette\Utils\PhpGenerator\Helpers', 'Nette\PhpGenerator\Helpers');
+}
 
 /**
  * @author Filip Procházka <filip@prochazka.su>
@@ -83,7 +86,7 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 		$scriptFile = TEMP_DIR . '/scripts/' . md5(get_class($this)) . '.phpt';
 		if (!is_dir($dir = dirname($scriptFile))) {
 			@umask(0);
-			mkdir($dir, 0777);
+			mkdir($dir, 0777, TRUE);
 		}
 
 		$extractor = new ClosureExtractor($closure);
@@ -92,11 +95,12 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 
 		ob_start();
 		$runner = new Tester\Runner\Runner(new Tester\Runner\PhpExecutable('php-cgi'));
-		$runner->jobs = $jobs;
+		$runner->jobCount = $jobs;
 		$runner->paths = array($scriptFile);
 		$result = $runner->run();
 		list($info) = Strings::match(ob_get_clean(), '~(?:FAILURES|OK)[^\n]+~i');
 
+		@unlink($scriptFile);
 		if ($result !== TRUE) {
 			Tester\Assert::fail($info);
 		}
