@@ -83,6 +83,9 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 		if (empty($meta[self::META_SERIALIZED])) {
 			return $data;
 
+		} elseif ($data === NULL) {
+			return NULL;
+
 		} else {
 			return @unserialize($data); // intentionally @
 		}
