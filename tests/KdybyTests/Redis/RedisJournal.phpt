@@ -10,11 +10,9 @@
 
 namespace KdybyTests\Redis;
 
-use Kdyby\Redis\RedisJournal;
 use Kdyby\Redis\RedisLuaJournal;
 use Nette;
 use Nette\Caching\Cache;
-use Nette\Caching\Storages\IJournal;
 use Tester;
 use Tester\Assert;
 
@@ -28,178 +26,159 @@ require_once __DIR__ . '/../bootstrap.php';
 class RedisJournalTest extends AbstractRedisTestCase
 {
 
-	public function dataJournals()
+	/**
+	 * @var RedisLuaJournal|Nette\Caching\Storages\IJournal
+	 */
+	private $journal;
+
+
+
+	protected function setUp()
 	{
-		return array(
-			// array(new RedisJournal($this->getClient())),
-			array(new RedisLuaJournal($this->getClient())),
-		);
+		parent::setUp();
+
+		$this->journal = new RedisLuaJournal($this->getClient());
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testRemoveByTag(IJournal $journal)
+	public function testRemoveByTag()
 	{
-		Assert::same(0, count($this->getClient()->keys('*')));
+		// Assert::same(0, count($this->getClient()->keys('*')));
+		$this->assertKeysInDatabase(0);
 
-		$journal->write('ok_test1', array(
+		$this->journal->write('ok_test1', array(
 			Cache::TAGS => array('test:homepage'),
 		));
 
-		Assert::same(2, count($this->getClient()->keys('*')));
+		// Assert::same(2, count($this->getClient()->keys('*')));
+		$this->assertKeysInDatabase(2);
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage')));
 		Assert::same(1, count($result));
 		Assert::same('ok_test1', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testRemovingByMultipleTags_OneIsNotDefined(IJournal $journal)
+	public function testRemovingByMultipleTags_OneIsNotDefined()
 	{
-		$journal->write('ok_test2', array(
+		$this->journal->write('ok_test2', array(
 			Cache::TAGS => array('test:homepage', 'test:homepage2'),
 		));
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage2')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage2')));
 		Assert::same(1, count($result));
 		Assert::same('ok_test2', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testRemovingByMultipleTags_BothAreOnOneEntry(IJournal $journal)
+	public function testRemovingByMultipleTags_BothAreOnOneEntry()
 	{
-		$journal->write('ok_test2b', array(
+		$this->journal->write('ok_test2b', array(
 			Cache::TAGS => array('test:homepage', 'test:homepage2'),
 		));
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage', 'test:homepage2')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage', 'test:homepage2')));
 		Assert::same(1, count($result));
 		Assert::same('ok_test2b', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testRemoveByMultipleTags_TwoSameTags(IJournal $journal)
+	public function testRemoveByMultipleTags_TwoSameTags()
 	{
-		$journal->write('ok_test2c', array(
+		$this->journal->write('ok_test2c', array(
 			Cache::TAGS => array('test:homepage', 'test:homepage'),
 		));
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage', 'test:homepage')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage', 'test:homepage')));
 		Assert::same(1, count($result));
 		Assert::same('ok_test2c', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testRemoveByTagAndPriority(IJournal $journal)
+	public function testRemoveByTagAndPriority()
 	{
-		$journal->write('ok_test2d', array(
+		$this->journal->write('ok_test2d', array(
 			Cache::TAGS => array('test:homepage'),
 			Cache::PRIORITY => 15,
 		));
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage'), Cache::PRIORITY => 20));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage'), Cache::PRIORITY => 20));
 		Assert::same(1, count($result));
 		Assert::same('ok_test2d', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testRemoveByPriority(IJournal $journal)
+	public function testRemoveByPriority()
 	{
-		$journal->write('ok_test3', array(
+		$this->journal->write('ok_test3', array(
 			Cache::PRIORITY => 10,
 		));
 
-		$result = $journal->clean(array(Cache::PRIORITY => 10));
+		$result = $this->journal->clean(array(Cache::PRIORITY => 10));
 		Assert::same(1, count($result));
 		Assert::same('ok_test3', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testPriorityAndTag_CleanByTag(IJournal $journal)
+	public function testPriorityAndTag_CleanByTag()
 	{
-		$journal->write('ok_test4', array(
+		$this->journal->write('ok_test4', array(
 			Cache::TAGS => array('test:homepage'),
 			Cache::PRIORITY => 10,
 		));
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage')));
 		Assert::same(1, count($result));
 		Assert::same('ok_test4', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testPriorityAndTag_CleanByPriority(IJournal $journal)
+	public function testPriorityAndTag_CleanByPriority()
 	{
-		$journal->write('ok_test5', array(
+		$this->journal->write('ok_test5', array(
 			Cache::TAGS => array('test:homepage'),
 			Cache::PRIORITY => 10,
 		));
 
-		$result = $journal->clean(array(Cache::PRIORITY => 10));
+		$result = $this->journal->clean(array(Cache::PRIORITY => 10));
 		Assert::same(1, count($result));
 		Assert::same('ok_test5', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testMultipleWritesAndMultipleClean(IJournal $journal)
+	public function testMultipleWritesAndMultipleClean()
 	{
 		for ($i = 1; $i <= 10; $i++) {
-			$journal->write('ok_test6_' . $i, array(
+			$this->journal->write('ok_test6_' . $i, array(
 				Cache::TAGS => array('test:homepage', 'test:homepage/' . $i),
 				Cache::PRIORITY => $i,
 			));
 		}
 
-		$result = $journal->clean(array(Cache::PRIORITY => 5));
+		$result = $this->journal->clean(array(Cache::PRIORITY => 5));
 		Assert::same(5, count($result), "clean priority lower then 5");
 		Assert::same('ok_test6_1', $result[0], "clean priority lower then 5");
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage/7')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage/7')));
 		Assert::same(1, count($result), "clean tag homepage/7");
 		Assert::same('ok_test6_7', $result[0], "clean tag homepage/7");
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage/4')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage/4')));
 		Assert::same(0, count($result), "clean non exists tag");
 
-		$result = $journal->clean(array(Cache::PRIORITY => 4));
+		$result = $this->journal->clean(array(Cache::PRIORITY => 4));
 		Assert::same(0, count($result), "clean non exists priority");
 
-		$result = $journal->clean(array(Cache::TAGS => array('test:homepage')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage')));
 		Assert::same(4, count($result), "clean other");
 		sort($result);
 		Assert::same(array('ok_test6_10', 'ok_test6_6', 'ok_test6_8', 'ok_test6_9'), $result, "clean other");
@@ -207,131 +186,110 @@ class RedisJournalTest extends AbstractRedisTestCase
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testSpecialChars(IJournal $journal)
+	public function testSpecialChars()
 	{
-		$journal->write('ok_test7ščřžýáíé', array(
+		$this->journal->write('ok_test7ščřžýáíé', array(
 			Cache::TAGS => array('čšřýýá', 'ýřžčýž/10')
 		));
 
-		$result = $journal->clean(array(Cache::TAGS => array('čšřýýá')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('čšřýýá')));
 		Assert::same(1, count($result));
 		Assert::same('ok_test7ščřžýáíé', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testDuplicates_SameTag(IJournal $journal)
+	public function testDuplicates_SameTag()
 	{
-		$journal->write('ok_test_a', array(
+		$this->journal->write('ok_test_a', array(
 			Cache::TAGS => array('homepage')
 		));
 
-		$journal->write('ok_test_a', array(
+		$this->journal->write('ok_test_a', array(
 			Cache::TAGS => array('homepage')
 		));
 
-		$result = $journal->clean(array(Cache::TAGS => array('homepage')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('homepage')));
 		Assert::same(1, count($result));
 		Assert::same('ok_test_a', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testDuplicates_SamePriority(IJournal $journal)
+	public function testDuplicates_SamePriority()
 	{
-		$journal->write('ok_test_b', array(
+		$this->journal->write('ok_test_b', array(
 			Cache::PRIORITY => 12
 		));
 
-		$journal->write('ok_test_b', array(
+		$this->journal->write('ok_test_b', array(
 			Cache::PRIORITY => 12
 		));
 
-		$result = $journal->clean(array(Cache::PRIORITY => 12));
+		$result = $this->journal->clean(array(Cache::PRIORITY => 12));
 		Assert::same(1, count($result));
 		Assert::same('ok_test_b', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testDuplicates_DifferentTags(IJournal $journal)
+	public function testDuplicates_DifferentTags()
 	{
-		$journal->write('ok_test_ba', array(
+		$this->journal->write('ok_test_ba', array(
 			Cache::TAGS => array('homepage')
 		));
 
-		$journal->write('ok_test_ba', array(
+		$this->journal->write('ok_test_ba', array(
 			Cache::TAGS => array('homepage2')
 		));
 
-		$result = $journal->clean(array(Cache::TAGS => array('homepage')));
+		$result = $this->journal->clean(array(Cache::TAGS => array('homepage')));
 		Assert::same(0, count($result));
 
-		$result2 = $journal->clean(array(Cache::TAGS => array('homepage2')));
+		$result2 = $this->journal->clean(array(Cache::TAGS => array('homepage2')));
 		Assert::same(1, count($result2));
 		Assert::same('ok_test_ba', $result2[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testDuplicates_DifferentPriorities(IJournal $journal)
+	public function testDuplicates_DifferentPriorities()
 	{
-		$journal->write('ok_test_bb', array(
+		$this->journal->write('ok_test_bb', array(
 			Cache::PRIORITY => 15
 		));
 
-		$journal->write('ok_test_bb', array(
+		$this->journal->write('ok_test_bb', array(
 			Cache::PRIORITY => 20
 		));
 
-		$result = $journal->clean(array(Cache::PRIORITY => 30));
+		$result = $this->journal->clean(array(Cache::PRIORITY => 30));
 		Assert::same(1, count($result));
 		Assert::same('ok_test_bb', $result[0]);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testCleanAll(IJournal $journal)
+	public function testCleanAll()
 	{
-		$journal->write('ok_test_all_tags', array(
+		$this->journal->write('ok_test_all_tags', array(
 			Cache::TAGS => array('test:all', 'test:all')
 		));
 
-		$journal->write('ok_test_all_priority', array(
+		$this->journal->write('ok_test_all_priority', array(
 			Cache::PRIORITY => 5,
 		));
 
-		$result = $journal->clean(array(Cache::ALL => TRUE));
+		$result = $this->journal->clean(array(Cache::ALL => TRUE));
 		Assert::null($result);
 
-		$result2 = $journal->clean(array(Cache::TAGS => 'test:all'));
+		$result2 = $this->journal->clean(array(Cache::TAGS => 'test:all'));
 		Assert::true(empty($result2));
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testBigCache(IJournal $journal)
+	public function testBigCache()
 	{
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 			Tester\Helpers::skip("Linux only");
@@ -354,16 +312,13 @@ LUA;
 		Assert::true($this->getClient()->evalScript($script));
 		$this->assertKeysInDatabase(5100);
 
-		$journal->clean(array(Cache::TAGS => 'test.4356'));
+		$this->journal->clean(array(Cache::TAGS => 'test.4356'));
 		$this->assertKeysInDatabase(0);
 	}
 
 
 
-	/**
-	 * @dataProvider dataJournals
-	 */
-	public function testBigCache_ShitloadOfEntries(IJournal $journal)
+	public function testBigCache_ShitloadOfEntries()
 	{
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 			Tester\Helpers::skip("Linux only");
@@ -384,7 +339,7 @@ LUA;
 		Assert::true($this->getClient()->evalScript($script));
 		$this->assertKeysInDatabase(200001);
 
-		$journal->clean(array(Cache::TAGS => 'kdyby'));
+		$this->journal->clean(array(Cache::TAGS => 'kdyby'));
 		$this->assertKeysInDatabase(0);
 	}
 

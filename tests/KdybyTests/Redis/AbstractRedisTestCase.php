@@ -39,8 +39,6 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 			return $this->client;
 		}
 
-		flock(self::$lock = fopen(dirname(TEMP_DIR) . '/lock-redis', 'w'), LOCK_EX);
-
 		$client = new RedisClient();
 		try {
 			$client->connect();
@@ -70,6 +68,8 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 
 	protected function setUp()
 	{
+		flock(self::$lock = fopen(dirname(TEMP_DIR) . '/lock-redis', 'w'), LOCK_EX);
+
 		$this->getClient(); // make sure it's created
 	}
 
