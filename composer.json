@@ -16,7 +16,7 @@
 		"issues": "https://github.com/kdyby/redis/issues"
 	},
 	"require": {
-		"nette/nette": "~2.0"
+		"nette/nette": "2.0.*"
 	},
 	"suggest": {
 		"ext-redis": "The php redis extension https://github.com/nicolasff/phpredis/ is required for connecting to redis server"
