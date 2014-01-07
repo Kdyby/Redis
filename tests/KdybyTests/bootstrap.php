@@ -15,7 +15,7 @@ if (!$loader = include __DIR__ . '/../../vendor/autoload.php') {
 $loader->add('KdybyTests\\Redis\\', __DIR__ . '/..');
 
 // configure environment
-Tester\Helpers::setup();
+Tester\Environment::setup();
 class_alias('Tester\Assert', 'Assert');
 date_default_timezone_set('Europe/Prague');
 
