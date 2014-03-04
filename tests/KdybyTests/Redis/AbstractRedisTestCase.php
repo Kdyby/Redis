@@ -44,14 +44,14 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 			$client->connect();
 
 		} catch (RedisClientException $e) {
-			Tester\Helpers::skip($e->getMessage());
+			Tester\Environment::skip($e->getMessage());
 		}
 
 		try {
 			$client->assertVersion();
 
 		} catch (AssertionException $e) {
-			Tester\Helpers::skip($e->getMessage());
+			Tester\Environment::skip($e->getMessage());
 		}
 
 		try {
@@ -91,9 +91,9 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 	/**
 	 * @param callable $closure
 	 * @param int $repeat
-	 * @param int $jobs
+	 * @param int $threads
 	 */
-	protected function threadStress(\Closure $closure, $repeat = 100, $jobs = 30)
+	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30)
 	{
 		$scriptFile = TEMP_DIR . '/scripts/' . md5(get_class($this)) . '.php';
 		if (!is_dir($dir = dirname($scriptFile))) {
@@ -107,7 +107,7 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 
 		$runner = new Tester\Runner\Runner(new Tester\Runner\PhpExecutable('php-cgi'));
 		$runner->outputHandlers[] = $messages = new ResultsCollector();
-		$runner->jobCount = $jobs;
+		$runner->threadCount = $threads;
 		$runner->paths = array($scriptFile);
 		$runner->run();
 

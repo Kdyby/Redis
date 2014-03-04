@@ -21,59 +21,15 @@ use Nette\Caching\Cache;
  *
  * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJournal
+class RedisLuaJournal extends RedisJournal implements Nette\Caching\Storages\IJournal
 {
 
-	/** @internal cache structure */
-	const NS_NETTE = 'Nette.Journal';
-
-	/** dependency */
-	const PRIORITY = 'priority',
-		TAGS = 'tags',
-		KEYS = 'keys';
-
 	const DELETE_ENTRIES = 'delete-entries';
-
-	/**
-	 * @var RedisClient
-	 */
-	private $client;
 
 	/**
 	 * @var array
 	 */
 	private $script = array();
-
-
-
-	/**
-	 * @param RedisClient $client
-	 */
-	public function __construct(RedisClient $client)
-	{
-		$this->client = $client;
-	}
-
-
-
-	/**
-	 * Writes entry information into the journal.
-	 *
-	 * @param  string $key
-	 * @param  array  $dp
-	 *
-	 * @return void
-	 */
-	public function write($key, array $dp)
-	{
-		$args = self::flattenDp($dp);
-		$key = str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
-
-		$result = $this->client->evalScript($this->getScript('write'), array($key), array($args));
-		if ($result !== TRUE) {
-			throw new RedisClientException("Failed to successfully execute lua script journal.write($key): " . $this->client->getDriver()->getLastError());
-		}
-	}
 
 
 

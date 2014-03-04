@@ -34,7 +34,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	/**
 	 * @var RedisClient
 	 */
-	private $client;
+	protected $client;
 
 
 
@@ -58,6 +58,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	public function write($key, array $dp)
 	{
+		$key = str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
 		$this->cleanEntry($key);
 
 		$this->client->multi();
