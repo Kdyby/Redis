@@ -43,12 +43,12 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	/**
 	 * @var RedisClient
 	 */
-	private $client;
+	protected $client;
 
 	/**
 	 * @var \Nette\Caching\Storages\IJournal
 	 */
-	private $journal;
+	protected $journal;
 
 	/**
 	 * @var bool

@@ -22,27 +22,19 @@ require_once __DIR__ . '/../bootstrap.php';
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
-class ExtensionTest extends Tester\TestCase
+class ExtensionTest extends AbstractRedisTestCase
 {
 
-	/**
-	 * @return \SystemContainer|\Nette\DI\Container
-	 */
-	protected function createContainer()
+	protected function setUp()
 	{
-		$config = new Nette\Configurator();
-		$config->setTempDirectory(TEMP_DIR);
-		Kdyby\Redis\DI\RedisExtension::register($config);
-		$config->addConfig(__DIR__ . '/files/config.neon', $config::NONE);
-
-		return $config->createContainer();
+		// do not create the default client
 	}
 
 
 
 	public function testFunctional()
 	{
-		$dic = $this->createContainer();
+		$dic = $this->createContainer('default');
 		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
 		Assert::true($dic->getService('redis.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);
 		Assert::true($dic->getService('nette.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);
@@ -66,6 +58,18 @@ class ExtensionTest extends Tester\TestCase
 			'hash_function' => NULL,
 			'hash_bits_per_character' => NULL,
 		), $dic->getService('session')->getOptions());
+	}
+
+
+
+	public function testFunctional_shards()
+	{
+		$dic = $this->createContainer('sharding');
+		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
+		Assert::true($dic->getService('redis.clientPool') instanceof Kdyby\Redis\ClientsPool);
+		Assert::same(10, iterator_count($dic->getService('redis.clientPool')));
+		Assert::true($dic->getService('redis.cacheJournal') instanceof Kdyby\Redis\JournalRouter);
+		Assert::true($dic->getService('redis.cacheStorage') instanceof Kdyby\Redis\StorageRouter);
 	}
 
 }

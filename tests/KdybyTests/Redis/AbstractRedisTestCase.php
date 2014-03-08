@@ -89,6 +89,23 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 
 
 	/**
+	 * @param string $file
+	 * @return \SystemContainer|\Nette\DI\Container
+	 */
+	protected function createContainer($file = 'default')
+	{
+		$config = new Nette\Configurator();
+		$config->setTempDirectory(TEMP_DIR);
+		Kdyby\Redis\DI\RedisExtension::register($config);
+		$config->addConfig(__DIR__ . '/files/' . $file . '.neon', $config::NONE);
+		$config->addParameters(array('container' => array('class' => 'SystemContainer_' . md5($file))));
+
+		return $config->createContainer();
+	}
+
+
+
+	/**
 	 * @param callable $closure
 	 * @param int $repeat
 	 * @param int $threads

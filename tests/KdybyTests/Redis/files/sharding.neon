@@ -1,0 +1,16 @@
+redis:
+	shards:
+		- 6379
+		- 6380
+		- 6381
+		- 6382
+		- 6383
+		- 6384
+		- 6385
+		- 6386
+		- 6387
+		- {port: 6388}
+
+	journal: on
+	storage: on
+	session: on
