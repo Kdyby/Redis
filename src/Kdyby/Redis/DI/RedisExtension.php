@@ -62,6 +62,36 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$config = $this->getConfig($this->defaults);
 
+		$builder->addDefinition($this->prefix('driver'))
+			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
+			->setFactory($this->prefix('@client') . '::getDriver');
+
+		$builder->addDefinition($this->prefix('panel'))
+			->setClass('Kdyby\Redis\Diagnostics\Panel')
+			->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
+			->addSetup('$renderPanel', array($config['debugger']));
+
+		$this->loadClient($config);
+
+		if ($config['journal']) {
+			$this->loadJournal($config);
+		}
+
+		if ($config['storage']) {
+			$this->loadStorage($config);
+		}
+
+		if ($config['session']) {
+			$this->loadSession($config);
+		}
+	}
+
+
+
+	protected function loadClient(array $config)
+	{
+		$builder = $this->getContainerBuilder();
+
 		$builder->addDefinition($this->prefix('client'))
 			->setClass('Kdyby\Redis\RedisClient', array(
 				'host' => $config['host'],
@@ -72,75 +102,81 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			))
 			->addSetup('setupLockDuration', array($config['lockDuration']))
 			->addSetup('setPanel', array($this->prefix('@panel')));
+	}
 
-		$builder->addDefinition($this->prefix('driver'))
-			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
-			->setFactory($this->prefix('@client') . '::getDriver');
 
-		$builder->addDefinition($this->prefix('panel'))
-			->setClass('Kdyby\Redis\Diagnostics\Panel')
-			->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
-			->addSetup('$renderPanel', array($config['debugger']));
 
-		if ($config['journal']) {
-			$builder->addDefinition($this->prefix('cacheJournal'))
-				->setClass('Kdyby\Redis\RedisLuaJournal');
+	protected function loadJournal(array $config)
+	{
+		$builder = $this->getContainerBuilder();
 
-			// overwrite
-			$builder->removeDefinition('nette.cacheJournal');
-			$builder->addDefinition('nette.cacheJournal')->setFactory($this->prefix('@cacheJournal'));
+		$builder->addDefinition($this->prefix('cacheJournal'))
+			->setClass('Kdyby\Redis\RedisLuaJournal');
+
+		// overwrite
+		$builder->removeDefinition('nette.cacheJournal');
+		$builder->addDefinition('nette.cacheJournal')->setFactory($this->prefix('@cacheJournal'));
+	}
+
+
+
+	protected function loadStorage(array $config)
+	{
+		$builder = $this->getContainerBuilder();
+
+		$storageConfig = Nette\DI\Config\Helpers::merge(is_array($config['storage']) ? $config['storage'] : array(), array(
+			'locks' => TRUE,
+		));
+
+		$cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
+			->setClass('Kdyby\Redis\RedisStorage');
+
+		if (!$storageConfig['locks']) {
+			$cacheStorage->addSetup('disableLocking');
 		}
 
-		if ($config['storage']) {
-			$storageConfig = Nette\DI\Config\Helpers::merge(is_array($config['storage']) ? $config['storage'] : array(), array(
-				'locks' => TRUE,
-			));
+		$builder->removeDefinition('cacheStorage');
+		$builder->addDefinition('cacheStorage')->setFactory($this->prefix('@cacheStorage'));
+	}
 
-			$cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
-				->setClass('Kdyby\Redis\RedisStorage');
 
-			if (!$storageConfig['locks']) {
-				$cacheStorage->addSetup('disableLocking');
-			}
 
-			$builder->removeDefinition('cacheStorage');
-			$builder->addDefinition('cacheStorage')->setFactory($this->prefix('@cacheStorage'));
-		}
+	protected function loadSession(array $config)
+	{
+		$builder = $this->getContainerBuilder();
 
-		if ($config['session']) {
-			$sessionConfig = Nette\DI\Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
-				'host' => $config['host'],
-				'port' => $config['port'],
-				'weight' => 1,
-				'timeout' => $config['timeout'],
-				'database' => $config['database'],
-				'prefix' => self::DEFAULT_SESSION_PREFIX,
-				'auth' => $config['auth'],
-				'native' => TRUE,
-				'lockDuration' => $config['lockDuration'],
-			));
+		$sessionConfig = Nette\DI\Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
+			'host' => $config['host'],
+			'port' => $config['port'],
+			'weight' => 1,
+			'timeout' => $config['timeout'],
+			'database' => $config['database'],
+			'prefix' => self::DEFAULT_SESSION_PREFIX,
+			'auth' => $config['auth'],
+			'native' => TRUE,
+			'lockDuration' => $config['lockDuration'],
+		));
 
-			if ($sessionConfig['native']) {
-				$this->loadNativeSessionHandler($sessionConfig);
+		if ($sessionConfig['native']) {
+			$this->loadNativeSessionHandler($sessionConfig);
 
-			} else {
-				$builder->addDefinition($this->prefix('sessionHandler_client'))
-					->setClass('Kdyby\Redis\RedisClient', array(
-						'host' => $sessionConfig['host'],
-						'port' => $sessionConfig['port'],
-						'database' => $sessionConfig['database'],
-						'timeout' => $sessionConfig['timeout'],
-						'auth' => $sessionConfig['auth']
-					))
-					->addSetup('setupLockDuration', array($sessionConfig['lockDuration']))
-					->setAutowired(FALSE);
+		} else {
+			$builder->addDefinition($this->prefix('sessionHandler_client'))
+				->setClass('Kdyby\Redis\RedisClient', array(
+					'host' => $sessionConfig['host'],
+					'port' => $sessionConfig['port'],
+					'database' => $sessionConfig['database'],
+					'timeout' => $sessionConfig['timeout'],
+					'auth' => $sessionConfig['auth']
+				))
+				->addSetup('setupLockDuration', array($sessionConfig['lockDuration']))
+				->setAutowired(FALSE);
 
-				$builder->addDefinition($this->prefix('sessionHandler'))
-					->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
+			$builder->addDefinition($this->prefix('sessionHandler'))
+				->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
 
-				$builder->getDefinition('session')
-					->addSetup('setStorage', array($this->prefix('@sessionHandler')));
-			}
+			$builder->getDefinition('session')
+				->addSetup('setStorage', array($this->prefix('@sessionHandler')));
 		}
 	}
 
