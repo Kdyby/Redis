@@ -14,8 +14,6 @@ use Kdyby;
 use Kdyby\Redis\RedisClient;
 use Nette;
 use Nette\DI\Compiler;
-use Nette\DI\ContainerBuilder;
-use Nette\Utils\Validators;
 
 
 
@@ -42,16 +40,24 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	 * @var array
 	 */
 	public $defaults = array(
+		'shards' => array(),
+		'remoteShards' => array(),
 		'journal' => FALSE,
 		'storage' => FALSE,
 		'session' => FALSE,
-		'lockDuration' => 15,
+		'debugger' => '%debugMode%',
+		'versionCheck' => TRUE,
+	);
+
+	/**
+	 * @var array
+	 */
+	public $connectionDefaults = array(
 		'host' => '127.0.0.1',
 		'port' => NULL,
 		'timeout' => 10,
 		'database' => 0,
-		'debugger' => '%debugMode%',
-		'versionCheck' => TRUE,
+		'lockDuration' => 15,
 		'auth' => NULL,
 	);
 
@@ -60,7 +66,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	public function loadConfiguration()
 	{
 		$builder = $this->getContainerBuilder();
-		$config = $this->getConfig($this->defaults);
+		$config = $this->getConfig($this->defaults + $this->connectionDefaults);
 
 		$builder->addDefinition($this->prefix('driver'))
 			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
@@ -159,25 +165,25 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		if ($sessionConfig['native']) {
 			$this->loadNativeSessionHandler($sessionConfig);
-
-		} else {
-			$builder->addDefinition($this->prefix('sessionHandler_client'))
-				->setClass('Kdyby\Redis\RedisClient', array(
-					'host' => $sessionConfig['host'],
-					'port' => $sessionConfig['port'],
-					'database' => $sessionConfig['database'],
-					'timeout' => $sessionConfig['timeout'],
-					'auth' => $sessionConfig['auth']
-				))
-				->addSetup('setupLockDuration', array($sessionConfig['lockDuration']))
-				->setAutowired(FALSE);
-
-			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
-
-			$builder->getDefinition('session')
-				->addSetup('setStorage', array($this->prefix('@sessionHandler')));
+			return;
 		}
+
+		$builder->addDefinition($this->prefix('sessionHandler_client'))
+			->setClass('Kdyby\Redis\RedisClient', array(
+				'host' => $sessionConfig['host'],
+				'port' => $sessionConfig['port'],
+				'database' => $sessionConfig['database'],
+				'timeout' => $sessionConfig['timeout'],
+				'auth' => $sessionConfig['auth']
+			))
+			->addSetup('setupLockDuration', array($sessionConfig['lockDuration']))
+			->setAutowired(FALSE);
+
+		$builder->addDefinition($this->prefix('sessionHandler'))
+			->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
+
+		$builder->getDefinition('session')
+			->addSetup('setStorage', array($this->prefix('@sessionHandler')));
 	}
 
 
@@ -220,7 +226,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	 */
 	public function beforeCompile()
 	{
-		$config = $this->getConfig($this->defaults);
+		$config = $this->getConfig($this->defaults + $this->connectionDefaults);
 		if ($config['versionCheck'] && ($config['journal'] || $config['storage'] || $config['session'])) {
 			$client = new RedisClient($config['host'], $config['port'], $config['database'], $config['timeout'], $config['auth']);
 			$client->assertVersion();
