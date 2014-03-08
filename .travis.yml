@@ -18,5 +18,6 @@ before_script:
   - ./.travis.redis.sh
   - composer self-update
   - composer install --no-interaction --prefer-source --dev
+  - ./tests/redis-conf/start.sh
 
 script: php tests/lint.php src/Kdyby/ tests/KdybyTests/ && VERBOSE=true ./tests/run-tests.sh -s tests/KdybyTests/
