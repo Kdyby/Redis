@@ -33,13 +33,13 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 
 
 
-	protected function getClient()
+	protected function getClient(RedisClient $client = NULL)
 	{
-		if ($this->client) {
+		if ($this->client && !$client) {
 			return $this->client;
 		}
 
-		$client = new RedisClient();
+		$client = $client ?: new RedisClient();
 		try {
 			$client->connect();
 

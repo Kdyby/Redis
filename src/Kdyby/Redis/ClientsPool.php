@@ -62,10 +62,26 @@ class ClientsPool extends Nette\Object implements \IteratorAggregate
 	 * @param string $key
 	 * @return RedisClient
 	 */
-	public function chooseClient($key)
+	public function choose($key)
 	{
 		$num = array_sum(str_split(md5($key), 1));
 		return $this->local[$num % count($this->local)];
+	}
+
+
+
+	/**
+	 * @param int $i
+	 * @return RedisClient
+	 * @throws InvalidArgumentException
+	 */
+	public function get($i)
+	{
+		if (!isset($this->local[$i])) {
+			throw new InvalidArgumentException("Client with index $i not found, there are only " . count($this->local) . ' clients.');
+		}
+
+		return $this->local[$i];
 	}
 
 

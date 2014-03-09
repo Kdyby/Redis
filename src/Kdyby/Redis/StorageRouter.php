@@ -37,7 +37,7 @@ class StorageRouter extends RedisStorage
 
 	public function read($key)
 	{
-		$this->client = $this->clients->chooseClient($key);
+		$this->client = $this->clients->choose($key);
 		return parent::read($key);
 	}
 
@@ -45,7 +45,7 @@ class StorageRouter extends RedisStorage
 
 	public function lock($key)
 	{
-		$this->client = $this->clients->chooseClient($key);
+		$this->client = $this->clients->choose($key);
 		parent::lock($key);
 	}
 
@@ -53,7 +53,7 @@ class StorageRouter extends RedisStorage
 
 	public function write($key, $data, array $dependencies)
 	{
-		$this->client = $this->clients->chooseClient($key);
+		$this->client = $this->clients->choose($key);
 		parent::write($key, $data, $dependencies);
 	}
 
@@ -61,7 +61,7 @@ class StorageRouter extends RedisStorage
 
 	public function remove($key)
 	{
-		$this->client = $this->clients->chooseClient($key);
+		$this->client = $this->clients->choose($key);
 		return parent::remove($key);
 	}
 

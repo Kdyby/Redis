@@ -37,7 +37,7 @@ class JournalRouter extends RedisLuaJournal
 
 	public function write($key, array $dependencies)
 	{
-		$this->client = $this->clients->chooseClient($key);
+		$this->client = $this->clients->choose($key);
 		parent::write($key, $dependencies);
 	}
 
