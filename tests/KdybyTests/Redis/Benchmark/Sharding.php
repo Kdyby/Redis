@@ -66,7 +66,7 @@ class ShardingTest extends AbstractRedisTestCase
 						});
 					}
 
-					return new Nette\Http\Request(new Nette\Http\UrlScript(), ['e' => $key]);
+					return new Nette\Http\Request(new Nette\Http\UrlScript(), array('e' => $key));
 				});
 			}
 
