@@ -33,7 +33,7 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 	public static $maxLength = 1000;
 
 	/**
-	 * @var int
+	 * @var float
 	 */
 	private $totalTime = 0;
 
@@ -54,18 +54,42 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 
 
 
+	/**
+	 * @return int
+	 */
+	public function getQueryCount()
+	{
+		return count($this->queries);
+	}
+
+
+
+	/**
+	 * @return int milliseconds
+	 */
+	public function getTotalTime()
+	{
+		return $this->totalTime * 1000;
+	}
+
+
+
 	public function begin($args)
 	{
-		$cmd = array();
-		if ($this->renderPanel) {
+		if (!$this->renderPanel) {
+			$cmd = '';
+
+		} else {
+			$cmd = array();
 			foreach ($args as $arg) {
 				$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
 			}
+			$cmd = implode(' ', $cmd);
 		}
 
-		$this->queries[] = (object)array(
+		$this->queries[] = (object) array(
 			'errors' => array(),
-			'cmd' => implode(' ', $cmd),
+			'cmd' => $cmd,
 			'time' => 0
 		);
 
