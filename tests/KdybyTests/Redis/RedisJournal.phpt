@@ -347,15 +347,14 @@ LUA;
 
 	protected function assertKeysInDatabase($number)
 	{
-		$dbInfo = $this->getClient()->info('db' . $this->getClient()->getDriver()->getDBNum());
-		if ($dbInfo === NULL) {
-			$m = array('keys' => 0);
+		$dbNum = $this->getClient()->getDriver()->getDBNum();
+		$dbInfo = $this->getClient()->info('db' . $dbNum);
 
-		} elseif (!$m = Nette\Utils\Strings::match($dbInfo, '~keys\=(?P<keys>[^,]+),~')) {
+		if ($number > 0 && !$dbInfo) {
 			Assert::fail("Number of keys in database couldn't be determined");
 		}
 
-		Assert::equal($number, (int) $m['keys']);
+		Assert::equal($number, $dbInfo ? (int) $dbInfo['keys'] : 0);
 	}
 
 

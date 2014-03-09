@@ -134,6 +134,15 @@ class RedisClientTest extends AbstractRedisTestCase
 		Assert::false(isset($this->client->nemam));
 	}
 
+
+
+	public function testInfo()
+	{
+		Assert::true(is_array($this->client->info()));
+		Assert::true(is_array($this->client->info('db1')));
+		Assert::same('master', $this->client->info('role'));
+	}
+
 }
 
 \run(new RedisClientTest());

@@ -22,7 +22,7 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 {
 
 	/**
-	 * @var \Kdyby\Redis\RedisClient
+	 * @var \Kdyby\Redis\RedisClient|\stdClass
 	 */
 	protected $client;
 

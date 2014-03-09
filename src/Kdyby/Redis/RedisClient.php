@@ -364,11 +364,27 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * Get information and statistics about the server
 	 *
 	 * @param string $returnKey
-	 * @return array
+	 * @return array|string
 	 */
 	public function info($returnKey = NULL)
 	{
 		$info = $this->send('info');
+
+		$dbs = array_map(function ($db) {
+			$info = array_map(function ($item) {
+				return explode('=', $item, 2);
+			}, explode(',', $db));
+
+			$result = array();
+			foreach ($info as $item) {
+				$result[$item[0]] = $item[1];
+			}
+
+			return $result;
+
+		}, preg_grep('~^keys=[0-9]+,~', $info));
+
+		$info = $dbs + $info; // replace
 
 		if ($returnKey !== NULL) {
 			return array_key_exists($returnKey, $info) ? $info[$returnKey] : NULL;
