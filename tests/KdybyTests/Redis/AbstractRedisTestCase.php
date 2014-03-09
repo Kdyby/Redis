@@ -117,7 +117,7 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 			echo 'FAILURE ' . $result[0] . "\n" . $result[1] . "\n";
 		}
 
-		Tester\Assert::equal(100, $result[Tester\Runner\Runner::PASSED]);
+		Tester\Assert::equal($repeat, $result[Tester\Runner\Runner::PASSED]);
 	}
 
 }
