@@ -62,9 +62,9 @@ class ClientsPoolTest extends AbstractRedisTestCase
 		/** @var \Kdyby\Redis\ClientsPool $pool */
 		$pool = $container->getByType('Kdyby\Redis\ClientsPool');
 
-		Assert::same($container->getService('redis.client_b6aef3'), $pool->choose('lister')); // md5() ... fe35ce4b4d3b3b45f19df6b7b0669fd9 % 10 ... 4
-		Assert::same($container->getService('redis.client_499e3b'), $pool->choose('rimmer')); // md5() ... 4b3db99763faa360c21df8fd384a8d62 % 10 ... 2
-		Assert::same($container->getService('redis.client_c22699'), $pool->choose('kryten')); // md5() ... 255bd87dfe66e24f6f25147b0d7dd948 % 10 ... 8
+		Assert::same($container->getService('redis.client_c22699'), $pool->choose('lister')); // 3592764338 % 10 ... 8
+		Assert::same($container->getService('redis.client_29d2f8'), $pool->choose('rimmer')); // 1288232970 % 10 ... 0
+		Assert::same($container->getService('redis.client_b6aef3'), $pool->choose('kryten')); // 2813071794 % 10 ... 4
 	}
 
 

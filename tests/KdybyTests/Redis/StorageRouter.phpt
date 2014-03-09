@@ -116,15 +116,15 @@ class StorageRouterTest extends AbstractRedisTestCase
 		$cache['l'] = 'l';
 
 		Assert::same(2, count($this->pool->get(0)->keys('*')));
-		Assert::same(2, count($this->pool->get(1)->keys('*')));
+		Assert::same(0, count($this->pool->get(1)->keys('*')));
 		Assert::same(1, count($this->pool->get(2)->keys('*')));
-		Assert::same(2, count($this->pool->get(3)->keys('*')));
-		Assert::same(1, count($this->pool->get(4)->keys('*')));
+		Assert::same(0, count($this->pool->get(3)->keys('*')));
+		Assert::same(3, count($this->pool->get(4)->keys('*')));
 		Assert::same(1, count($this->pool->get(5)->keys('*')));
 		Assert::same(1, count($this->pool->get(6)->keys('*')));
-		Assert::same(0, count($this->pool->get(7)->keys('*')));
-		Assert::same(0, count($this->pool->get(8)->keys('*')));
-		Assert::same(2, count($this->pool->get(9)->keys('*')));
+		Assert::same(1, count($this->pool->get(7)->keys('*')));
+		Assert::same(2, count($this->pool->get(8)->keys('*')));
+		Assert::same(1, count($this->pool->get(9)->keys('*')));
 	}
 
 }

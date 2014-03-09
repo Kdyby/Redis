@@ -16,6 +16,7 @@ use Nette;
 
 
 /**
+ * @see http://redis.io/topics/partitioning
  * @author Filip Procházka <filip@prochazka.su>
  */
 class ClientsPool extends Nette\Object implements \IteratorAggregate
@@ -64,8 +65,7 @@ class ClientsPool extends Nette\Object implements \IteratorAggregate
 	 */
 	public function choose($key)
 	{
-		$num = array_sum(str_split(md5($key), 1));
-		return $this->local[$num % count($this->local)];
+		return $this->local[crc32($key) % count($this->local)];
 	}
 
 
