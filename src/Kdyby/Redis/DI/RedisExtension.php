@@ -62,7 +62,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$config = $this->getConfig($this->defaults);
 
-		$builder->addDefinition($this->prefix('client'))
+		$client = $builder->addDefinition($this->prefix('client'))
 			->setClass('Kdyby\Redis\RedisClient', array(
 				'host' => $config['host'],
 				'port' => $config['port'],
@@ -70,17 +70,20 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'timeout' => $config['timeout'],
 				'auth' => $config['auth']
 			))
-			->addSetup('setupLockDuration', array($config['lockDuration']))
-			->addSetup('setPanel', array($this->prefix('@panel')));
+			->addSetup('setupLockDuration', array($config['lockDuration']));
 
 		$builder->addDefinition($this->prefix('driver'))
 			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
 			->setFactory($this->prefix('@client') . '::getDriver');
 
-		$builder->addDefinition($this->prefix('panel'))
-			->setClass('Kdyby\Redis\Diagnostics\Panel')
-			->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
-			->addSetup('$renderPanel', array($config['debugger']));
+		if ($builder->parameters['debugMode'] || $config['debugger']) {
+			$builder->addDefinition($this->prefix('panel'))
+				->setClass('Kdyby\Redis\Diagnostics\Panel')
+				->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
+				->addSetup('$renderPanel', array($config['debugger']));
+
+			$client->addSetup('setPanel', array($this->prefix('@panel')));
+		}
 
 		if ($config['journal']) {
 			$builder->addDefinition($this->prefix('cacheJournal'))
