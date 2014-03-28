@@ -177,6 +177,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	private $driver;
 
 	/**
+	 * @var bool
+	 */
+	private $isConnected = FALSE;
+
+	/**
 	 * @var Diagnostics\Panel
 	 */
 	private $panel;
@@ -273,6 +278,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			}
 
 			$this->driver->select($this->database);
+			$this->isConnected = $this->driver->isConnected();
 
 		} catch (\Exception $e) {
 			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
@@ -289,6 +295,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		if ($this->driver->isConnected()) {
 			$this->getLock()->releaseAll();
 			$this->driver->close();
+			$this->isConnected = FALSE;
 		}
 	}
 
@@ -305,6 +312,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 	/**
+	 * @internal
 	 * @param string $cmd
 	 * @param array $args
 	 *
@@ -312,9 +320,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * @throws RedisClientException
 	 * @return mixed
 	 */
-	protected function send($cmd, array $args = array())
+	public function send($cmd, array $args = array())
 	{
-		$this->connect();
+		if (!$this->isConnected) {
+			$this->connect();
+		}
 
 		try {
 			if ($this->panel) {
@@ -323,14 +333,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				$this->panel->begin($request);
 			}
 
-			set_error_handler(function ($severenity, $message) {
-				restore_error_handler();
-				throw new \ErrorException($message);
-			});
-
 			$result = call_user_func_array(array($this->driver, $cmd), $args);
-
-			restore_error_handler();
 
 			if ($result instanceof \Redis) {
 				$result = strtolower($cmd) === 'multi' ? 'OK' : 'QUEUED';
