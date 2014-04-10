@@ -202,7 +202,8 @@ DOC;
 		$code .= 'use ' . implode(";\n" . 'use ', $uses->parse()) . ";\n\n";
 
 		// bootstrap
-		$code .= Code\Helpers::formatArgs('require_once ?;', array(__DIR__ . '/../bootstrap.php')) . "\n\n\n";
+		$code .= Code\Helpers::formatArgs('require_once ?;', array(__DIR__ . '/../bootstrap.php')) . "\n";
+		$code .= '\Tester\Environment::$checkAssertions = FALSE;' . "\n\n\n";
 
 		// script
 		$code .= Code\Helpers::formatArgs('extract(?);', array($this->closure->getStaticVariables())) . "\n\n";
