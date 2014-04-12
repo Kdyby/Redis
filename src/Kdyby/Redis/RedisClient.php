@@ -351,7 +351,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				$this->panel->end();
 			}
 
-		} catch (\Exception $e) {
+		} catch (\RedisException $e) {
 			if ($this->panel) {
 				$this->panel->error($e);
 			}
