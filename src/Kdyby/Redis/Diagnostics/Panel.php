@@ -94,7 +94,9 @@ class Panel extends Nette\Object implements IBarPanel
 		} else {
 			$cmd = array();
 			foreach ($args as $arg) {
-				$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
+				if (!$arg instanceof \Closure) {
+					$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
+				}
 			}
 			$cmd = implode(' ', $cmd);
 		}
