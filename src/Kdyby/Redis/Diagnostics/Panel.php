@@ -59,7 +59,9 @@ class Panel extends Nette\Object implements Nette\Diagnostics\IBarPanel
 		$cmd = array();
 		if ($this->renderPanel) {
 			foreach ($args as $arg) {
-				$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
+				if (!$arg instanceof \Closure) {
+					$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
+				}
 			}
 		}
 
