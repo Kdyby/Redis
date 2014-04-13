@@ -156,7 +156,7 @@ use Nette\Diagnostics\Debugger;
 class RedisClient extends Nette\Object implements \ArrayAccess
 {
 
-	/** commands */
+	/** @deprecated */
 	const WITH_SCORES = 'WITHSCORES';
 
 	/**
