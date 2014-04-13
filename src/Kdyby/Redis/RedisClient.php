@@ -30,9 +30,9 @@ use Nette\Diagnostics\Debugger;
  * @method bool 		bgRewriteAof() Asynchronously rewrite the append-only file
  * @method bool 		bgSave() Asynchronously save the dataset to disk
  * @method int			bitCount(string $key, int $start , int $end) Count set bits in a string
- * @method int			bitOp(string $operation, string $destKey, $key1, $key2 = NULL) Perform bitwise operations between strings, return the size of the string stored in the destination key
- * @method array		blPop(string $key1, $key2 = NULL, $timeout = NULL) Remove and get the first element in a list, or block until one is available
- * @method array		brPop(string $key1, $key2 = NULL, $timeout = NULL) Remove and get the last element in a list, or block until one is available
+ * @method int			bitOp(string $operation, string $destKey, string $key1, string $key2 = NULL) Perform bitwise operations between strings, return the size of the string stored in the destination key
+ * @method array		blPop(string $key1, string $key2 = NULL, int $timeout = NULL) Remove and get the first element in a list, or block until one is available
+ * @method array		brPop(string $key1, string $key2 = NULL, int $timeout = NULL) Remove and get the last element in a list, or block until one is available
  * @method string		brPopLPush(string $source, string $destination, int $timeout) Pop a value from a list, push it to another list and return it; or block until one is available
  * @method array|bool 	config(string $operation, string $key, mixed $value = NULL) Get os Redis the Redis server configuration parameters
  * @method int 			dbSize() Return the number of keys in the selected database
@@ -53,7 +53,7 @@ use Nette\Diagnostics\Debugger;
  * @method string 		getSet(string $key, string $value) Set the string value of a key and return its old value, return previous value located at this key
  * @method int			hDel(string $key, string $field1, string $field2 = NULL) Delete one or more hash fields
  * @method bool			hExists(string $key, string $field) Determine if a hash field exists
- * @method string		hGet(string $key, $field) Get the value of a hash field
+ * @method string		hGet(string $key, string $field) Get the value of a hash field
  * @method array		hGetAll(string $key) Get all the fields and values in a hash
  * @method int			hIncrBy(string $key, string $field, int $increment) Increment the integer value of a hash field by the given number. Return the new value
  * @method float		hIncrByFloat(string $key, string $field, float $increment) Increment the float value of a hash field by the given amount. Return the new value
@@ -118,7 +118,7 @@ use Nette\Diagnostics\Debugger;
  * @method int			sInterStore(string $destination, string $key1, string $key2 = NULL) Intersect multiple sets and store the resulting set in a key. Return the cardinality of the resulting set,
  * @method bool			sIsMember(string $key, string $member) Determine if a given value is a member of a set
  * @method bool 		slaveOf(string $host, int $port) Make the server a slave of another instance, or promote it as master
- * @method mixed		slowLog(string $subCommand, $arg = NULL) Manages the Redis slow queries log
+ * @method mixed		slowLog(string $subCommand, mixed $arg = NULL) Manages the Redis slow queries log
  * @method array		sMembers(string $key) Get all the members in a set
  * @method bool			sMove(string $source, string $destination, string $member) Move a member from one set to another
  * @method array|int	sort(string $key, array $options) Sort the elements in a list, set or sorted set
@@ -139,17 +139,17 @@ use Nette\Diagnostics\Debugger;
  * @method int			zCount(string $key, int $min, int $max) Count the members in a sorted set with scores within the given values
  * @method float		zIncrBy(string $key, float $increment, string $member) Increment the score of a member in a sorted set. Return the new value
  * @method int			zInter(string $destination, array $zsetKeys, array $weights = array(), string $aggregateFunction = NULL) Intersect multiple sorted sets and store the resulting sorted set in a new key. Return the number of values in the new sorted set
- * @method array		zRange(string $key, int $start, int $stop, $withScored = FALSE) Return a range of members in a sorted set, by index
- * @method array		zRangeByScore(string $key, float $min, float$max, array $options = array()) Return a range of members in a sorted set, by score
+ * @method array		zRange(string $key, int $start, int $stop, bool $withScores = FALSE) Return a range of members in a sorted set, by index
+ * @method array		zRangeByScore(string $key, float $min, float $max, array $options = array()) Return a range of members in a sorted set, by score
  * @method int			zRank(string $key, string $member) Determine the index of a member in a sorted set
  * @method int			zRem(string $key, string $member1, string $member2 = NULL) Remove one or more members from a sorted set. Return the number of removed members
  * @method int			zRemRangeByRank(string $key, int $start, int $stop) Remove all members in a sorted set within the given indexes. Return the number of values deleted from the set
  * @method int			zRemRangeByScore(string $key, float $min, float $max) Remove all members in a sorted set within the given scores. Return the number of values deleted from the set
- * @method array		zRevRange(string $key, int $start, int $stop, bool $withScored = FALSE) Return a range of members in a sorted set, by index, with scores ordered from high to low
+ * @method array		zRevRange(string $key, int $start, int $stop, bool $withScores = FALSE) Return a range of members in a sorted set, by index, with scores ordered from high to low
  * @method array		zRevRangeByScore(string $key, float $max, float $min, array $options = array()) Return a range of members in a sorted set, by score, with scores ordered from high to low
  * @method int			zRevRank(string $key, string $member) Determine the index of a member in a sorted set, with scores ordered from high to low
  * @method float		zScore(string $key, string $member) Get the score associated with the given member in a sorted set
- * @method int			zUnion(string $destination, array $setKeys, array $weights = array(), $aggregateFunction = NULL) Add multiple sorted sets and store the resulting sorted set in a new key</ul>
+ * @method int			zUnion(string $destination, array $setKeys, array $weights = array(), string $aggregateFunction = NULL) Add multiple sorted sets and store the resulting sorted set in a new key</ul>
  *
  * @author Filip Procházka <filip@prochazka.su>
  */
