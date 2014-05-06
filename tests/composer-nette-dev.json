@@ -1,0 +1,61 @@
+{
+	"name": "kdyby/redis",
+	"type": "library",
+	"description": "Redis storage for Nette Framework",
+	"keywords": ["nette", "kdyby", "redis", "client", "cache"],
+	"homepage": "http://kdyby.org",
+	"license": ["BSD-3-Clause", "GPL-2.0", "GPL-3.0"],
+	"authors": [
+		{
+			"name": "Filip Procházka",
+			"homepage": "http://filip-prochazka.com",
+			"email": "filip@prochazka.su"
+		}
+	],
+	"support": {
+		"email": "filip@prochazka.su",
+		"issues": "https://github.com/kdyby/redis/issues"
+	},
+	"require": {
+		"nette/nette": "@dev",
+		"nette/application": "@dev",
+		"nette/bootstrap": "@dev",
+		"nette/caching": "@dev",
+		"nette/component-model": "@dev",
+		"nette/database": "@dev",
+		"nette/di": "@dev",
+		"nette/finder": "@dev",
+		"nette/forms": "@dev",
+		"nette/http": "@dev",
+		"nette/mail": "@dev",
+		"nette/neon": "@dev",
+		"nette/php-generator": "@dev",
+		"nette/reflection": "@dev",
+		"nette/robot-loader": "@dev",
+		"nette/safe-stream": "@dev",
+		"nette/security": "@dev",
+		"nette/tokenizer": "@dev",
+		"nette/utils": "@dev",
+		"latte/latte": "@dev",
+		"tracy/tracy": "@dev"
+	},
+	"suggest": {
+		"ext-redis": "The php redis extension https://github.com/nicolasff/phpredis/ is required for connecting to redis server"
+	},
+	"require-dev": {
+		"nette/tester": "@dev"
+	},
+	"autoload": {
+		"psr-0": {
+			"Kdyby\\Redis\\": "src/"
+		},
+		"classmap": [
+			"src/Kdyby/Redis/exceptions.php"
+		]
+	},
+	"extra": {
+		"branch-alias": {
+			"dev-master": "3.0-dev"
+		}
+	}
+}
