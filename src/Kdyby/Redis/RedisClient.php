@@ -225,8 +225,6 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		$this->database = $database;
 		$this->timeout = $timeout;
 		$this->auth = $auth;
-
-		$this->driver = new Driver\PhpRedisDriver();
 	}
 
 
@@ -254,6 +252,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 	public function connect()
 	{
+		if (!$this->driver) {
+			$this->driver = new Driver\PhpRedisDriver();
+		}
+
 		if ($this->driver->isConnected()) {
 			return;
 		}
@@ -280,7 +282,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function close()
 	{
-		if ($this->driver->isConnected()) {
+		if ($this->driver && $this->driver->isConnected()) {
 			$this->getLock()->releaseAll();
 			$this->driver->close();
 			$this->isConnected = FALSE;
