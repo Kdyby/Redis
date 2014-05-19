@@ -37,6 +37,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 {
 
 	const DEFAULT_SESSION_PREFIX = Kdyby\Redis\RedisSessionHandler::NS_NETTE;
+	const PANEL_COUNT_MODE = 'count';
 
 	/**
 	 * @var array
@@ -76,11 +77,11 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
 			->setFactory($this->prefix('@client') . '::getDriver');
 
-		if ($builder->parameters['debugMode'] || $config['debugger']) {
+ 		if ($config['debugger']) {
 			$builder->addDefinition($this->prefix('panel'))
 				->setClass('Kdyby\Redis\Diagnostics\Panel')
 				->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
-				->addSetup('$renderPanel', array($config['debugger']));
+				->addSetup('$renderPanel', array($config['debugger'] !== self::PANEL_COUNT_MODE));
 
 			$client->addSetup('setPanel', array($this->prefix('@panel')));
 		}
