@@ -569,9 +569,9 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	public function assertVersion()
 	{
 		$version = $this->info('redis_version');
-		if (version_compare($version, '2.2.0', '<')) {
+		if (version_compare($version, '2.6.0', '<')) {
 			throw new Nette\Utils\AssertionException(
-				"Minimum required version for this Redis client is 2.2.0, your version is $version. Please upgrade your software."
+				"Minimum required version for this Redis client is 2.6.0, your version is $version. Please upgrade your software."
 			);
 		}
 	}
