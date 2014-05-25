@@ -17,12 +17,18 @@
 		"issues": "https://github.com/kdyby/redis/issues"
 	},
 	"require": {
-		"nette/nette": "2.1.*"
+		"nette/di": "2.2.*",
+		"nette/caching": "2.2.*",
+		"nette/http": "2.2.*",
+		"nette/utils": "2.2.*"
 	},
 	"suggest": {
 		"ext-redis": "The php redis extension https://github.com/nicolasff/phpredis/ is required for connecting to redis server"
 	},
 	"require-dev": {
+		"nette/nette": "2.2.*",
+		"nette/bootstrap": "2.2.*",
+
 		"nette/tester": "@dev",
 		"jakub-onderka/php-parallel-lint": "~0.6"
 	},

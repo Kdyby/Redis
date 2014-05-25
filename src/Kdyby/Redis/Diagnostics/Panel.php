@@ -19,17 +19,6 @@ use Tracy\IBarPanel;
 
 
 
-if (!class_exists('Tracy\Debugger')) {
-	class_alias('Nette\Diagnostics\Debugger', 'Tracy\Debugger');
-}
-
-if (!class_exists('Tracy\Bar')) {
-	class_alias('Nette\Diagnostics\Bar', 'Tracy\Bar');
-	class_alias('Nette\Diagnostics\BlueScreen', 'Tracy\BlueScreen');
-	class_alias('Nette\Diagnostics\Helpers', 'Tracy\Helpers');
-	class_alias('Nette\Diagnostics\IBarPanel', 'Tracy\IBarPanel');
-}
-
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
@@ -241,7 +230,7 @@ class Panel extends Nette\Object implements IBarPanel
 	 */
 	private static function getDebuggerBar()
 	{
-		return method_exists('Tracy\Debugger', 'getBar') ? Debugger::getBar() : Debugger::$bar;
+		return Debugger::getBar();
 	}
 
 
@@ -251,7 +240,7 @@ class Panel extends Nette\Object implements IBarPanel
 	 */
 	private static function getDebuggerBlueScreen()
 	{
-		return method_exists('Tracy\Debugger', 'getBlueScreen') ? Debugger::getBlueScreen() : Debugger::$blueScreen;
+		return Debugger::getBlueScreen();
 	}
 
 }
