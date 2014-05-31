@@ -2,7 +2,7 @@ Kdyby/Redis
 ======
 
 [![Build Status](https://travis-ci.org/Kdyby/Redis.svg?branch=master)](https://travis-ci.org/Kdyby/Redis)
-[![Downloads this Month](https://img.shields.io/packagist/dm/Kdyby/Redis.svg)](https://packagist.org/packages/Kdyby/Redis)
+[![Downloads this Month](https://img.shields.io/packagist/dm/kdyby/redis.svg)](https://packagist.org/packages/kdyby/redis)
 [![Latest stable](https://img.shields.io/packagist/v/kdyby/redis.svg)](https://packagist.org/packages/kdyby/redis)
 
 
