@@ -1,5 +1,9 @@
-Kdyby/Redis [![Build Status](https://secure.travis-ci.org/Kdyby/Redis.png?branch=master)](http://travis-ci.org/Kdyby/Redis)
-===========================
+Kdyby/Redis
+======
+
+[![Build Status](https://travis-ci.org/Kdyby/Redis.svg?branch=master)](https://travis-ci.org/Kdyby/Redis)
+[![Downloads this Month](https://img.shields.io/packagist/dm/Kdyby/Redis.svg)](https://packagist.org/packages/Kdyby/Redis)
+[![Latest stable](img.shields.io/packagist/v/Kdyby/Redis.svg)](https://packagist.org/packages/Kdyby/Redis)
 
 
 Requirements
