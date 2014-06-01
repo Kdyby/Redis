@@ -67,7 +67,7 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 	public function write($key, array $dp)
 	{
 		$args = self::flattenDp($dp);
-		$key = str_replace(['\\', ':', Cache::NAMESPACE_SEPARATOR], ['\\\\', '\\:', ':'], $key);
+		$key = str_replace(array('\\', ':', Cache::NAMESPACE_SEPARATOR), array('\\\\', '\\:', ':'), $key);
 
 		$result = $this->client->evalScript($this->getScript('write'), array($key), array($args));
 		if ($result !== TRUE) {
@@ -102,8 +102,8 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 			return array();
 		}
 
-		$unescape = function($key){
-			return preg_replace(["~(?<!\\\\):~", "~\\\\:~", "~\\\\\\\\~"], [Cache::NAMESPACE_SEPARATOR, ":", "\\"], $key);
+		$unescape = function($key) {
+			return preg_replace(array("~(?<!\\\\):~", "~\\\\:~", "~\\\\\\\\~"), array(Cache::NAMESPACE_SEPARATOR, ":", "\\"), $key);
 		};
 		return is_array($result) ? array_map($unescape, array_unique($result)) : NULL;
 	}
