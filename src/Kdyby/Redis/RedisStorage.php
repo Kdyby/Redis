@@ -14,7 +14,6 @@ use Kdyby;
 use Nette;
 use Nette\Caching\Cache;
 use Nette\Caching\Storages\IJournal;
-use Nette\Utils\Json;
 
 
 
@@ -23,7 +22,7 @@ use Nette\Utils\Json;
  *
  * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
+class RedisStorage extends Nette\Object implements IMultiReadStorage
 {
 
 	/** @internal cache structure */
@@ -91,6 +90,8 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 
 		return $this->getUnserializedValue($stored);
 	}
+
+
 
 
 
