@@ -89,19 +89,28 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 			return NULL;
 		}
 
-		if (empty($stored[0][self::META_SERIALIZED])) {
-			return $stored[1];
-
-		} else {
-			return @unserialize($stored[1]); // intentionally @
-		}
+		return $this->getUnserializedValue($stored);
 	}
 
 
 
+	/**
+	 * Read multiple entries from cache (using mget)
+	 *
+	 * @param array $keys
+	 * @return array
+	 */
 	public function multiRead(array $keys)
 	{
-		$this->doMultiRead($keys);
+		$values = array();
+		foreach ($this->doMultiRead($keys) as $key => $stored) {
+			if (!$this->verify($stored[0])) {
+				continue;
+			}
+			$values[$key] = $this->getUnserializedValue($stored);
+		}
+
+		return $values;
 	}
 
 
@@ -356,6 +365,22 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 	{
 		list($meta, $data) = explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + array(NULL, NULL);
 		return array(array(self::KEY => $key) + json_decode($meta, TRUE), $data);
+	}
+
+
+
+	/**
+	 * @param $stored
+	 * @return mixed
+	 */
+	private function getUnserializedValue($stored)
+	{
+		if (empty($stored[0][self::META_SERIALIZED])) {
+			return $stored[1];
+
+		} else {
+			return @unserialize($stored[1]); // intentionally @
+		}
 	}
 
 }
