@@ -154,7 +154,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 
-		$params = array_intersect_key($session, array_flip(array('weight', 'timeout', 'database', 'prefix', 'auth')));
+		$params = array_intersect_key($session, array_flip(array('weight', 'timeout', 'database', 'prefix', 'auth', 'persistent')));
 		if (substr($session['host'], 0, 1) === '/') {
 			$savePath = $session['host'];
 
