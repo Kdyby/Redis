@@ -418,12 +418,13 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 		$storage->write('A', 1, array());
 		$storage->write('B', 2, array());
-		$storage->write('C', NULL, array());
+		$storage->write('C', FALSE, array());
 
 		Assert::equal(array(
 			'A' => 1,
 			'B' => 2,
-			'C' => NULL
+			'C' => FALSE,
+			'D' => NULL
 		), $storage->multiRead(array('A', 'B', 'C', 'D')));
 	}
 

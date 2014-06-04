@@ -105,10 +105,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	{
 		$values = array();
 		foreach ($this->doMultiRead($keys) as $key => $stored) {
-			if (!$this->verify($stored[0])) {
-				continue;
-			}
-			$values[$key] = $this->getUnserializedValue($stored);
+			$values[$key] = $this->verify($stored[0]) ? $this->getUnserializedValue($stored) : NULL;
 		}
 
 		return $values;
@@ -346,10 +343,8 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 
 		$result = array();
 		foreach ($this->client->send('mget', array($formatedKeys)) as $index => $stored) {
-			if ($stored === FALSE) {
-				continue;
-			}
-			$result[$key] = $this->processStoredValue($key = $keys[$index], $stored);
+			$key = $keys[$index];
+			$result[$key] = $stored !== FALSE ? $this->processStoredValue($key, $stored) : NULL;
 		}
 
 		return $result;
