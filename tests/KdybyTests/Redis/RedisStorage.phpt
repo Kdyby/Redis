@@ -410,6 +410,24 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::true(isset($cache['key4']), 'Is cached key4?');
 	}
 
+
+
+	public function testMultiRead()
+	{
+		$storage = $this->storage;
+
+		$storage->write('A', 1, array());
+		$storage->write('B', 2, array());
+		$storage->write('C', FALSE, array());
+
+		Assert::equal(array(
+			'A' => 1,
+			'B' => 2,
+			'C' => FALSE,
+			'D' => NULL
+		), $storage->multiRead(array('A', 'B', 'C', 'D')));
+	}
+
 }
 
 \run(new RedisStorageTest());
