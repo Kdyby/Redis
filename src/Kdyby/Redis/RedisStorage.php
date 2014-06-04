@@ -88,7 +88,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 			return NULL;
 		}
 
-		return $this->getUnserializedValue($stored);
+		return self::getUnserializedValue($stored);
 	}
 
 
@@ -105,7 +105,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	{
 		$values = array();
 		foreach ($this->doMultiRead($keys) as $key => $stored) {
-			$values[$key] = $this->verify($stored[0]) ? $this->getUnserializedValue($stored) : NULL;
+			$values[$key] = $this->verify($stored[0]) ? self::getUnserializedValue($stored) : NULL;
 		}
 
 		return $values;
@@ -328,7 +328,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 			return NULL;
 		}
 
-		return $this->processStoredValue($key, $stored);
+		return self::processStoredValue($key, $stored);
 	}
 
 
@@ -344,7 +344,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 		$result = array();
 		foreach ($this->client->send('mget', array($formatedKeys)) as $index => $stored) {
 			$key = $keys[$index];
-			$result[$key] = $stored !== FALSE ? $this->processStoredValue($key, $stored) : NULL;
+			$result[$key] = $stored !== FALSE ? self::processStoredValue($key, $stored) : NULL;
 		}
 
 		return $result;
@@ -357,7 +357,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 * @param string $storedValue
 	 * @return array
 	 */
-	private function processStoredValue($key, $storedValue)
+	private static function processStoredValue($key, $storedValue)
 	{
 		list($meta, $data) = explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + array(NULL, NULL);
 		return array(array(self::KEY => $key) + json_decode($meta, TRUE), $data);
@@ -369,7 +369,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 * @param $stored
 	 * @return mixed
 	 */
-	private function getUnserializedValue($stored)
+	private static function getUnserializedValue($stored)
 	{
 		if (empty($stored[0][self::META_SERIALIZED])) {
 			return $stored[1];
