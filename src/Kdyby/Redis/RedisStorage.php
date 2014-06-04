@@ -99,9 +99,16 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 
 
 
-	/**
-	 * Verifies dependencies.
-	 *
+	public function multiRead(array $keys)
+	{
+		$this->doMultiRead($keys);
+	}
+
+
+
+    /**
+     * Verifies dependencies.
+     *
 	 * @param  array
 	 *
 	 * @return bool
@@ -314,7 +321,40 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 			return NULL;
 		}
 
-		list($meta, $data) = explode(Cache::NAMESPACE_SEPARATOR, $stored, 2) + array(NULL, NULL);
+		return $this->processStoredValue($key, $stored);
+	}
+
+
+
+	/**
+	 * @param array $keys
+	 * @return array
+	 */
+	private function doMultiRead(array $keys)
+	{
+		$formatedKeys = array_map(array($this, 'formatEntryKey'), $keys);
+
+		$result = array();
+		foreach ($this->client->send('mget', array($formatedKeys)) as $index => $stored) {
+			if ($stored === FALSE) {
+				continue;
+			}
+			$result[$key] = $this->processStoredValue($key = $keys[$index], $stored);
+		}
+
+		return $result;
+	}
+
+
+
+	/**
+	 * @param string $key
+	 * @param string $storedValue
+	 * @return array
+	 */
+	private function processStoredValue($key, $storedValue)
+	{
+		list($meta, $data) = explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + array(NULL, NULL);
 		return array(array(self::KEY => $key) + json_decode($meta, TRUE), $data);
 	}
 
