@@ -105,7 +105,10 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	{
 		$values = array();
 		foreach ($this->doMultiRead($keys) as $key => $stored) {
-			$values[$key] = $this->verify($stored[0]) ? self::getUnserializedValue($stored) : NULL;
+			$values[$key] = NULL;
+			if ($stored !== NULL && $this->verify($stored[0])) {
+				$values[$key] = self::getUnserializedValue($stored);
+			}
 		}
 
 		return $values;
