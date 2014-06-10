@@ -105,9 +105,9 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 		file_put_contents($scriptFile, $extractor->buildScript(ClassType::from($this), $repeat));
 		@chmod($scriptFile, 0755);
 
-		$runner = new Tester\Runner\Runner(new Tester\Runner\PhpExecutable('php-cgi'));
+		$runner = new Tester\Runner\Runner(new Tester\Runner\PhpExecutable('php-cgi', "-d extension=redis.so"));
 		$runner->outputHandlers[] = $messages = new ResultsCollector();
-		$runner->jobCount = $jobs;
+		$runner->threadCount = $jobs;
 		$runner->paths = array($scriptFile);
 		$runner->run();
 
