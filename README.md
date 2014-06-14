@@ -31,7 +31,7 @@ $ composer require kdyby/redis:~3.0.0
 Documentation
 ------------
 
-Lear more in the [documentation](https://github.com/Kdyby/Redis/blob/nette-2.1/docs/en/index.md).
+Learn more in the [documentation](https://github.com/Kdyby/Redis/blob/nette-2.1/docs/en/index.md).
 
 
 -----
