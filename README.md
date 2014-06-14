@@ -31,7 +31,7 @@ $ composer require kdyby/redis:~3.1
 Documentation
 ------------
 
-Lear more in the [documentation](https://github.com/Kdyby/Redis/blob/master/docs/en/index.md).
+Learn more in the [documentation](https://github.com/Kdyby/Redis/blob/master/docs/en/index.md).
 
 
 -----
