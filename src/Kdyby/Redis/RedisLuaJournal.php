@@ -67,7 +67,6 @@ class RedisLuaJournal extends Nette\Object implements Nette\Caching\Storages\IJo
 	public function write($key, array $dp)
 	{
 		$args = self::flattenDp($dp);
-		$key = str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
 
 		$result = $this->client->evalScript($this->getScript('write'), array($key), array($args));
 		if ($result !== TRUE) {
