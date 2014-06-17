@@ -201,11 +201,13 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 			$meta[self::META_CALLBACKS] = $dp[Cache::CALLBACKS];
 		}
 
+		$cacheKey = $this->formatEntryKey($key);
+
 		if (isset($dp[Cache::TAGS]) || isset($dp[Cache::PRIORITY])) {
 			if (!$this->journal) {
 				throw new Nette\InvalidStateException('CacheJournal has not been provided.');
 			}
-			$this->journal->write($key, $dp);
+			$this->journal->write($cacheKey, $dp);
 		}
 
 		if (!is_string($data) || $data === NULL) {
@@ -217,10 +219,10 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 
 		try {
 			if (isset($dp[Cache::EXPIRATION])) {
-				$this->client->send('setEX', array($this->formatEntryKey($key), $dp[Cache::EXPIRATION], $store));
+				$this->client->send('setEX', array($cacheKey, $dp[Cache::EXPIRATION], $store));
 
 			} else {
-				$this->client->send('set', array($this->formatEntryKey($key), $store));
+				$this->client->send('set', array($cacheKey, $store));
 			}
 
 			$this->unlock($key);
@@ -268,8 +270,8 @@ class RedisStorage extends Nette\Object implements Nette\Caching\IStorage
 
 		// cleaning using journal
 		if ($this->journal) {
-			foreach ($this->journal->clean($conds, $this) as $key) {
-				$this->remove($key);
+			if ($keys = $this->journal->clean($conds, $this)) {
+				$this->client->send('del', $keys);
 			}
 		}
 	}
