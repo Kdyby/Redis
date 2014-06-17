@@ -386,6 +386,21 @@ LUA;
 		return $script;
 	}
 
+
+
+	public function testNullByte()
+	{
+		$key = "prefix\x00test:\\2";
+		$this->journal->write($key, array(
+			Cache::TAGS => array("test:nullByte")
+		));
+
+		$result = $this->journal->clean(array(
+			Cache::TAGS => array("test:nullByte")
+		));
+		Assert::same(array($key), $result);
+	}
+
 }
 
 \run(new RedisJournalTest());
