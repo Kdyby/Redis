@@ -20,7 +20,7 @@ if conds["tags"] ~= nil then
 
             for i, key in pairs(found) do
                 if conds["delete-entries"] ~= nil then
-                    redis.call("del", formatStorageKey(key))
+                    redis.call("del", key)
                 else
                     entries[#entries + 1] = key
                 end
@@ -36,7 +36,7 @@ if conds["priority"] ~= nil then
 
         for i, key in pairs(found) do
             if conds["delete-entries"] ~= nil then
-                redis.call("del", formatStorageKey(key))
+                redis.call("del", key)
             else
                 entries[#entries + 1] = key
             end
