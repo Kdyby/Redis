@@ -58,7 +58,6 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	public function write($key, array $dp)
 	{
-		$key = str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
 		$this->cleanEntry($key);
 
 		$this->client->multi();
@@ -184,7 +183,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	protected function formatKey($key, $suffix = NULL)
 	{
-		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key) . ($suffix ? ':' . $suffix : NULL);
+		return self::NS_NETTE . ':' . $key . ($suffix ? ':' . $suffix : NULL);
 	}
 
 }
