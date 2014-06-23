@@ -5,11 +5,12 @@ namespace KdybyTests\Redis;
 use Kdyby;
 use Kdyby\Redis\RedisClient;
 use Kdyby\Redis\RedisClientException;
+use Nette;
 use Nette\PhpGenerator as Code;
 use Nette\Reflection\ClassType;
 use Nette\Reflection\GlobalFunction;
 use Nette\Utils\AssertionException;
-use Nette;
+use Nette\Utils\Callback;
 use Nette\Utils\Strings;
 use Tester;
 
@@ -323,7 +324,7 @@ class NamespaceUses extends Nette\Object
 							$name .= $token;
 							continue 2;
 						} elseif ($token === ';') {
-							$list = array_map(callback('trim'), explode(',', $name));
+							$list = array_map(Callback::closure('trim'), explode(',', $name));
 							$uses[$namespace] = isset($uses[$namespace]) ? array_merge($uses[$namespace], $list) : $list;
 						}
 						break;
