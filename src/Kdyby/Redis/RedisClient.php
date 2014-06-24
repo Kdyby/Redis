@@ -12,6 +12,7 @@ namespace Kdyby\Redis;
 
 use Kdyby;
 use Nette;
+use Nette\Utils\Callback;
 
 
 
@@ -404,7 +405,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		try {
-			callback($callback)->invoke($this);
+			Callback::invoke($callback, $this);
 			return $this->exec();
 
 		} catch (RedisClientException $e) {
