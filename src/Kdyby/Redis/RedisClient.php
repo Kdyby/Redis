@@ -204,7 +204,18 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	private $auth;
 
-	private static $exceptionCmd = array('evalsha' => 0);
+	/**
+	 * @var bool
+	 */
+	private $persistent;
+
+	/**
+	 * @var array
+	 */
+	private static $exceptionCmd = array(
+		'evalsha' => 0
+	);
+
 
 
 	/**
@@ -214,7 +225,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * @param int $timeout
 	 * @throws MissingExtensionException
 	 */
-	public function __construct($host = '127.0.0.1', $port = NULL, $database = 0, $timeout = 10, $auth = NULL)
+	public function __construct($host = '127.0.0.1', $port = NULL, $database = 0, $timeout = 10, $auth = NULL, $persistent = FALSE)
 	{
 		if (!extension_loaded('redis')) {
 			throw new MissingExtensionException("Please install and enable the redis extension. \nhttps://github.com/nicolasff/phpredis/");
@@ -225,6 +236,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		$this->database = $database;
 		$this->timeout = $timeout;
 		$this->auth = $auth;
+		$this->persistent = $persistent;
 	}
 
 
@@ -261,7 +273,12 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		try {
-			$this->driver->connect($this->host, $this->port, $this->timeout);
+			if ($this->persistent) {
+				$this->driver->pconnect($this->host, $this->port, $this->timeout);
+
+			} else {
+				$this->driver->connect($this->host, $this->port, $this->timeout);
+			}
 
 			if (isset($this->auth)) {
 				$this->driver->auth($this->auth);

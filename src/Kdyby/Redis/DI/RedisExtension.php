@@ -51,6 +51,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'port' => NULL,
 		'timeout' => 10,
 		'database' => 0,
+		'persistent' => FALSE,
 		'debugger' => '%debugMode%',
 		'versionCheck' => TRUE,
 		'auth' => NULL,
@@ -69,7 +70,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'port' => $config['port'],
 				'database' => $config['database'],
 				'timeout' => $config['timeout'],
-				'auth' => $config['auth']
+				'auth' => $config['auth'],
+				'persistent' => $config['persistent'],
 			))
 			->addSetup('setupLockDuration', array($config['lockDuration']));
 
@@ -122,6 +124,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'auth' => $config['auth'],
 				'native' => TRUE,
 				'lockDuration' => $config['lockDuration'],
+				'persistent' => $config['persistent'],
 			));
 
 			if ($sessionConfig['native']) {
@@ -134,7 +137,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 						'port' => $sessionConfig['port'],
 						'database' => $sessionConfig['database'],
 						'timeout' => $sessionConfig['timeout'],
-						'auth' => $sessionConfig['auth']
+						'auth' => $sessionConfig['auth'],
+						'persistent' => $config['persistent'],
 					))
 					->addSetup('setupLockDuration', array($sessionConfig['lockDuration']))
 					->setAutowired(FALSE);
@@ -160,6 +164,14 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		} else {
 			$savePath = sprintf('tcp://%s:%d', $session['host'], $session['port']);
+		}
+
+		if (!$params['persistent']) {
+			unset($params['persistent']);
+		}
+
+		if (!$params['auth']) {
+			unset($params['auth']);
 		}
 
 		$options = array(
