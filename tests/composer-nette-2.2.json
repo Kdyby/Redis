@@ -39,10 +39,5 @@
 		"classmap": [
 			"src/Kdyby/Redis/exceptions.php"
 		]
-	},
-	"extra": {
-		"branch-alias": {
-			"dev-master": "3.0-dev"
-		}
 	}
 }
