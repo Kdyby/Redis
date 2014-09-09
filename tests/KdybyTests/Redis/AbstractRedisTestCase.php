@@ -106,7 +106,8 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 		file_put_contents($scriptFile, $extractor->buildScript(ClassType::from($this), $repeat));
 		@chmod($scriptFile, 0755);
 
-		$runner = new Tester\Runner\Runner(new Tester\Runner\PhpExecutable('php-cgi', ' -c ' . Tester\Helpers::escapeArg(__DIR__ . '/../../php.ini-unix')));
+		// todo: fix for hhvm
+		$runner = new Tester\Runner\Runner(new Tester\Runner\ZendPhpInterpreter('php-cgi', ' -c ' . Tester\Helpers::escapeArg(__DIR__ . '/../../php.ini-unix')));
 		$runner->outputHandlers[] = $messages = new ResultsCollector();
 		$runner->threadCount = $threads;
 		$runner->paths = array($scriptFile);
