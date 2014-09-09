@@ -69,3 +69,13 @@ class TransactionException extends RedisClientException implements Exception
 {
 
 }
+
+
+
+/**
+ * @author Filip Procházka <filip@prochazka.su>
+ */
+class LockException extends RedisClientException
+{
+
+}
