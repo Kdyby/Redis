@@ -548,6 +548,17 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 	/**
+	 * @param ExclusiveLock $lock
+	 */
+	public function setLock(ExclusiveLock $lock)
+	{
+		$this->lock = $lock;
+		$this->lock->setClient($this);
+	}
+
+
+
+	/**
 	 * @internal
 	 * @param int $timeout
 	 */

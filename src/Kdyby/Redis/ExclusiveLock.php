@@ -9,6 +9,7 @@
  */
 
 namespace Kdyby\Redis;
+
 use Kdyby;
 use Nette;
 
@@ -44,6 +45,16 @@ class ExclusiveLock extends Nette\Object
 	public function __construct(RedisClient $redisClient)
 	{
 		$this->client = $redisClient;
+	}
+
+
+
+	/**
+	 * @param RedisClient $client
+	 */
+	public function setClient(RedisClient $client)
+	{
+		$this->client = $client;
 	}
 
 
@@ -196,15 +207,5 @@ class ExclusiveLock extends Nette\Object
 	{
 		$this->releaseAll();
 	}
-
-}
-
-
-
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class LockException extends RedisClientException
-{
 
 }
