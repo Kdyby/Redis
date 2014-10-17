@@ -283,7 +283,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		$remaining = $this->connectionAttempts;
-		$errors = [];
+		$errors = array();
 
 		do {
 			try {
