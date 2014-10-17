@@ -288,10 +288,16 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		do {
 			try {
 				if ($this->persistent) {
-					$this->driver->pconnect($this->host, $this->port, $this->timeout);
+					$isConnected = $this->driver->pconnect($this->host, $this->port, $this->timeout);
 
 				} else {
-					$this->driver->connect($this->host, $this->port, $this->timeout);
+					$isConnected = $this->driver->connect($this->host, $this->port, $this->timeout);
+				}
+
+				if (!$isConnected || !$this->driver->isConnected()) {
+					$errorMessage = $this->driver->getLastError();
+					$this->driver->clearLastError();
+					throw new ConnectionException(sprintf('Connecting to %s:%s failed: %s', $this->host, $this->port, $errorMessage));
 				}
 
 				if (isset($this->auth)) {
@@ -315,7 +321,9 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		} while(--$remaining > 0);
 
 		if ($e = reset($errors)) {
-			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
+			$errorMessage = $this->driver->getLastError();
+			$this->driver->clearLastError();
+			throw new RedisClientException($e->getMessage() . ': ' . $errorMessage, $e->getCode(), $e);
 		}
 	}
 

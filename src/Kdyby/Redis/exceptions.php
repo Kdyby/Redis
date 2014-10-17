@@ -45,6 +45,16 @@ class MissingExtensionException extends \RuntimeException implements Exception
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
+class ConnectionException extends \RuntimeException implements Exception
+{
+
+}
+
+
+
+/**
+ * @author Filip Procházka <filip@prochazka.su>
+ */
 class RedisClientException extends \RuntimeException implements Exception
 {
 
