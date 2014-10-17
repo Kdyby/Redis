@@ -297,6 +297,8 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				$this->driver->select($this->database);
 				$this->isConnected = $this->driver->isConnected();
 
+				return;
+
 			} catch (\Exception $e) {
 				$errors[] = $e;
 				if (!Debugger::$productionMode) {
