@@ -126,6 +126,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'auth' => $config['auth'],
 				'native' => TRUE,
 				'lockDuration' => $config['lockDuration'],
+				'connectionAttempts' => $config['connectionAttempts'],
 				'persistent' => $config['persistent'],
 			));
 
@@ -143,6 +144,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 						'persistent' => $config['persistent'],
 					))
 					->addSetup('setupLockDuration', array($sessionConfig['lockDuration']))
+					->addSetup('setConnectionAttempts', array($sessionConfig['connectionAttempts']))
 					->setAutowired(FALSE);
 
 				$builder->addDefinition($this->prefix('sessionHandler'))
