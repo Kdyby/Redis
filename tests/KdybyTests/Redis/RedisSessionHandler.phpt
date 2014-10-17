@@ -36,8 +36,8 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		$this->threadStress(function () use ($userId) {
 			$handler = new RedisSessionHandler(new RedisClient());
 
-			Nette\Diagnostics\Debugger::$logDirectory = __DIR__;
-			Nette\Diagnostics\Debugger::log(getmypid());
+			\Tracy\Debugger::$logDirectory = __DIR__;
+			\Tracy\Debugger::log(getmypid());
 
 			// read
 			$handler->open('path', 'session_id');
