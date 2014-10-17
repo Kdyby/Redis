@@ -41,6 +41,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'timeout' => 10,
 		'database' => 0,
 		'persistent' => FALSE,
+		'connectionAttempts' => 1,
 		'debugger' => '%debugMode%',
 		'versionCheck' => TRUE,
 		'auth' => NULL,
@@ -62,7 +63,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				'auth' => $config['auth'],
 				'persistent' => $config['persistent'],
 			))
-			->addSetup('setupLockDuration', array($config['lockDuration']));
+			->addSetup('setupLockDuration', array($config['lockDuration']))
+			->addSetup('setConnectionAttempts', array($config['connectionAttempts']));
 
 		$builder->addDefinition($this->prefix('driver'))
 			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')

@@ -13,6 +13,7 @@ namespace Kdyby\Redis;
 use Kdyby;
 use Nette;
 use Nette\Utils\Callback;
+use Tracy\Debugger;
 
 
 
@@ -170,6 +171,11 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	private $isConnected = FALSE;
 
 	/**
+	 * @var int
+	 */
+	private $connectionAttempts = 1;
+
+	/**
 	 * @var Diagnostics\Panel
 	 */
 	private $panel;
@@ -272,22 +278,37 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			return;
 		}
 
-		try {
-			if ($this->persistent) {
-				$this->driver->pconnect($this->host, $this->port, $this->timeout);
+		$remaining = $this->connectionAttempts;
+		$errors = [];
 
-			} else {
-				$this->driver->connect($this->host, $this->port, $this->timeout);
+		do {
+			try {
+				if ($this->persistent) {
+					$this->driver->pconnect($this->host, $this->port, $this->timeout);
+
+				} else {
+					$this->driver->connect($this->host, $this->port, $this->timeout);
+				}
+
+				if (isset($this->auth)) {
+					$this->driver->auth($this->auth);
+				}
+
+				$this->driver->select($this->database);
+				$this->isConnected = $this->driver->isConnected();
+
+			} catch (\Exception $e) {
+				$errors[] = $e;
+				if (!Debugger::$productionMode) {
+					break;
+				}
+
+				usleep(10 * $this->connectionAttempts);
 			}
 
-			if (isset($this->auth)) {
-				$this->driver->auth($this->auth);
-			}
+		} while(--$remaining > 0);
 
-			$this->driver->select($this->database);
-			$this->isConnected = $this->driver->isConnected();
-
-		} catch (\Exception $e) {
+		if ($e = reset($errors)) {
 			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
 		}
 	}
@@ -304,6 +325,18 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			$this->driver->close();
 			$this->isConnected = FALSE;
 		}
+	}
+
+
+
+	/**
+	 * @param int $attempts
+	 * @return RedisClient
+	 */
+	public function setConnectionAttempts($attempts)
+	{
+		$this->connectionAttempts = max((int) $attempts, 1);
+		return $this;
 	}
 
 
