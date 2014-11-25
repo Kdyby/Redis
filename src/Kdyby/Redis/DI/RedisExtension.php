@@ -47,6 +47,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'journal' => FALSE,
 		'storage' => FALSE,
 		'session' => FALSE,
+		'clients' => array(),
 	);
 
 	/**
@@ -68,18 +69,18 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	/**
 	 * @var array
 	 */
-	private $checkClients = array();
+	private $configuredClients = array();
 
 
 
 	public function loadConfiguration()
 	{
-		$this->checkClients = array();
+		$this->configuredClients = array();
 
 		$builder = $this->getContainerBuilder();
 		$config = self::fixClientConfig($this->getConfig($this->defaults + $this->clientDefaults));
 
-		$this->buildClient('client', $config);
+		$this->buildClient(NULL, $config);
 
 		$builder->addDefinition($this->prefix('driver'))
 			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
@@ -88,6 +89,10 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$this->loadJournal($config);
 		$this->loadStorage($config);
 		$this->loadSession($config, $builder);
+
+		foreach ($config['clients'] as $name => $clientConfig) {
+			$this->buildClient($name, $clientConfig);
+		}
 	}
 
 
@@ -101,10 +106,16 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 
-		$config = Config\Helpers::merge($config, $builder->expand($this->clientDefaults));
-		$config = self::fixClientConfig($config);
+		$defaultConfig = $builder->expand($this->clientDefaults);
+		if ($parentName = Config\Helpers::takeParent($config)) {
+			Nette\Utils\Validators::assertField($this->configuredClients, $parentName, 'array', "parent configuration '%', are you sure it's defined?");
+			$defaultConfig = Config\Helpers::merge($this->configuredClients[$parentName], $defaultConfig);
+		}
 
-		$client = $builder->addDefinition($clientName = $this->prefix($name))
+		$config = Config\Helpers::merge($config, $defaultConfig);
+		$config = array_intersect_key(self::fixClientConfig($config), $this->clientDefaults);
+
+		$client = $builder->addDefinition($clientName = $this->prefix(($name ? $name . '_' : '') . 'client'))
 			->setClass('Kdyby\Redis\RedisClient', array(
 				'host' => $config['host'],
 				'port' => $config['port'],
@@ -117,24 +128,28 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		if (empty($builder->parameters[$this->name]['defaultClient'])) {
 			$builder->parameters[$this->name]['defaultClient'] = $clientName;
 
+			$this->configuredClients['default'] = $config;
+			$builder->addDefinition($this->prefix('default_client'))
+				->setClass('Kdyby\Redis\RedisClient')
+				->setFactory('@' . $clientName)
+				->setAutowired(FALSE);
+
 		} else {
 			$client->setAutowired(FALSE);
 		}
 
-		if ($config['versionCheck']) {
-			$this->checkClients[] = $config;
-		}
+		$this->configuredClients[$name] = $config;
 
 		$client->addSetup('setupLockDuration', array($config['lockDuration']));
 		$client->addSetup('setConnectionAttempts', array($config['connectionAttempts']));
 
 		if (array_key_exists('debugger', $config) && $config['debugger']) {
-			$builder->addDefinition($this->prefix($panelName = $name . '.panel'))
+			$builder->addDefinition($panelName = $clientName . '.panel')
 				->setClass('Kdyby\Redis\Diagnostics\Panel')
 				->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
 				->addSetup('$renderPanel', array($config['debugger'] !== self::PANEL_COUNT_MODE));
 
-			$client->addSetup('setPanel', array($this->prefix('@' . $panelName)));
+			$client->addSetup('setPanel', array('@' . $panelName));
 		}
 
 		return $client;
@@ -212,7 +227,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			$this->loadNativeSessionHandler($sessionConfig);
 
 		} else {
-			$this->buildClient('sessionHandler_client', array('debugger' => FALSE) + $sessionConfig);
+			$this->buildClient('sessionHandler', array('debugger' => FALSE) + $sessionConfig);
 
 			$builder->addDefinition($this->prefix('sessionHandler'))
 				->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
@@ -270,7 +285,11 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	 */
 	public function beforeCompile()
 	{
-		foreach ($this->checkClients as $config) {
+		foreach ($this->configuredClients as $config) {
+			if (!$config['versionCheck']) {
+				continue;
+			}
+
 			$client = new RedisClient($config['host'], $config['port'], $config['database'], $config['timeout'], $config['auth']);
 			$client->assertVersion();
 			$client->close();
