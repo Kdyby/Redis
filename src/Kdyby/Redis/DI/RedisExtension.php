@@ -15,8 +15,6 @@ use Kdyby\Redis\RedisClient;
 use Nette;
 use Nette\DI\Compiler;
 use Nette\DI\Config;
-use Nette\DI\ContainerBuilder;
-use Nette\Utils\Validators;
 
 
 
