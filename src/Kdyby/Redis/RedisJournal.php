@@ -31,6 +31,9 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 		TAGS = 'tags',
 		KEYS = 'keys';
 
+	/** @internal batch delete size */
+	const BATCH_SIZE = 8000;
+
 	/**
 	 * @var RedisClient
 	 */
@@ -108,34 +111,86 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 * Cleans entries from journal.
 	 *
 	 * @param  array  $conds
+	 * @param \Nette\Caching\IStorage $storage
 	 *
 	 * @return array of removed items or NULL when performing a full cleanup
 	 */
-	public function clean(array $conds)
+	public function clean(array $conds, Nette\Caching\IStorage $storage = NULL)
 	{
 		if (!empty($conds[Cache::ALL])) {
 			$all = $this->client->keys(self::NS_NETTE . ':*');
+			if ($storage instanceof RedisStorage) {
+				$all = array_merge($all, $this->client->keys(RedisStorage::NS_NETTE . ':*'));
+			}
 
-			$this->client->multi();
 			call_user_func_array(array($this->client, 'del'), $all);
-			$this->client->exec();
 			return NULL;
 		}
 
 		$entries = array();
 		if (!empty($conds[Cache::TAGS])) {
+			$removingTagKeys = array();
 			foreach ((array)$conds[Cache::TAGS] as $tag) {
-				$this->cleanEntry($found = $this->tagEntries($tag));
+				$found = $this->tagEntries($tag);
+				$removingTagKeys[] = $this->formatKey($tag, self::KEYS);
 				$entries = array_merge($entries, $found);
+			}
+			if ($removingTagKeys) {
+				call_user_func_array(array($this->client, 'del'), $removingTagKeys);
 			}
 		}
 
 		if (isset($conds[Cache::PRIORITY])) {
-			$this->cleanEntry($found = $this->priorityEntries($conds[Cache::PRIORITY]));
+			$found = $this->priorityEntries($conds[Cache::PRIORITY]);
+			call_user_func_array(array($this->client, 'zRemRangeByScore'), array($this->formatKey(self::PRIORITY), 0, (int)$conds[Cache::PRIORITY]));
 			$entries = array_merge($entries, $found);
 		}
 
-		return array_unique($entries);
+		$entries = array_unique($entries);
+
+		$removingKeys = array();
+		$removingKeyTags = array();
+		$removingKeyPriorities = array();
+		foreach ($entries as $key) {
+			if ($storage instanceof RedisStorage) {
+				$removingKeys[] = $key;
+			}
+			$removingKeyTags[] = $this->formatKey($key, self::TAGS);
+			$removingKeyPriorities[] = $this->formatKey($key, self::PRIORITY);
+			if (count($removingKeyTags) >= self::BATCH_SIZE) {
+				$this->cleanBatchData($removingKeys, $removingKeyPriorities, $removingKeyTags, $entries);
+				$removingKeys = array();
+				$removingKeyTags = array();
+				$removingKeyPriorities = array();
+			}
+		}
+
+		$this->cleanBatchData($removingKeys, $removingKeyPriorities, $removingKeyTags, $entries);
+
+		return $storage instanceof RedisStorage ? array() : $entries;
+	}
+
+
+
+	private function cleanBatchData(array $removingKeys, array $removingKeyPriorities, array $removingKeyTags, array $keys)
+	{
+		if ($removingKeyTags) {
+			if ($keys) {
+				$affectedTags = call_user_func_array(array($this->client, 'sunion'), array($removingKeyTags));
+				foreach ($affectedTags as $tag) {
+					if ($tag) {
+						call_user_func_array(array($this->client, 'sRem'), array_merge(array($this->formatKey($tag, self::KEYS)), $keys));
+					}
+				}
+			}
+			call_user_func_array(array($this->client, 'del'), $removingKeyTags);
+		}
+		if ($removingKeyPriorities) {
+			call_user_func_array(array($this->client, 'del'), $removingKeyPriorities);
+		}
+		if ($removingKeys) {
+			call_user_func_array(array($this->client, 'del'), $removingKeys);
+		}
 	}
 
 

@@ -2,11 +2,10 @@
 local conds = cjson.decode(ARGV[1])
 
 if conds["all"] ~= nil then
-    -- redis.call('multi')
-    for i, value in pairs(redis.call('keys', "Nette.Journal:*")) do
-        redis.call('del', value)
+    batchDelete(redis.call('keys', "Nette.Journal:*"))
+    if conds["delete-entries"] ~= nil then
+        batchDelete(redis.call('keys', "Nette.Storage:*"))
     end
-    -- redis.call('exec')
 
     return redis.status_reply("Ok")
 end

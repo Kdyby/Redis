@@ -284,7 +284,7 @@ class RedisJournalTest extends AbstractRedisTestCase
 		Assert::null($result);
 
 		$result2 = $this->journal->clean(array(Cache::TAGS => 'test:all'));
-		Assert::true(empty($result2));
+		Assert::equal(array(), $result2);
 	}
 
 
@@ -362,26 +362,7 @@ LUA;
 	private function cacheGeneratorScripts()
 	{
 		$script = file_get_contents(__DIR__ . '/../../../src/Kdyby/Redis/scripts/common.lua');
-		$script .= <<<LUA
-local range = function (from, to, step)
-	step = step or 1
-	local f =
-		step > 0 and
-			function(_, lastvalue)
-				local nextvalue = lastvalue + step
-				if nextvalue <= to then return nextvalue end
-			end or
-		step < 0 and
-			function(_, lastvalue)
-				local nextvalue = lastvalue + step
-				if nextvalue >= to then return nextvalue end
-			end or
-			function(_, lastvalue) return lastvalue end
-	return f, nil, from - step
-end
 
-
-LUA;
 		return $script;
 	}
 
