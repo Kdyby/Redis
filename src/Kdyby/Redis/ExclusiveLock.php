@@ -85,6 +85,7 @@ class ExclusiveLock extends Nette\Object
 		$lockKey = $this->formatLock($key);
 		$maxAttempts = 10;
 		do {
+			$sleepTime = 5000;
 			do {
 				if ($this->client->setNX($lockKey, $timeout = $this->calculateTimeout())) {
 					$this->keys[$key] = $timeout;
@@ -92,7 +93,8 @@ class ExclusiveLock extends Nette\Object
 				}
 
 				$lockExpiration = $this->client->get($lockKey);
-			} while (empty($lockExpiration) || ($lockExpiration >= time() && !usleep(10000)));
+				$sleepTime *= 2;
+			} while (empty($lockExpiration) || ($lockExpiration >= time() && $sleepTime <= 1000000 && !usleep($sleepTime)));
 
 			$oldExpiration = $this->client->getSet($lockKey, $timeout = $this->calculateTimeout());
 			if ($oldExpiration === $lockExpiration) {
