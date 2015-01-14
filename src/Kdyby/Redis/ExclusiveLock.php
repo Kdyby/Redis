@@ -111,7 +111,6 @@ class ExclusiveLock extends Nette\Object
 
 	/**
 	 * @param string $key
-	 * @param $key
 	 */
 	public function release($key)
 	{

@@ -229,6 +229,8 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * @param int $port
 	 * @param int $database
 	 * @param int $timeout
+	 * @param string $auth
+	 * @param bool $persistent
 	 * @throws MissingExtensionException
 	 */
 	public function __construct($host = '127.0.0.1', $port = NULL, $database = 0, $timeout = 10, $auth = NULL, $persistent = FALSE)
