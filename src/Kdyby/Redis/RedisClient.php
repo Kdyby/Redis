@@ -164,6 +164,8 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	/** @deprecated */
 	const WITH_SCORES = 'WITHSCORES';
 
+	const DEFAULT_PORT = 6379;
+
 	/**
 	 * @var Driver\PhpRedisDriver
 	 */
@@ -299,7 +301,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				if (!$isConnected || !$this->driver->isConnected()) {
 					$errorMessage = $this->driver->getLastError();
 					$this->driver->clearLastError();
-					throw new ConnectionException(sprintf('Connecting to %s:%s failed: %s', $this->host, $this->port, $errorMessage));
+					throw new ConnectionException(sprintf('Connecting to %s failed: %s', $this->formatServerAddress(), $errorMessage));
 				}
 
 				if (isset($this->auth)) {
@@ -325,7 +327,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		if ($e = reset($errors)) {
 			$errorMessage = $this->driver->getLastError();
 			$this->driver->clearLastError();
-			throw new RedisClientException($e->getMessage() . ': ' . $errorMessage, $e->getCode(), $e);
+			throw new RedisClientException(sprintf('Client of %s; %s; %s', $this->formatServerAddress(), $e->getMessage(), $errorMessage), $e->getCode(), $e);
 		}
 	}
 
@@ -417,7 +419,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			if ($this->panel) {
 				$this->panel->error($e);
 			}
-			throw new RedisClientException($e->getMessage(), $e->getCode(), $e);
+			throw new RedisClientException(sprintf('Client of %s; %s', $this->formatServerAddress(), $e->getMessage()), $e->getCode(), $e);
 		}
 
 		return $result;
@@ -499,7 +501,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	{
 		$response = $this->send('exec');
 		if ($response === NULL || $response === FALSE) {
-			throw new TransactionException("Transaction was aborted");
+			throw new TransactionException(sprintf('Client of %s; Transaction was aborted', $this->formatServerAddress()));
 		}
 		return $response;
 	}
@@ -662,6 +664,17 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				"Minimum required version for this Redis client is 2.6.0, your version is $version. Please upgrade your software."
 			);
 		}
+	}
+
+
+
+	private function formatServerAddress()
+	{
+		if (stripos($this->host, '/') === 0) { // socket
+			return $this->host;
+		}
+
+		return sprintf('tcp://%s:%s', $this->host, $this->port ?: self::DEFAULT_PORT);
 	}
 
 
