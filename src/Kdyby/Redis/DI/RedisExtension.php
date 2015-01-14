@@ -291,7 +291,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			$config['port'] = NULL; // sockets have no ports
 
 		} elseif (!$config['port']) {
-			$config['port'] = 6379;
+			$config['port'] = RedisClient::DEFAULT_PORT;
 		}
 
 		return $config;
