@@ -332,11 +332,17 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function close()
 	{
-		if ($this->driver && $this->driver->isConnected()) {
-			$this->getLock()->releaseAll();
-			$this->driver->close();
-			$this->isConnected = FALSE;
+		try {
+			if ($this->driver && $this->driver->isConnected()) {
+				$this->getLock()->releaseAll();
+				$this->driver->close();
+			}
+
+		} catch (\RedisException $e) {
+			// doesn't matter, it's closing anyway
 		}
+
+		$this->isConnected = FALSE;
 	}
 
 
