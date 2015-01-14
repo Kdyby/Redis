@@ -315,7 +315,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 					break;
 				}
 
-				usleep(10 * $this->connectionAttempts);
+				usleep(1000 * $this->connectionAttempts);
 			}
 
 		} while(--$remaining > 0);
