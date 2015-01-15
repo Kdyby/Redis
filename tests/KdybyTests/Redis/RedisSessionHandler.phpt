@@ -48,6 +48,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 
 			// modify
 			$session['counter'] += 1;
+			usleep(100000);
 
 			// write
 			$handler->write($userId, serialize($session));
