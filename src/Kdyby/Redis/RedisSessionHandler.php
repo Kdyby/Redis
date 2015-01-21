@@ -78,18 +78,10 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 			$this->ssIds[$key] = $this->client->lock($key);
 			return (string) $this->client->get($key);
 
-		} catch (LockException $e) {
-			if ($e->getCode() === LockException::ACQUIRE_TIMEOUT) {
-				throw $e;
-			}
-
 		} catch (Exception $e) {
+			Debugger::log($e, 'redis-session');
+			return FALSE;
 		}
-
-		Debugger::log($e->getMessage(), 'redis-session');
-		trigger_error($e->getMessage(), E_USER_WARNING);
-
-		return FALSE;
 	}
 
 
@@ -108,17 +100,10 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 			$this->client->setex($key, ini_get("session.gc_maxlifetime"), $data);
 			return TRUE;
 
-		} catch (LockException $e) {
-			if ($e->getCode() === LockException::ACQUIRE_TIMEOUT) {
-				throw $e;
-			}
-
 		} catch (Exception $e) {
+			Debugger::log($e, 'redis-session');
+			return FALSE;
 		}
-
-		Debugger::log($e->getMessage(), 'redis-session');
-		trigger_error($e->getMessage(), E_USER_WARNING);
-		return FALSE;
 	}
 
 
@@ -139,18 +124,10 @@ class RedisSessionHandler extends Nette\Object implements Nette\Http\ISessionSto
 			unset($this->ssIds[$key]);
 			return TRUE;
 
-		} catch (LockException $e) {
-			if ($e->getCode() === LockException::ACQUIRE_TIMEOUT) {
-				throw $e;
-			}
-
 		} catch (Exception $e) {
+			Debugger::log($e, 'redis-session');
+			return FALSE;
 		}
-
-		Debugger::log($e->getMessage(), 'redis-session');
-		trigger_error($e->getMessage(), E_USER_WARNING);
-
-		return FALSE;
 	}
 
 
