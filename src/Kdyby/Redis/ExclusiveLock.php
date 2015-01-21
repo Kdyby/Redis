@@ -33,9 +33,19 @@ class ExclusiveLock extends Nette\Object
 	private $keys = array();
 
 	/**
+	 * Duration of the lock, this is time in seconds, how long any other process can't work with the row.
+	 *
 	 * @var int
 	 */
 	public $duration = 15;
+
+	/**
+	 * When there are too many requests trying to acquire the lock, you can set this timeout,
+	 * to make them manually die in case they would be taking too long and the user would lock himself out.
+	 *
+	 * @var bool
+	 */
+	public $acquireTimeout = FALSE;
 
 
 
@@ -82,6 +92,8 @@ class ExclusiveLock extends Nette\Object
 			return $this->increaseLockTimeout($key);
 		}
 
+		$start = microtime(TRUE);
+
 		$lockKey = $this->formatLock($key);
 		$maxAttempts = 10;
 		do {
@@ -90,6 +102,10 @@ class ExclusiveLock extends Nette\Object
 				if ($this->client->setNX($lockKey, $timeout = $this->calculateTimeout())) {
 					$this->keys[$key] = $timeout;
 					return TRUE;
+				}
+
+				if ($this->acquireTimeout !== FALSE && (microtime(TRUE) - $start) >= $this->acquireTimeout) {
+					throw LockException::acquireTimeout();
 				}
 
 				$lockExpiration = $this->client->get($lockKey);
@@ -105,7 +121,7 @@ class ExclusiveLock extends Nette\Object
 
 		} while (--$maxAttempts > 0);
 
-		throw new LockException("Lock couldn't be acquired. Concurrency is too high.");
+		throw LockException::highConcurrency();
 	}
 
 
@@ -142,12 +158,12 @@ class ExclusiveLock extends Nette\Object
 		}
 
 		if ($this->keys[$key] <= time()) {
-			throw new LockException("Process ran too long. Increase lock duration, or extend lock regularly.");
+			throw LockException::durabilityTimedOut();
 		}
 
 		$oldTimeout = $this->client->getSet($this->formatLock($key), $timeout = $this->calculateTimeout());
 		if ((int)$oldTimeout !== (int)$this->keys[$key]) {
-			throw new LockException("Some rude client have messed up the lock duration.");
+			throw LockException::invalidDuration();
 		}
 		$this->keys[$key] = $timeout;
 		return TRUE;

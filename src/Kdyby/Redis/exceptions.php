@@ -88,4 +88,47 @@ class TransactionException extends RedisClientException implements Exception
 class LockException extends RedisClientException
 {
 
+	const PROCESS_TIMEOUT = 1;
+	const ACQUIRE_TIMEOUT = 2;
+
+
+
+	/**
+	 * @return LockException
+	 */
+	public static function highConcurrency()
+	{
+		return new static("Lock couldn't be acquired. Concurrency is way too high. I died of old age.", self::PROCESS_TIMEOUT);
+	}
+
+
+
+	/**
+	 * @return LockException
+	 */
+	public static function acquireTimeout()
+	{
+		return new static("Lock couldn't be acquired. The locking mechanism is giving up. You should kill the request.", self::ACQUIRE_TIMEOUT);
+	}
+
+
+
+	/**
+	 * @return LockException
+	 */
+	public static function durabilityTimedOut()
+	{
+		return new static("Process ran too long. Increase lock duration, or extend lock regularly.");
+	}
+
+
+
+	/**
+	 * @return LockException
+	 */
+	public static function invalidDuration()
+	{
+		return new static("Some rude client have messed up the lock duration.");
+	}
+
 }
