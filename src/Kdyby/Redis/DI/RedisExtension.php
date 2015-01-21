@@ -223,12 +223,12 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		));
 		$sessionConfig = self::fixClientConfig($sessionConfig);
 
+		$this->buildClient('sessionHandler', array('debugger' => FALSE) + $sessionConfig);
+
 		if ($sessionConfig['native']) {
 			$this->loadNativeSessionHandler($sessionConfig);
 
 		} else {
-			$this->buildClient('sessionHandler', array('debugger' => FALSE) + $sessionConfig);
-
 			$builder->addDefinition($this->prefix('sessionHandler'))
 				->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
 
