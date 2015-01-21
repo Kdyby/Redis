@@ -62,6 +62,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'persistent' => FALSE,
 		'connectionAttempts' => 1,
 		'lockDuration' => 15,
+		'lockAcquireTimeout' => FALSE,
 		'debugger' => '%debugMode%',
 		'versionCheck' => TRUE,
 	);
@@ -140,7 +141,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$this->configuredClients[$name] = $config;
 
-		$client->addSetup('setupLockDuration', array($config['lockDuration']));
+		$client->addSetup('setupLockDuration', array($config['lockDuration'], $config['lockAcquireTimeout']));
 		$client->addSetup('setConnectionAttempts', array($config['connectionAttempts']));
 
 		if (array_key_exists('debugger', $config) && $config['debugger']) {
@@ -218,6 +219,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			'auth' => $config['auth'],
 			'native' => TRUE,
 			'lockDuration' => $config['lockDuration'],
+			'lockAcquireTimeout' => $config['lockAcquireTimeout'],
 			'connectionAttempts' => $config['connectionAttempts'],
 			'persistent' => $config['persistent'],
 		));

@@ -613,6 +613,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 		if ($this->lock) {
 			$lock->duration = $this->lock->duration;
+			$lock->acquireTimeout = $this->lock->acquireTimeout;
 		}
 
 		$this->lock = $lock;
@@ -622,11 +623,13 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 	/**
 	 * @internal
-	 * @param int $timeout
+	 * @param int $duration
+	 * @param int|boolean $timeout
 	 */
-	public function setupLockDuration($timeout)
+	public function setupLockDuration($duration, $timeout = FALSE)
 	{
-		$this->getLock()->duration = abs((int)$timeout);
+		$this->getLock()->duration = abs((int)$duration);
+		$this->getLock()->acquireTimeout = abs((int) $timeout) ?: FALSE;
 	}
 
 
