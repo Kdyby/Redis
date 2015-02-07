@@ -13,6 +13,7 @@ use Nette\Utils\AssertionException;
 use Nette\Utils\Callback;
 use Nette\Utils\Strings;
 use Tester;
+use Tracy;
 
 
 
@@ -96,11 +97,9 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 	 */
 	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30)
 	{
-		$scriptFile = TEMP_DIR . '/scripts/' . md5(get_class($this)) . '.php';
-		if (!is_dir($dir = dirname($scriptFile))) {
-			@umask(0);
-			mkdir($dir, 0777);
-		}
+		$runTest = Tracy\Helpers::findTrace(debug_backtrace(), 'Tester\TestCase::runTest') ?: array('args' => array(0 => 'test'));
+		$scriptFile = TEMP_DIR . '/scripts/' . str_replace('%5C', '_', urlencode(get_class($this))) . '.' . urlencode($runTest['args'][0]) . '.php';
+		Nette\Utils\FileSystem::createDir($dir = dirname($scriptFile));
 
 		$extractor = new ClosureExtractor($closure);
 		file_put_contents($scriptFile, $extractor->buildScript(ClassType::from($this), $repeat));
