@@ -190,14 +190,10 @@ interface IRedisDriver
 	 */
 	function select($database);
 
-
-
 	/**
 	 * Disconnects from the Redis instance, except when pconnect is used.
 	 */
 	function close();
-
-
 
 	/**
 	 * The last error message (if any)
@@ -206,14 +202,10 @@ interface IRedisDriver
 	 */
 	function getLastError();
 
-
-
 	/**
 	 * Clear the last error message
 	 */
 	function clearLastError();
-
-
 
 	/**
 	 * Execute the Redis SCRIPT command to perform various operations on the scripting subsystem.
@@ -224,8 +216,6 @@ interface IRedisDriver
 	 */
 	function script($command, $script = NULL);
 
-
-
 	/**
 	 * @param string $scriptSha The sha1 encoded hash of the script you want to run.
 	 * @param array $argsArray Arguments to pass to the LUA script.
@@ -235,4 +225,3 @@ interface IRedisDriver
 	function evalsha($scriptSha, $argsArray = array(), $numKeys = 0);
 
 }
-

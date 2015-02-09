@@ -116,9 +116,9 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 
 
 
-    /**
-     * Verifies dependencies.
-     *
+	/**
+	 * Verifies dependencies.
+	 *
 	 * @param  array
 	 *
 	 * @return bool
