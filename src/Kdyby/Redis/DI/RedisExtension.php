@@ -222,7 +222,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 				->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
 
 			$builder->getDefinition('session')
-				->addSetup('setStorage', array($this->prefix('@sessionHandler')));
+				->addSetup('setHandler', array($this->prefix('@sessionHandler')));
 		}
 	}
 

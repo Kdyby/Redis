@@ -60,6 +60,9 @@
 			"src/Kdyby/Redis/exceptions.php"
 		]
 	},
+	"autoload-dev": {
+		"classmap": ["tests/KdybyTests/Redis"]
+	},
 	"extra": {
 		"branch-alias": {
 			"dev-master": "3.2-dev"

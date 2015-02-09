@@ -94,8 +94,10 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 	 * @param callable $closure
 	 * @param int $repeat
 	 * @param int $threads
+	 * @param bool $outputFailures
+	 * @return array
 	 */
-	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30)
+	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30, $outputFailures = TRUE)
 	{
 		$runTest = Tracy\Helpers::findTrace(debug_backtrace(), 'Tester\TestCase::runTest') ?: array('args' => array(0 => 'test'));
 		$scriptFile = TEMP_DIR . '/scripts/' . str_replace('%5C', '_', urlencode(get_class($this))) . '.' . urlencode($runTest['args'][0]) . '.php';
@@ -112,13 +114,13 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 		$runner->paths = array($scriptFile);
 		$runner->run();
 
-		$result = $runner->getResults();
-
-		foreach ($messages->results as $result) {
-			echo 'FAILURE ' . $result[0] . "\n" . $result[1] . "\n";
+		if ($outputFailures) {
+			foreach ($messages->results as $process) {
+				echo 'FAILURE ' . $process[0] . "\n" . $process[1] . "\n";
+			}
 		}
 
-		Tester\Assert::equal($repeat, $result[Tester\Runner\Runner::PASSED]);
+		return $runner->getResults();
 	}
 
 }
@@ -204,7 +206,8 @@ DOC;
 
 		// bootstrap
 		$code .= Code\Helpers::formatArgs('require_once ?;', array(__DIR__ . '/../bootstrap.php')) . "\n";
-		$code .= '\Tester\Environment::$checkAssertions = FALSE;' . "\n\n\n";
+		$code .= '\Tester\Environment::$checkAssertions = FALSE;' . "\n";
+		$code .= Code\Helpers::formatArgs('\Tracy\Debugger::$logDirectory = ?;', array(TEMP_DIR)) . "\n\n\n";
 
 		// script
 		$code .= Code\Helpers::formatArgs('extract(?);', array($this->closure->getStaticVariables())) . "\n\n";
@@ -523,6 +526,117 @@ class FunctionCode extends Nette\Object
 		}
 
 		return $functions;
+	}
+
+}
+
+
+class SessionHandlerDecorator implements \SessionHandlerInterface
+{
+
+	/**
+	 * @var array
+	 */
+	public $methods = array();
+
+	/**
+	 * @var bool
+	 */
+	public $log = FALSE;
+
+	/**
+	 * @var \SessionHandlerInterface
+	 */
+	private $handler;
+
+
+
+	public function __construct(\SessionHandlerInterface $handler)
+	{
+		$this->handler = $handler;
+	}
+
+
+
+	private function log($msg)
+	{
+		if (!$this->log) {
+			return;
+		}
+
+		file_put_contents(dirname(TEMP_DIR) . '/session.log', sprintf('[%s] [%s]: %s', date('Y-m-d H:i:s'), str_pad(getmypid(), 6, '0', STR_PAD_LEFT), $msg) . "\n", FILE_APPEND);
+	}
+
+
+
+	public function open($save_path, $session_id)
+	{
+		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		return $this->handler->open($save_path, $session_id);
+	}
+
+
+
+	public function close()
+	{
+		$this->log(__FUNCTION__);
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		return $this->handler->close();
+	}
+
+
+
+	public function read($session_id)
+	{
+		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		try {
+			return $this->handler->read($session_id);
+
+		} catch (\Exception $e) {
+			$this->log(sprintf('%s: %s', __FUNCTION__, $e->getMessage()));
+			throw $e;
+		}
+	}
+
+
+
+	public function destroy($session_id)
+	{
+		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		try {
+			return $this->handler->destroy($session_id);
+
+		} catch (\Exception $e) {
+			$this->log(sprintf('%s: %s', __FUNCTION__, $e->getMessage()));
+			throw $e;
+		}
+	}
+
+
+
+	public function write($session_id, $session_data)
+	{
+		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		try {
+			return $this->handler->write($session_id, $session_data);
+
+		} catch (\Exception $e) {
+			$this->log(sprintf('%s: %s', __FUNCTION__, $e->getMessage()));
+			throw $e;
+		}
+	}
+
+
+
+	public function gc($maxlifetime)
+	{
+		$this->log(__FUNCTION__);
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		return $this->handler->gc($maxlifetime);
 	}
 
 }
