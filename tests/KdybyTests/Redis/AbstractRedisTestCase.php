@@ -12,7 +12,7 @@ use Nette\Utils\AssertionException;
 use Nette;
 use Nette\Utils\Strings;
 use Tester;
-use Tracy;
+use Nette\Diagnostics as Tracy;
 
 
 
