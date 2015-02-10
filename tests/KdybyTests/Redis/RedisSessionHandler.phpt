@@ -27,6 +27,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 {
 
 	/**
+	 * @dataProvider dataRepeatMe
 	 * @group concurrency
 	 */
 	public function testConsistency()
@@ -211,6 +212,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 
 
 	/**
+	 * @dataProvider dataRepeatMe
 	 * @group concurrency
 	 */
 	public function testConsistency_Integration()
@@ -275,6 +277,16 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		$session->close(); // unlocking drops the key
 
 		Assert::count(1, $this->client->keys('Nette.Session:*'));
+	}
+
+
+
+	/**
+	 * @return array
+	 */
+	public function dataRepeatMe()
+	{
+		return array_fill(0, 10, array());
 	}
 
 
