@@ -11,6 +11,7 @@ use Nette\Reflection\ClassType;
 use Nette\Reflection\GlobalFunction;
 use Nette\Utils\AssertionException;
 use Nette\Utils\Callback;
+use Nette\Utils\FileSystem;
 use Nette\Utils\Strings;
 use Tester;
 use Tracy;
@@ -94,31 +95,29 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 	 * @param callable $closure
 	 * @param int $repeat
 	 * @param int $threads
+	 * @return array
 	 */
 	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30)
 	{
 		$runTest = Tracy\Helpers::findTrace(debug_backtrace(), 'Tester\TestCase::runTest') ?: array('args' => array(0 => 'test'));
 		$scriptFile = TEMP_DIR . '/scripts/' . str_replace('%5C', '_', urlencode(get_class($this))) . '.' . urlencode($runTest['args'][0]) . '.php';
-		Nette\Utils\FileSystem::createDir($dir = dirname($scriptFile));
+		FileSystem::createDir($dir = dirname($scriptFile));
 
 		$extractor = new ClosureExtractor($closure);
 		file_put_contents($scriptFile, $extractor->buildScript(ClassType::from($this), $repeat));
 		@chmod($scriptFile, 0755);
 
+		$testRefl = new \ReflectionClass($this);
+		$collector = new ResultsCollector(dirname($testRefl->getFileName()) . '/output', $runTest['args'][0]);
+
 		// todo: fix for hhvm
 		$runner = new Tester\Runner\Runner(new Tester\Runner\ZendPhpInterpreter('php-cgi', ' -c ' . Tester\Helpers::escapeArg(__DIR__ . '/../../php.ini-unix')));
-		$runner->outputHandlers[] = $messages = new ResultsCollector();
+		$runner->outputHandlers[] = $collector;
 		$runner->threadCount = $threads;
 		$runner->paths = array($scriptFile);
 		$runner->run();
 
-		$result = $runner->getResults();
-
-		foreach ($messages->results as $result) {
-			echo 'FAILURE ' . $result[0] . "\n" . $result[1] . "\n";
-		}
-
-		Tester\Assert::equal($repeat, $result[Tester\Runner\Runner::PASSED]);
+		return $runner->getResults();
 	}
 
 }
@@ -129,11 +128,40 @@ class ResultsCollector implements Tester\Runner\OutputHandler
 
 	public $results;
 
+	/**
+	 * @var string
+	 */
+	private $dir;
+
+	/**
+	 * @var string
+	 */
+	private $testName;
+
+
+
+	public function __construct($dir, $testName = NULL)
+	{
+		$this->dir = $dir;
+
+		if (!$testName) {
+			$runTest = Tracy\Helpers::findTrace(debug_backtrace(), 'Tester\TestCase::runTest') ?: array('args' => array(0 => 'test'));
+			$testName = $runTest['args'][0];
+		}
+		$this->testName = $testName;
+	}
+
 
 
 	public function begin()
 	{
 		$this->results = array();
+
+		if (is_dir($this->dir)) {
+			foreach (glob(sprintf('%s/%s.*.actual', $this->dir, urlencode($this->testName))) as $file) {
+				@unlink($file);
+			}
+		}
 	}
 
 
@@ -151,7 +179,18 @@ class ResultsCollector implements Tester\Runner\OutputHandler
 
 	public function end()
 	{
+		if (!$this->results) {
+			return;
+		}
 
+		FileSystem::createDir($this->dir);
+
+		// write new
+		foreach ($this->results as $process) {
+			$args = !preg_match('~\\[(.+)\\]$~', trim($process[0]), $m) ? md5(basename($process[0])) : str_replace('=', '_', $m[1]);
+			$filename = urlencode($this->testName) . '.' . urlencode($args) . '.actual';
+			file_put_contents($this->dir . '/' . $filename, $process[1]);
+		}
 	}
 
 }
@@ -204,7 +243,8 @@ DOC;
 
 		// bootstrap
 		$code .= Code\Helpers::formatArgs('require_once ?;', array(__DIR__ . '/../bootstrap.php')) . "\n";
-		$code .= '\Tester\Environment::$checkAssertions = FALSE;' . "\n\n\n";
+		$code .= '\Tester\Environment::$checkAssertions = FALSE;' . "\n";
+		$code .= Code\Helpers::formatArgs('\Tracy\Debugger::$logDirectory = ?;', array(TEMP_DIR)) . "\n\n\n";
 
 		// script
 		$code .= Code\Helpers::formatArgs('extract(?);', array($this->closure->getStaticVariables())) . "\n\n";
@@ -523,6 +563,117 @@ class FunctionCode extends Nette\Object
 		}
 
 		return $functions;
+	}
+
+}
+
+
+class SessionHandlerDecorator implements \SessionHandlerInterface
+{
+
+	/**
+	 * @var array
+	 */
+	public $methods = array();
+
+	/**
+	 * @var bool
+	 */
+	public $log = FALSE;
+
+	/**
+	 * @var \SessionHandlerInterface
+	 */
+	private $handler;
+
+
+
+	public function __construct(\SessionHandlerInterface $handler)
+	{
+		$this->handler = $handler;
+	}
+
+
+
+	private function log($msg)
+	{
+		if (!$this->log) {
+			return;
+		}
+
+		file_put_contents(dirname(TEMP_DIR) . '/session.log', sprintf('[%s] [%s]: %s', date('Y-m-d H:i:s'), str_pad(getmypid(), 6, '0', STR_PAD_LEFT), $msg) . "\n", FILE_APPEND);
+	}
+
+
+
+	public function open($save_path, $session_id)
+	{
+		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		return $this->handler->open($save_path, $session_id);
+	}
+
+
+
+	public function close()
+	{
+		$this->log(__FUNCTION__);
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		return $this->handler->close();
+	}
+
+
+
+	public function read($session_id)
+	{
+		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		try {
+			return $this->handler->read($session_id);
+
+		} catch (\Exception $e) {
+			$this->log(sprintf('%s: %s', __FUNCTION__, $e->getMessage()));
+			throw $e;
+		}
+	}
+
+
+
+	public function destroy($session_id)
+	{
+		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		try {
+			return $this->handler->destroy($session_id);
+
+		} catch (\Exception $e) {
+			$this->log(sprintf('%s: %s', __FUNCTION__, $e->getMessage()));
+			throw $e;
+		}
+	}
+
+
+
+	public function write($session_id, $session_data)
+	{
+		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		try {
+			return $this->handler->write($session_id, $session_data);
+
+		} catch (\Exception $e) {
+			$this->log(sprintf('%s: %s', __FUNCTION__, $e->getMessage()));
+			throw $e;
+		}
+	}
+
+
+
+	public function gc($maxlifetime)
+	{
+		$this->log(__FUNCTION__);
+		$this->methods[] = array(__FUNCTION__ => func_get_args());
+		return $this->handler->gc($maxlifetime);
 	}
 
 }

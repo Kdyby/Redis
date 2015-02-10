@@ -17,6 +17,7 @@
 		"issues": "https://github.com/kdyby/redis/issues"
 	},
 	"require": {
+		"php": ">=5.4",
 		"nette/di": "~2.2@dev",
 		"nette/caching": "~2.2@dev",
 		"nette/http": "~2.2@dev",
@@ -58,6 +59,9 @@
 		"classmap": [
 			"src/Kdyby/Redis/exceptions.php"
 		]
+	},
+	"autoload-dev": {
+		"classmap": ["tests/KdybyTests/Redis"]
 	},
 	"extra": {
 		"branch-alias": {

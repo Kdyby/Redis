@@ -55,6 +55,16 @@ class ConnectionException extends \RuntimeException implements Exception
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
+class SessionHandlerException extends \RuntimeException implements Exception
+{
+
+}
+
+
+
+/**
+ * @author Filip Procházka <filip@prochazka.su>
+ */
 class RedisClientException extends \RuntimeException implements Exception
 {
 

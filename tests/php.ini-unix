@@ -1,2 +1,5 @@
+[php]
+session.gc_probability=0
+
 [redis]
 extension=redis.so
