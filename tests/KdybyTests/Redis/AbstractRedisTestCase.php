@@ -95,7 +95,6 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 	 * @param callable $closure
 	 * @param int $repeat
 	 * @param int $threads
-	 * @param bool $outputFailures
 	 * @return array
 	 */
 	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30)
@@ -108,15 +107,15 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 		file_put_contents($scriptFile, $extractor->buildScript(ClassType::from($this), $repeat));
 		@chmod($scriptFile, 0755);
 
+		$testRefl = new \ReflectionClass($this);
+		$collector = new ResultsCollector(dirname($testRefl->getFileName()) . '/output', $runTest['args'][0]);
+
 		// todo: fix for hhvm
 		$runner = new Tester\Runner\Runner(new Tester\Runner\ZendPhpInterpreter('php-cgi', ' -c ' . Tester\Helpers::escapeArg(__DIR__ . '/../../php.ini-unix')));
-		$runner->outputHandlers[] = $messages = new ResultsCollector();
+		$runner->outputHandlers[] = $collector;
 		$runner->threadCount = $threads;
 		$runner->paths = array($scriptFile);
 		$runner->run();
-
-		$testRefl = new \ReflectionClass($this);
-		$messages->dump(dirname($testRefl->getFileName()) . '/output', $runTest['args'][0]);
 
 		return $runner->getResults();
 	}
@@ -129,11 +128,40 @@ class ResultsCollector implements Tester\Runner\OutputHandler
 
 	public $results;
 
+	/**
+	 * @var string
+	 */
+	private $dir;
+
+	/**
+	 * @var string
+	 */
+	private $testName;
+
+
+
+	public function __construct($dir, $testName = NULL)
+	{
+		$this->dir = $dir;
+
+		if (!$testName) {
+			$runTest = Tracy\Helpers::findTrace(debug_backtrace(), 'Tester\TestCase::runTest') ?: array('args' => array(0 => 'test'));
+			$testName = $runTest['args'][0];
+		}
+		$this->testName = $testName;
+	}
+
 
 
 	public function begin()
 	{
 		$this->results = array();
+
+		if (is_dir($this->dir)) {
+			foreach (glob(sprintf('%s/%s.*.actual', $this->dir, urlencode($this->testName))) as $file) {
+				@unlink($file);
+			}
+		}
 	}
 
 
@@ -151,30 +179,17 @@ class ResultsCollector implements Tester\Runner\OutputHandler
 
 	public function end()
 	{
-
-	}
-
-
-
-	public function dump($dir, $testName)
-	{
-		if (is_dir($dir)) {
-			foreach (glob(sprintf('%s/%s.*.actual', $dir, urlencode($testName))) as $file) {
-				@unlink($file);
-			}
-		}
-
 		if (!$this->results) {
 			return;
 		}
 
-		FileSystem::createDir($dir);
+		FileSystem::createDir($this->dir);
 
 		// write new
 		foreach ($this->results as $process) {
 			$args = !preg_match('~\\[(.+)\\]$~', trim($process[0]), $m) ? md5(basename($process[0])) : str_replace('=', '_', $m[1]);
-			$filename = urlencode($testName) . '.' . urlencode($args) . '.actual';
-			file_put_contents($dir . '/' . $filename, $process[1]);
+			$filename = urlencode($this->testName) . '.' . urlencode($args) . '.actual';
+			file_put_contents($this->dir . '/' . $filename, $process[1]);
 		}
 	}
 
