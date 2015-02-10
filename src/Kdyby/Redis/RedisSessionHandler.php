@@ -76,12 +76,7 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 	 */
 	public function open($savePath, $sessionName)
 	{
-		$id = &$_COOKIE[$sessionName]; // prevent notice
-		if (!is_string($id) || !preg_match('#^[0-9a-zA-Z,-]{22,128}\z#i', $id)) {
-			return FALSE; // Wtf?
-		}
-
-		return (bool) $this->lock($id);
+		return TRUE;
 	}
 
 
