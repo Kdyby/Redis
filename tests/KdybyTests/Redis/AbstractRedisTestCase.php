@@ -11,6 +11,7 @@ use Nette\Reflection\ClassType;
 use Nette\Reflection\GlobalFunction;
 use Nette\Utils\AssertionException;
 use Nette\Utils\Callback;
+use Nette\Utils\FileSystem;
 use Nette\Utils\Strings;
 use Tester;
 use Tracy;
@@ -97,11 +98,11 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 	 * @param bool $outputFailures
 	 * @return array
 	 */
-	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30, $outputFailures = TRUE)
+	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30)
 	{
 		$runTest = Tracy\Helpers::findTrace(debug_backtrace(), 'Tester\TestCase::runTest') ?: array('args' => array(0 => 'test'));
 		$scriptFile = TEMP_DIR . '/scripts/' . str_replace('%5C', '_', urlencode(get_class($this))) . '.' . urlencode($runTest['args'][0]) . '.php';
-		Nette\Utils\FileSystem::createDir($dir = dirname($scriptFile));
+		FileSystem::createDir($dir = dirname($scriptFile));
 
 		$extractor = new ClosureExtractor($closure);
 		file_put_contents($scriptFile, $extractor->buildScript(ClassType::from($this), $repeat));
@@ -114,11 +115,8 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 		$runner->paths = array($scriptFile);
 		$runner->run();
 
-		if ($outputFailures) {
-			foreach ($messages->results as $process) {
-				echo 'FAILURE ' . $process[0] . "\n" . $process[1] . "\n";
-			}
-		}
+		$testRefl = new \ReflectionClass($this);
+		$messages->dump(dirname($testRefl->getFileName()) . '/output', $runTest['args'][0]);
 
 		return $runner->getResults();
 	}
@@ -154,6 +152,30 @@ class ResultsCollector implements Tester\Runner\OutputHandler
 	public function end()
 	{
 
+	}
+
+
+
+	public function dump($dir, $testName)
+	{
+		if (is_dir($dir)) {
+			foreach (glob(sprintf('%s/%s.*.actual', $dir, urlencode($testName))) as $file) {
+				@unlink($file);
+			}
+		}
+
+		if (!$this->results) {
+			return;
+		}
+
+		FileSystem::createDir($dir);
+
+		// write new
+		foreach ($this->results as $process) {
+			$args = !preg_match('~\\[(.+)\\]$~', trim($process[0]), $m) ? md5(basename($process[0])) : str_replace('=', '_', $m[1]);
+			$filename = urlencode($testName) . '.' . urlencode($args) . '.actual';
+			file_put_contents($dir . '/' . $filename, $process[1]);
+		}
 	}
 
 }

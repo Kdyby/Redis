@@ -261,7 +261,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 			sleep(1); // hard work after session is opened ~ 1s
 
 			$session->close(); // explicit close with unlock
-		}, 100, 30, FALSE); // silence, I kill you!
+		}, 100, 30); // silence, I kill you!
 
 		self::assertRange(30, 40, $result[Tester\Runner\Runner::PASSED]);
 
