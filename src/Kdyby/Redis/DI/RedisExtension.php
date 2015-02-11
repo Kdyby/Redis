@@ -130,6 +130,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$client->addSetup('setupLockDuration', array($config['lockDuration'], $config['lockAcquireTimeout']));
 		$client->addSetup('setConnectionAttempts', array($config['connectionAttempts']));
+		$client->addTag('redis.client');
 
 		if (array_key_exists('debugger', $config) && $config['debugger']) {
 			$builder->addDefinition($panelName = $clientName . '.panel')
