@@ -54,7 +54,20 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 	public function __construct(RedisClient $redisClient)
 	{
 		$this->client = $redisClient;
-		$this->ttl = ini_get("session.gc_maxlifetime");
+	}
+
+
+
+	/**
+	 * @return int|string
+	 */
+	protected function getTtl()
+	{
+		if ($this->ttl === NULL) {
+			$this->ttl = ini_get("session.gc_maxlifetime");
+		}
+
+		return $this->ttl;
 	}
 
 
@@ -104,7 +117,7 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 			return FALSE;
 		}
 
-		return $this->client->setex($this->formatKey($id), $this->ttl, $data);
+		return $this->client->setex($this->formatKey($id), $this->getTtl(), $data);
 	}
 
 
