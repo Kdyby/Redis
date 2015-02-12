@@ -136,7 +136,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			$builder->addDefinition($panelName = $clientName . '.panel')
 				->setClass('Kdyby\Redis\Diagnostics\Panel')
 				->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
-				->addSetup('$renderPanel', array($config['debugger'] !== self::PANEL_COUNT_MODE));
+				->addSetup('$renderPanel', array($config['debugger'] !== self::PANEL_COUNT_MODE))
+				->addSetup('$name', array($name ?: 'default'));
 
 			$client->addSetup('setPanel', array('@' . $panelName));
 		}

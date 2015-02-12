@@ -53,6 +53,11 @@ class Panel extends Nette\Object implements IBarPanel
 	 */
 	public $renderPanel = TRUE;
 
+	/**
+	 * @var string
+	 */
+	public $name;
+
 
 
 	/**
@@ -131,7 +136,7 @@ class Panel extends Nette\Object implements IBarPanel
 	 */
 	public function getTab()
 	{
-		return '<span title="Redis Storage">' .
+		return '<span title="Redis Storage' . ($this->name ? ' - ' . $this->name : '') . '">' .
 			'<img alt="" src="data:image/png;base64,' . base64_encode(file_get_contents(__DIR__ . '/icon.png')) . '" height="16px" />' .
 			'<span class="tracy-label">' .
 				count($this->queries) . ' queries' .
