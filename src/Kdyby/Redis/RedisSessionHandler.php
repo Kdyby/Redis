@@ -42,6 +42,11 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 	private $client;
 
 	/**
+	 * @var Nette\Http\Session
+	 */
+	private $session;
+
+	/**
 	 * @var integer
 	 */
 	private $ttl;
@@ -59,12 +64,32 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 
 
 	/**
+	 * @internal
+	 * @param Nette\Http\Session $session
+	 * @return RedisSessionHandler
+	 */
+	public function bind(Nette\Http\Session $session)
+	{
+		$this->session = $session;
+		$session->setHandler($this);
+		return $this;
+	}
+
+
+
+	/**
 	 * @return int|string
 	 */
 	protected function getTtl()
 	{
 		if ($this->ttl === NULL) {
-			$this->ttl = ini_get("session.gc_maxlifetime");
+			if ($this->session !== NULL) {
+				$options = $this->session->getOptions();
+				$this->ttl = min($options['cookie_lifetime'], $options['gc_maxlifetime']);
+
+			} else {
+				$this->ttl = ini_get("session.gc_maxlifetime");
+			}
 		}
 
 		return $this->ttl;
