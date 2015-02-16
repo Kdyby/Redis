@@ -136,8 +136,17 @@ class Panel extends Nette\Object implements IBarPanel
 	 */
 	public function getTab()
 	{
-		return '<span title="Redis Storage' . ($this->name ? ' - ' . $this->name : '') . '">' .
-			'<img alt="" src="data:image/png;base64,' . base64_encode(file_get_contents(__DIR__ . '/icon.png')) . '" height="16px" />' .
+		return
+			'<style>
+				#nette-debug div.kdyby-RedisClientPanel table td,
+				#tracy-debug div.kdyby-RedisClientPanel table td { text-align: right }
+				#nette-debug div.kdyby-RedisClientPanel table td.kdyby-RedisClientPanel-cmd,
+				#tracy-debug div.kdyby-RedisClientPanel table td.kdyby-RedisClientPanel-cmd { background: white !important; text-align: left }
+				#nette-debug .kdyby-redis-panel svg,
+				#tracy-debug .kdyby-redis-panel svg { vertical-align: bottom; max-height: 1.55em; width: 1.50em; }
+			</style>' .
+			'<span title="Redis Storage' . ($this->name ? ' - ' . $this->name : '') . '" class="kdyby-redis-panel">' .
+			file_get_contents(__DIR__ . '/logo.svg') .
 			'<span class="tracy-label">' .
 				count($this->queries) . ' queries' .
 				($this->errors ? ' / ' . count($this->errors) . ' errors' : '') .
@@ -167,13 +176,7 @@ class Panel extends Nette\Object implements IBarPanel
 		}
 
 		return empty($this->queries) ? '' :
-			'<style>
-				#nette-debug div.kdyby-RedisClientPanel table td,
-				#tracy-debug div.kdyby-RedisClientPanel table td { text-align: right }
-				#nette-debug div.kdyby-RedisClientPanel table td.kdyby-RedisClientPanel-cmd,
-				#tracy-debug div.kdyby-RedisClientPanel table td.kdyby-RedisClientPanel-cmd { background: white !important; text-align: left }
-			</style>
-			<h1>Queries: ' . count($this->queries) . ($this->totalTime ? ', time: ' . sprintf('%0.3f', $this->totalTime * 1000) . ' ms' : '') . '</h1>
+			'<h1>Queries: ' . count($this->queries) . ($this->totalTime ? ', time: ' . sprintf('%0.3f', $this->totalTime * 1000) . ' ms' : '') . '</h1>
 			<div class="nette-inner tracy-inner kdyby-RedisClientPanel">
 			<table>
 				<tr><th>Time&nbsp;µs</th><th>Command</th></tr>' . $s . '
