@@ -62,26 +62,20 @@ class RedisStorageTest extends AbstractRedisTestCase
 		list($key, $value) = $this->basicData();
 
 		$cache = new Cache($this->storage);
-		Assert::false(isset($cache[$key]), "Is cached?");
-		Assert::null($cache[$key], "Cache content");
-
-		// Writing cache...
-		$cache[$key] = $value;
-		Assert::true(isset($cache[$key]), "Is cached?");
-		Assert::same($value, $cache[$key], "Is cache ok?");
-
-		// Removing from cache using unset()...
-		unset($cache[$key]);
-		Assert::false(isset($cache[$key]), "Is cached?");
-
-		// Removing from cache using set NULL...
-		$cache[$key] = $value;
-		$cache[$key] = NULL;
-		Assert::false(isset($cache[$key]), "Is cached?");
+		Assert::null($cache->load($key), "Cache content");
 
 		// Writing cache...
 		$cache->save($key, $value);
 		Assert::same($value, $cache->load($key), "Is cache ok?");
+
+		// Removing from cache using unset()...
+		$cache->remove($key);
+		Assert::false($cache->load($key) !== NULL, "Is cached?");
+
+		// Removing from cache using set NULL...
+		$cache->save($key, $value);
+		$cache->save($key, NULL);
+		Assert::false($cache->load($key) !== NULL, "Is cached?");
 	}
 
 
@@ -110,14 +104,14 @@ class RedisStorageTest extends AbstractRedisTestCase
 			Cache::CALLBACKS => array(array($cb, 1)),
 		));
 
-		Assert::true(isset($cache[$key]), 'Is cached?');
+		Assert::true($cache->load($key) !== NULL, 'Is cached?');
 
 		// Writing cache...
 		$cache->save($key, $value, array(
 			Cache::CALLBACKS => array(array($cb, 0)),
 		));
 
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
 
@@ -127,24 +121,24 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$cacheA = new Cache($this->storage);
 		$cacheB = new Cache($this->storage, 'B');
 
-		$cacheA['test1'] = 'David';
-		$cacheA['test2'] = 'Grudl';
-		$cacheB['test1'] = 'divaD';
-		$cacheB['test2'] = 'ldurG';
+		$cacheA->save('test1', 'David');
+		$cacheA->save('test2', 'Grudl');
+		$cacheB->save('test1', 'divaD');
+		$cacheB->save('test2', 'ldurG');
 
 		Assert::same('David Grudl divaD ldurG', implode(' ', array(
-			$cacheA['test1'],
-			$cacheA['test2'],
-			$cacheB['test1'],
-			$cacheB['test2'],
+			$cacheA->load('test1'),
+			$cacheA->load('test2'),
+			$cacheB->load('test1'),
+			$cacheB->load('test2'),
 		)));
 
 		$this->storage->clean(array(Cache::ALL => TRUE));
 
-		Assert::null($cacheA['test1']);
-		Assert::null($cacheA['test2']);
-		Assert::null($cacheB['test1']);
-		Assert::null($cacheB['test2']);
+		Assert::null($cacheA->load('test1'));
+		Assert::null($cacheA->load('test2'));
+		Assert::null($cacheB->load('test1'));
+		Assert::null($cacheB->load('test2'));
 	}
 
 
@@ -163,11 +157,11 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 		// Sleeping 1 second
 		sleep(1);
-		Assert::true(isset($cache[$key]), 'Is cached?');
+		Assert::true($cache->load($key) !== NULL, 'Is cached?');
 
 		// Sleeping 3 seconds
 		sleep(3);
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
 
@@ -179,22 +173,22 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$value = range("\x00", "\xFF");
 
 		$cache = new Cache($this->storage);
-		Assert::false(isset($cache[$key]), 'Is cached?');
-		Assert::null($cache[$key], 'Cache content');
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
+		Assert::null($cache->load($key), 'Cache content');
 
 		// Writing cache...
-		$cache[$key] = $value;
-		Assert::true(isset($cache[$key]), 'Is cached?');
-		Assert::same($value, $cache[$key], 'Is cache ok?');
+		$cache->save($key, $value);
+		Assert::true($cache->load($key) !== NULL, 'Is cached?');
+		Assert::same($value, $cache->load($key), 'Is cache ok?');
 
 		// Removing from cache using unset()...
-		unset($cache[$key]);
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		$cache->remove($key);
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 
 		// Removing from cache using set NULL...
-		$cache[$key] = $value;
-		$cache[$key] = NULL;
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		$cache->save($key, $value);
+		$cache->save($key, NULL);
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
 
@@ -210,32 +204,32 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$cache->save($key, $value, array(
 			Cache::ITEMS => array('dependent'),
 		));
-		Assert::true(isset($cache[$key]), 'Is cached?');
+		Assert::true($cache->load($key) !== NULL, 'Is cached?');
 
 		// Modifing dependent cached item
-		$cache['dependent'] = 'hello world';
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		$cache->save('dependent', 'hello world');
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 
 		// Writing cache...
 		$cache->save($key, $value, array(
 			Cache::ITEMS => 'dependent',
 		));
-		Assert::true(isset($cache[$key]), 'Is cached?');
+		Assert::true($cache->load($key) !== NULL, 'Is cached?');
 
 		// Modifing dependent cached item
 		sleep(2);
-		$cache['dependent'] = 'hello europe';
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		$cache->save('dependent', 'hello europe');
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 
 		// Writing cache...
 		$cache->save($key, $value, array(
 			Cache::ITEMS => 'dependent',
 		));
-		Assert::true(isset($cache[$key]), 'Is cached?');
+		Assert::true($cache->load($key) !== NULL, 'Is cached?');
 
 		// Deleting dependent cached item
-		$cache['dependent'] = NULL;
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		$cache->save('dependent', NULL);
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
 
@@ -249,7 +243,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$value = range("\x00", "\xFF");
 
 		$cache = new Cache($this->storage);
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 
 		// Writing cache using Closure...
 		$res = $cache->load($key, function (& $dp) use ($value) {
@@ -265,7 +259,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 		// Sleeping 3 seconds
 		sleep(3);
-		Assert::false(isset($cache[$key]), 'Is cached?');
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
 
@@ -276,18 +270,18 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$cacheB = new Cache($this->storage, 'b');
 
 		// Writing cache...
-		$cacheA['key'] = 'hello';
-		$cacheB['key'] = 'world';
+		$cacheA->save('key', 'hello');
+		$cacheB->save('key', 'world');
 
-		Assert::true(isset($cacheA['key']), 'Is cached #1?');
-		Assert::true(isset($cacheB['key']), 'Is cached #2?');
-		Assert::same('hello', $cacheA['key'], 'Is cache ok #1?');
-		Assert::same('world', $cacheB['key'], 'Is cache ok #2?');
+		Assert::true($cacheA->load('key') !== NULL, 'Is cached #1?');
+		Assert::true($cacheB->load('key') !== NULL, 'Is cached #2?');
+		Assert::same('hello', $cacheA->load('key'), 'Is cache ok #1?');
+		Assert::same('world', $cacheB->load('key'), 'Is cache ok #2?');
 
 		// Removing from cache #2 using unset()...
-		unset($cacheB['key']);
-		Assert::true(isset($cacheA['key']), 'Is cached #1?');
-		Assert::false(isset($cacheB['key']), 'Is cached #2?');
+		$cacheB->remove('key');
+		Assert::true($cacheA->load('key') !== NULL, 'Is cached #1?');
+		Assert::false($cacheB->load('key') !== NULL, 'Is cached #2?');
 	}
 
 
@@ -307,17 +301,17 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$cache->save('key3', 'value3', array(
 			Cache::PRIORITY => 300,
 		));
-		$cache['key4'] = 'value4';
+		$cache->save('key4', 'value4');
 
 		// Cleaning by priority...
 		$cache->clean(array(
 			Cache::PRIORITY => '200',
 		));
 
-		Assert::false(isset($cache['key1']), 'Is cached key1?');
-		Assert::false(isset($cache['key2']), 'Is cached key2?');
-		Assert::true(isset($cache['key3']), 'Is cached key3?');
-		Assert::true(isset($cache['key4']), 'Is cached key4?');
+		Assert::false($cache->load('key1') !== NULL, 'Is cached key1?');
+		Assert::false($cache->load('key2') !== NULL, 'Is cached key2?');
+		Assert::true($cache->load('key3') !== NULL, 'Is cached key3?');
+		Assert::true($cache->load('key4') !== NULL, 'Is cached key4?');
 	}
 
 
@@ -337,17 +331,17 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$cache->save('key3', 'value3', array(
 			Cache::PRIORITY => 300,
 		));
-		$cache['key4'] = 'value4';
+		$cache->save('key4', 'value4');
 
 		// Cleaning by priority...
 		$cache->clean(array(
 			Cache::PRIORITY => '200',
 		));
 
-		Assert::false(isset($cache['key1']), 'Is cached key1?');
-		Assert::false(isset($cache['key2']), 'Is cached key2?');
-		Assert::true(isset($cache['key3']), 'Is cached key3?');
-		Assert::true(isset($cache['key4']), 'Is cached key4?');
+		Assert::false($cache->load('key1') !== NULL, 'Is cached key1?');
+		Assert::false($cache->load('key2') !== NULL, 'Is cached key2?');
+		Assert::true($cache->load('key3') !== NULL, 'Is cached key3?');
+		Assert::true($cache->load('key4') !== NULL, 'Is cached key4?');
 	}
 
 
@@ -367,17 +361,17 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$cache->save('key3', 'value3', array(
 			Cache::TAGS => array('two', 'three'),
 		));
-		$cache['key4'] = 'value4';
+		$cache->save('key4', 'value4');
 
 		// Cleaning by tags...
 		$cache->clean(array(
 			Cache::TAGS => 'one',
 		));
 
-		Assert::false(isset($cache['key1']), 'Is cached key1?');
-		Assert::false(isset($cache['key2']), 'Is cached key2?');
-		Assert::true(isset($cache['key3']), 'Is cached key3?');
-		Assert::true(isset($cache['key4']), 'Is cached key4?');
+		Assert::false($cache->load('key1') !== NULL, 'Is cached key1?');
+		Assert::false($cache->load('key2') !== NULL, 'Is cached key2?');
+		Assert::true($cache->load('key3') !== NULL, 'Is cached key3?');
+		Assert::true($cache->load('key4') !== NULL, 'Is cached key4?');
 	}
 
 
@@ -397,17 +391,17 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$cache->save('key3', 'value3', array(
 			Cache::TAGS => array('two', 'three'),
 		));
-		$cache['key4'] = 'value4';
+		$cache->save('key4', 'value4');
 
 		// Cleaning by tags...
 		$cache->clean(array(
 			Cache::TAGS => 'one',
 		));
 
-		Assert::false(isset($cache['key1']), 'Is cached key1?');
-		Assert::false(isset($cache['key2']), 'Is cached key2?');
-		Assert::true(isset($cache['key3']), 'Is cached key3?');
-		Assert::true(isset($cache['key4']), 'Is cached key4?');
+		Assert::false($cache->load('key1') !== NULL, 'Is cached key1?');
+		Assert::false($cache->load('key2') !== NULL, 'Is cached key2?');
+		Assert::true($cache->load('key3') !== NULL, 'Is cached key3?');
+		Assert::true($cache->load('key4') !== NULL, 'Is cached key4?');
 	}
 
 
