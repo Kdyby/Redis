@@ -74,7 +74,7 @@ class ExclusiveLock extends Nette\Object
 	 */
 	public function calculateTimeout()
 	{
-		return time() + abs((int) $this->duration) + 1;
+		return time() + $this->calculateRelativeTimeout() + 1;
 	}
 
 
@@ -97,9 +97,8 @@ class ExclusiveLock extends Nette\Object
 			$this->client->del($lockKey);
 			$this->client->rPush($lockKey, 1);
 		}
-		$acquireTimeout = abs((int) ($this->acquireTimeout !== FALSE ? $this->acquireTimeout : $this->duration));
 		try {
-			$result = $this->client->blPop($lockKey, $acquireTimeout);
+			$result = $this->client->blPop($lockKey, $this->calculateRelativeTimeout());
 		} catch (Kdyby\Redis\RedisClientException $e) {
 			LockException::highConcurrency();
 		}
@@ -130,7 +129,9 @@ class ExclusiveLock extends Nette\Object
 		$timeout = $this->keys[$key];
 		$lockKey = $this->formatLock($key);
 		$this->client->del($lockKey . ':timeout');
-		$this->client->rPush($lockKey, 1);
+		if ($timeout > time()) {
+			$this->client->rPush($lockKey, 1);
+		}
 		unset($this->keys[$key]);
 
 		return $timeout > time();
@@ -214,6 +215,13 @@ class ExclusiveLock extends Nette\Object
 	protected function formatLock($key)
 	{
 		return $key . ':lock';
+	}
+
+
+
+	protected function calculateRelativeTimeout()
+	{
+		return abs((int) ($this->acquireTimeout !== FALSE && $this->acquireTimeout > $this->duration ? $this->acquireTimeout : $this->duration));
 	}
 
 

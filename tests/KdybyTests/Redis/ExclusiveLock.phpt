@@ -56,6 +56,33 @@ class ExclusiveLockTest extends AbstractRedisTestCase
 		Assert::true($second->acquireLock('foo:bar'));
 	}
 
+
+
+	public function testAcquireTimeoutLongerThenLockDuration()
+	{
+		$first = new ExclusiveLock($this->client);
+		$first->acquireTimeout = 4;
+		$first->duration = 1;
+		$second = new ExclusiveLock(new RedisClient());
+		$second->acquireTimeout = 4;
+		$second->duration = 1;
+
+		Assert::true($first->acquireLock('foo:bar'));
+		sleep(2);
+
+		Assert::exception(function () use ($second) {
+			$second->acquireLock('foo:bar');
+		}, 'Kdyby\Redis\LockException', 'Lock couldn\'t be acquired. The locking mechanism is giving up. You should kill the request.');
+		sleep(2);
+
+		Assert::true($second->acquireLock('foo:bar'));
+
+		Assert::false($first->release('foo:bar'));
+		Assert::true($second->release('foo:bar'));
+
+		Assert::same(1, $this->client->lLen('foo:bar:lock'));
+	}
+
 }
 
 \run(new ExclusiveLockTest());
