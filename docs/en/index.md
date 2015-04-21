@@ -9,10 +9,10 @@ This extension is here to provide cache storage service, using [Redis](http://re
 * Compile & Install [latest phpredis](https://github.com/nicolasff/phpredis/)
 * Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 
-For dev Nette, you can install the extension using this command
+You can install the extension using this command
 
 ```sh
-$ composer require kdyby/redis:@dev
+$ composer require kdyby/redis
 ```
 
 and enable the extension using your neon config.
@@ -20,20 +20,6 @@ and enable the extension using your neon config.
 ```yml
 extensions:
 	redis: Kdyby\Redis\DI\RedisExtension
-```
-
-If you're using stable Nette, you can install the tagged release
-
-```sh
-$ composer require kdyby/redis:~2.3
-```
-
-and you have to register it in `app/bootstrap.php`
-
-```php
-Kdyby\Redis\DI\RedisExtension::register($configurator);
-
-return $configurator->createContainer();
 ```
 
 
