@@ -24,7 +24,7 @@ Installation
 * Install Kdyby/Redis to your project is using  [Composer](http://getcomposer.org/):
 
 ```sh
-$ composer require kdyby/redis:~3.1
+$ composer require kdyby/redis
 ```
 
 
