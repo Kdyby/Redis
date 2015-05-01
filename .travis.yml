@@ -12,16 +12,12 @@ php:
   - hhvm
   - hhvm-nightly
 
-services:
-  - redis-server
-
 matrix:
   allow_failures:
     - php: hhvm
     - php: hhvm-nightly
 
 before_install:
-  - redis-cli info |grep version
   - composer self-update
 
 install:
@@ -29,7 +25,10 @@ install:
   - wget -O vendor/bin/composer-nette https://raw.githubusercontent.com/Kdyby/TesterExtras/master/bin/composer-nette.php
   - php vendor/bin/composer-nette
   - composer install --no-interaction --prefer-source
+  - which redis-server
+  - cat /etc/redis/redis.conf
   - tests/travis.redis.sh
+  - tests/travis.phpredis.sh
 
 before_script:
   - composer create-project --prefer-source --no-interaction jakub-onderka/php-parallel-lint vendor/php-parallel-lint ~0.8
