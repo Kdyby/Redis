@@ -21,6 +21,7 @@ matrix:
     - php: hhvm-nightly
 
 before_install:
+  - redis-cli info |grep version
   - composer self-update
 
 install:
