@@ -159,8 +159,9 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			->setClass('Kdyby\Redis\RedisLuaJournal');
 
 		// overwrite
-		$builder->removeDefinition('nette.cacheJournal');
-		$builder->addDefinition('nette.cacheJournal')->setFactory($this->prefix('@cacheJournal'));
+		$journalService = $builder->getByType('Nette\Caching\Storages\IJournal') ?: 'nette.cacheJournal';
+		$builder->removeDefinition($journalService);
+		$builder->addDefinition($journalService)->setFactory($this->prefix('@cacheJournal'));
 	}
 
 
@@ -184,8 +185,9 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			$cacheStorage->addSetup('disableLocking');
 		}
 
-		$builder->removeDefinition('cacheStorage');
-		$builder->addDefinition('cacheStorage')->setFactory($this->prefix('@cacheStorage'));
+		$storageService = $builder->getByType('Nette\Caching\IStorage') ?: 'cacheStorage';
+		$builder->removeDefinition($storageService);
+		$builder->addDefinition($storageService)->setFactory($this->prefix('@cacheStorage'));
 	}
 
 
@@ -223,7 +225,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			$builder->addDefinition($this->prefix('sessionHandler'))
 				->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
 
-			$builder->getDefinition('session')
+			$sessionService = $builder->getByType('Nette\Http\Session') ?: 'session';
+			$builder->getDefinition($sessionService)
 				->addSetup('?->bind(?)', array($this->prefix('@sessionHandler'), '@self'));
 		}
 	}
