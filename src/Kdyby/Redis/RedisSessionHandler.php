@@ -11,7 +11,6 @@
 namespace Kdyby\Redis;
 
 use Kdyby;
-use Tracy\Debugger;
 use Nette;
 
 
