@@ -76,7 +76,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$this->loadJournal($config);
 		$this->loadStorage($config);
-		$this->loadSession($config, $builder);
+		$this->loadSession($config);
 
 		foreach ($config['clients'] as $name => $clientConfig) {
 			$this->buildClient($name, $clientConfig);
