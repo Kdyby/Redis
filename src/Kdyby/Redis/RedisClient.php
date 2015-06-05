@@ -165,7 +165,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	/**
 	 * @var Driver\PhpRedisDriver
 	 */
-	private $driver;
+	protected $driver;
 
 	/**
 	 * @var bool
@@ -183,7 +183,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	private $panel;
 
 	/**
-	 * @var string
+	 * @var int
 	 */
 	private $host;
 
@@ -262,6 +262,36 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 	/**
+	 * @return string
+	 */
+	protected function getHost()
+	{
+		return $this->host;
+	}
+
+
+
+	/**
+	 * @return int
+	 */
+	protected function getPort()
+	{
+		return $this->port;
+	}
+
+
+
+	/**
+	 * @return int
+	 */
+	protected function getDatabase()
+	{
+		return $this->database;
+	}
+
+
+
+	/**
 	 * @return \Kdyby\Redis\IRedisDriver
 	 */
 	public function getDriver()
@@ -279,6 +309,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		if ($this->driver->isConnected()) {
+			$this->isConnected = TRUE;
 			return;
 		}
 
