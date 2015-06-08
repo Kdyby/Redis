@@ -13,7 +13,7 @@ namespace KdybyTests\Redis;
 use Kdyby\Redis\ConnectionPool;
 use Kdyby\Redis\RedisSharedClient;
 use Kdyby\Redis\RedisClientException;
-use Kdyby\Redis\Driver\PhpRedisSharedDriver;
+use Kdyby\Redis\Driver\PhpRedisDriver;
 use Nette;
 use Tester;
 use Tester\Assert;
@@ -81,7 +81,7 @@ class RedisSharedClientTest extends AbstractRedisTestCase
 
 	public function testConnectionPool_AddExistingConnection()
 	{
-		$sharedDriver = new PhpRedisSharedDriver;
+		$sharedDriver = new PhpRedisDriver;
 		Assert::exception(function () use ($sharedDriver) {
 			$this->pool->addConnection('127.0.0.1', NULL, $sharedDriver);
 

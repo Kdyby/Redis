@@ -16,7 +16,7 @@ use Nette;
 
 
 /**
- * @author Filip Procházka <filip@prochazka.su>
+ * @author Jakub Trmota <jakub@trmota.cz>
  */
 class RedisSharedClient extends RedisClient
 {
@@ -51,7 +51,7 @@ class RedisSharedClient extends RedisClient
 			$driver = $this->connectionPool->getConnection($this->getHost(), $this->getPort());
 
 			if ($driver === NULL) {
-				$driver = new Driver\PhpRedisSharedDriver();
+				$driver = new Driver\PhpRedisDriver();
 				$this->connectionPool->addConnection($this->getHost(), $this->getPort(), $driver);
 			}
 
@@ -87,10 +87,6 @@ class RedisSharedClient extends RedisClient
 	 */
 	private function synchronizeClientDatabase()
 	{
-		if (!($this->driver instanceof Driver\PhpRedisSharedDriver)) {
-			throw new RedisClientException('Only PhpRedisSharedDriver allow synchronizing database');
-		}
-
 		if ($this->driver->getDatabase() != $this->getDatabase()) {
 			if (call_user_func_array(array($this->driver, 'select'), [$this->getDatabase()]) === FALSE) {
 				throw new RedisClientException('Can\'t set client database on driver');
