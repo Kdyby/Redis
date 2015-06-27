@@ -94,7 +94,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 
-		$defaultConfig = $builder->expand($this->clientDefaults);
+		$defaultConfig = $this->getConfig($this->defaults + $this->clientDefaults);
 		if ($parentName = Config\Helpers::takeParent($config)) {
 			Nette\Utils\Validators::assertField($this->configuredClients, $parentName, 'array', "parent configuration '%', are you sure it's defined?");
 			$defaultConfig = Config\Helpers::merge($this->configuredClients[$parentName], $defaultConfig);
