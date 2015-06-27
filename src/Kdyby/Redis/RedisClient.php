@@ -316,6 +316,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				}
 
 				usleep(1000 * $this->connectionAttempts);
+
+			} catch (\Throwable $e) {
+				$errors[] = $e;
+				break;
 			}
 
 		} while(--$remaining > 0);
@@ -482,6 +486,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			throw $e;
 
 		} catch (\Exception $e) {
+			$this->send('discard');
+			throw $e;
+
+		} catch (\Throwable $e) {
 			$this->send('discard');
 			throw $e;
 		}
