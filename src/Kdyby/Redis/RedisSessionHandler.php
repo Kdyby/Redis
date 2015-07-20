@@ -85,11 +85,23 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 		if ($this->ttl === NULL) {
 			if ($this->session !== NULL) {
 				$options = $this->session->getOptions();
-				$this->ttl = min($options['cookie_lifetime'], $options['gc_maxlifetime']);
+				if ($options['cookie_lifetime'] == 0) {
+					$ttl = $options['gc_maxlifetime'];
+				} else if ($options['gc_maxlifetime'] == 0) {
+					$ttl = $options['cookie_lifetime'];
+				} else {
+					$ttl = min($options['cookie_lifetime'], $options['gc_maxlifetime']);
+				}
 
 			} else {
-				$this->ttl = ini_get("session.gc_maxlifetime");
+				$ttl = ini_get("session.gc_maxlifetime");
 			}
+
+			if ($ttl <= 0) {
+				throw new \InvalidArgumentException('PHP settings "cookie_lifetime" or "gc_maxlifetime" must be greater than 0');
+			}
+
+			$this->ttl = $ttl;
 		}
 
 		return $this->ttl;
