@@ -107,9 +107,9 @@ class Panel extends Nette\Object implements IBarPanel
 
 
 	/**
-	 * @param \Exception $e
+	 * @param \Exception|\Throwable $e
 	 */
-	public function error(\Exception $e)
+	public function error($e)
 	{
 		$this->errors[] = $e;
 		if ($query = end($this->queries)) {

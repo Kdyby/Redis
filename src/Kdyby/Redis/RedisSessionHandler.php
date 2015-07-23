@@ -11,7 +11,6 @@
 namespace Kdyby\Redis;
 
 use Kdyby;
-use Tracy\Debugger;
 use Nette;
 
 
@@ -85,11 +84,17 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 		if ($this->ttl === NULL) {
 			if ($this->session !== NULL) {
 				$options = $this->session->getOptions();
-				$this->ttl = min($options['cookie_lifetime'], $options['gc_maxlifetime']);
+				$ttl = min(array_filter(array($options['cookie_lifetime'], $options['gc_maxlifetime']), function ($v) { return $v > 0; })) ?: 0;
 
 			} else {
-				$this->ttl = ini_get("session.gc_maxlifetime");
+				$ttl = ini_get('session.gc_maxlifetime');
 			}
+
+			if ($ttl <= 0) {
+				throw new \InvalidArgumentException('PHP settings "cookie_lifetime" or "gc_maxlifetime" must be greater than 0');
+			}
+
+			$this->ttl = $ttl;
 		}
 
 		return $this->ttl;
