@@ -237,10 +237,6 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function __construct($host = '127.0.0.1', $port = NULL, $database = 0, $timeout = 10, $auth = NULL, $persistent = FALSE)
 	{
-		if (!extension_loaded('redis')) {
-			throw new MissingExtensionException("Please install and enable the redis extension. \nhttps://github.com/nicolasff/phpredis/");
-		}
-
 		$this->host = $host;
 		$this->port = $port;
 		$this->database = $database;
@@ -274,6 +270,10 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 	public function connect()
 	{
+		if (!extension_loaded('redis')) {
+			throw new MissingExtensionException("Please install and enable the redis extension. \nhttps://github.com/nicolasff/phpredis/");
+		}
+
 		if (!$this->driver) {
 			$this->driver = new Driver\PhpRedisDriver();
 		}
