@@ -231,11 +231,4 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 		return self::NS_NETTE . $id;
 	}
 
-
-
-	public function __destruct()
-	{
-		$this->close();
-	}
-
 }
