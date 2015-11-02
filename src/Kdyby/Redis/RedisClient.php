@@ -268,6 +268,18 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 
 
+	/**
+	 * Returns database index
+	 *
+	 * @return int
+	 */
+	public function getDatabase()
+	{
+		return $this->database;
+	}
+
+
+
 	public function connect()
 	{
 		if (!extension_loaded('redis')) {
@@ -394,14 +406,17 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 			if ($this->panel) {
 				$request = $args;
 				array_unshift($request, $cmd);
-				$this->panel->begin($request);
+				$this->panel->begin($request, $this->database);
 			}
 
 			$result = call_user_func_array(array($this->driver, $cmd), $args);
 
+			if ($result === TRUE && strtolower($cmd) === 'select') {
+				$this->database = $args[0];
+			}
+
 			if ($result instanceof \Redis) {
 				$result = strtolower($cmd) === 'multi' ? 'OK' : 'QUEUED';
-
 			} elseif ($result === FALSE && ($msg = $this->driver->getLastError())) {
 				if (!isset(self::$exceptionCmd[strtolower($cmd)])) {
 					throw new \RedisException($msg);

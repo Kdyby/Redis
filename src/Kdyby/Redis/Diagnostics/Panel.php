@@ -80,7 +80,7 @@ class Panel extends Nette\Object implements IBarPanel
 
 
 
-	public function begin($args)
+	public function begin($args, $dbIndex)
 	{
 		if (!$this->renderPanel) {
 			$cmd = '';
@@ -98,6 +98,7 @@ class Panel extends Nette\Object implements IBarPanel
 		$this->queries[] = (object) array(
 			'errors' => array(),
 			'cmd' => $cmd,
+			'db' => $dbIndex,
 			'time' => 0
 		);
 
@@ -170,6 +171,7 @@ class Panel extends Nette\Object implements IBarPanel
 		$h = 'htmlSpecialChars';
 		foreach ($this->queries as $query) {
 			$s .= '<tr><td>' . sprintf('%0.3f', $query->time * 1000000);
+			$s .= '</td><td class="kdyby-RedisClientPanel-dbindex">' . $query->db;
 			$s .= '</td><td class="kdyby-RedisClientPanel-cmd">' .
 				$h(substr(Code\Helpers::dump(self::$maxLength ? substr($query->cmd, 0, self::$maxLength) : $query->cmd), 1, -1));
 			$s .= '</td></tr>';
@@ -179,7 +181,7 @@ class Panel extends Nette\Object implements IBarPanel
 			'<h1>Queries: ' . count($this->queries) . ($this->totalTime ? ', time: ' . sprintf('%0.3f', $this->totalTime * 1000) . ' ms' : '') . '</h1>
 			<div class="nette-inner tracy-inner kdyby-RedisClientPanel">
 			<table>
-				<tr><th>Time&nbsp;µs</th><th>Command</th></tr>' . $s . '
+				<tr><th>Time&nbsp;µs</th><th title="Database index">DB</th><th>Command</th></tr>' . $s . '
 			</table>
 			</div>';
 	}
