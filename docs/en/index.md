@@ -124,3 +124,36 @@ You can disable the native driver by this option (and the emulated will take con
 redis:
 	session: {native: off}
 ```
+
+## Key prefixes
+
+When you use two instances of one application with one Redis server, it is possible, that your data can be overwritten by second application instance.
+
+To avoid this problem you can define key prefixes in configuration, for example:
+
+Instance 1
+```yml
+redis:
+    keyPrefix: "instance1_"
+    host: 127.0.0.1
+    port: 6379
+    journal: on
+    session: on
+    storage: on
+    debugger: off
+```
+
+Instance 2
+```yml
+redis:
+    keyPrefix: "instance2_"
+    host: 127.0.0.1
+    port: 6379
+    journal: on
+    session: on
+    storage: on
+    debugger: off
+```
+
+After configration all keys will be prefixed "keyPrefix_key"
+
