@@ -155,7 +155,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 
 		$constructParams = array(
-				$this->prefix('@journal_client'),
+				$this->prefix('@client'),
 				(!isset($config['keyPrefix']) ? null : $config['keyPrefix']),
 		);
 
@@ -183,7 +183,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		));
 
 		$constructParams = array(
-				$this->prefix('@storage_client'),
+				$this->prefix('@client'),
+				$this->prefix('@cacheJournal'),
 				(!isset($config['keyPrefix']) ? null : $config['keyPrefix']),
 		);
 
