@@ -17,7 +17,6 @@ use Nette\DI\Compiler;
 use Nette\DI\Config;
 
 
-
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
@@ -155,8 +154,13 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
+		$constructParams = array(
+				$this->prefix('@journal_client'),
+				(!isset($config['keyPrefix']) ? null : $config['keyPrefix']),
+		);
+
 		$builder->addDefinition($this->prefix('cacheJournal'))
-			->setClass('Kdyby\Redis\RedisLuaJournal');
+				->setClass('Kdyby\Redis\RedisLuaJournal', $constructParams);
 
 		// overwrite
 		$journalService = $builder->getByType('Nette\Caching\Storages\IJournal') ?: 'nette.cacheJournal';
@@ -178,8 +182,13 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			'locks' => TRUE,
 		));
 
+		$constructParams = array(
+				$this->prefix('@storage_client'),
+				(!isset($config['keyPrefix']) ? null : $config['keyPrefix']),
+		);
+
 		$cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
-			->setClass('Kdyby\Redis\RedisStorage');
+				->setClass('Kdyby\Redis\RedisStorage', $constructParams);
 
 		if (!$storageConfig['locks']) {
 			$cacheStorage->addSetup('disableLocking');
@@ -206,7 +215,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			'weight' => 1,
 			'timeout' => $config['timeout'],
 			'database' => $config['database'],
-			'prefix' => self::DEFAULT_SESSION_PREFIX,
+			'prefix' => (!isset($config['keyPrefix']) ? self::DEFAULT_SESSION_PREFIX : $config['keyPrefix']),
 			'auth' => $config['auth'],
 			'native' => TRUE,
 			'lockDuration' => $config['lockDuration'],
@@ -220,15 +229,20 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		if ($sessionConfig['native']) {
 			$this->loadNativeSessionHandler($sessionConfig);
-
-		} else {
-			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
-
-			$sessionService = $builder->getByType('Nette\Http\Session') ?: 'session';
-			$builder->getDefinition($sessionService)
-				->addSetup('?->bind(?)', array($this->prefix('@sessionHandler'), '@self'));
+			return;
 		}
+
+		$constructParams = array(
+				$this->prefix('@sessionHandler_client'),
+				(!isset($config['keyPrefix']) ? null : $config['keyPrefix']),
+		);
+
+		$builder->addDefinition($this->prefix('sessionHandler'))
+			->setClass('Kdyby\Redis\RedisSessionHandler', $constructParams);
+
+		$sessionService = $builder->getByType('Nette\Http\Session') ?: 'session';
+		$builder->getDefinition($sessionService)
+			->addSetup('?->bind(?)', array($this->prefix('@sessionHandler'), '@self'));
 	}
 
 

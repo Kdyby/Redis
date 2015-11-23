@@ -41,6 +41,11 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 	private $client;
 
 	/**
+	 * @var string
+	 */
+	private $keyPrefix = '';
+
+	/**
 	 * @var Nette\Http\Session
 	 */
 	private $session;
@@ -51,13 +56,16 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 	private $ttl;
 
 
-
 	/**
 	 * @param RedisClient $redisClient
+	 * @param string|null $keyPrefix
 	 */
-	public function __construct(RedisClient $redisClient)
+	public function __construct(RedisClient $redisClient, $keyPrefix = null)
 	{
 		$this->client = $redisClient;
+		if (!empty($keyPrefix)) {
+			$this->keyPrefix = $keyPrefix . '_';
+		}
 	}
 
 
@@ -228,7 +236,8 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 	 */
 	private function formatKey($id)
 	{
-		return self::NS_NETTE . $id;
+		$key = $this->keyPrefix . $id;
+		return self::NS_NETTE . $key;
 	}
 
 }
