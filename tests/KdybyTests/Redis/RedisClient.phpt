@@ -11,7 +11,6 @@
 namespace KdybyTests\Redis;
 
 use Kdyby\Redis\RedisClient;
-use Kdyby\Redis\Diagnostics;
 use Nette;
 use Tester;
 use Tester\Assert;
@@ -145,6 +144,8 @@ class RedisClientTest extends AbstractRedisTestCase
 		$this->client->set('foo', 'bar');
 		Assert::same(array('keys' => '1', 'expires' => '0'), array_diff_key($this->client->info('db0'), array('avg_ttl' => TRUE)));
 	}
+
+
 
 	public function testSelect()
 	{
