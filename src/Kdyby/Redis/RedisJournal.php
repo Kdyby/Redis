@@ -31,6 +31,9 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 		TAGS = 'tags',
 		KEYS = 'keys';
 
+	/** @internal batch delete size */
+	const BATCH_SIZE = 8000;
+
 	/**
 	 * @var RedisClient
 	 */
@@ -108,34 +111,48 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 * Cleans entries from journal.
 	 *
 	 * @param  array  $conds
+	 * @param \Nette\Caching\IStorage $storage
 	 *
 	 * @return array of removed items or NULL when performing a full cleanup
 	 */
-	public function clean(array $conds)
+	public function clean(array $conds, Nette\Caching\IStorage $storage = NULL)
 	{
 		if (!empty($conds[Cache::ALL])) {
 			$all = $this->client->keys(self::NS_NETTE . ':*');
+			if ($storage instanceof RedisStorage) {
+				$all = array_merge($all, $this->client->keys(RedisStorage::NS_NETTE . ':*'));
+			}
 
-			$this->client->multi();
 			call_user_func_array(array($this->client, 'del'), $all);
-			$this->client->exec();
 			return NULL;
 		}
 
 		$entries = array();
 		if (!empty($conds[Cache::TAGS])) {
+			$removingTagKeys = array();
 			foreach ((array)$conds[Cache::TAGS] as $tag) {
-				$this->cleanEntry($found = $this->tagEntries($tag));
+				$found = $this->tagEntries($tag);
+				$removingTagKeys[] = $this->formatKey($tag, self::KEYS);
 				$entries = array_merge($entries, $found);
+			}
+			if ($removingTagKeys) {
+				call_user_func_array(array($this->client, 'del'), $removingTagKeys);
 			}
 		}
 
 		if (isset($conds[Cache::PRIORITY])) {
-			$this->cleanEntry($found = $this->priorityEntries($conds[Cache::PRIORITY]));
+			$found = $this->priorityEntries($conds[Cache::PRIORITY]);
+			call_user_func_array(array($this->client, 'zRemRangeByScore'), array($this->formatKey(self::PRIORITY), 0, (int)$conds[Cache::PRIORITY]));
 			$entries = array_merge($entries, $found);
 		}
 
-		return array_unique($entries);
+		$entries = array_unique($entries);
+
+		if ($storage instanceof RedisStorage && $entries) {
+			call_user_func_array(array($this->client, 'del'), $entries);
+		}
+
+		return $storage instanceof RedisStorage ? array() : $entries;
 	}
 
 

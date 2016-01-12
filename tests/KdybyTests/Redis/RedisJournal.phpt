@@ -173,15 +173,15 @@ class RedisJournalTest extends AbstractRedisTestCase
 		Assert::same('ok_test6_7', $result[0], "clean tag homepage/7");
 
 		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage/4')));
-		Assert::same(0, count($result), "clean non exists tag");
+		Assert::same(1, count($result), "clean non exists tag");
 
 		$result = $this->journal->clean(array(Cache::PRIORITY => 4));
 		Assert::same(0, count($result), "clean non exists priority");
 
 		$result = $this->journal->clean(array(Cache::TAGS => array('test:homepage')));
-		Assert::same(4, count($result), "clean other");
+		Assert::same(10, count($result), "clean other");
 		sort($result);
-		Assert::same(array('ok_test6_10', 'ok_test6_6', 'ok_test6_8', 'ok_test6_9'), $result, "clean other");
+		Assert::same(array('ok_test6_1', 'ok_test6_10', 'ok_test6_2', 'ok_test6_3', 'ok_test6_4', 'ok_test6_5', 'ok_test6_6', 'ok_test6_7', 'ok_test6_8', 'ok_test6_9'), $result, "clean other");
 	}
 
 
@@ -284,7 +284,7 @@ class RedisJournalTest extends AbstractRedisTestCase
 		Assert::null($result);
 
 		$result2 = $this->journal->clean(array(Cache::TAGS => 'test:all'));
-		Assert::true(empty($result2));
+		Assert::equal(array(), $result2);
 	}
 
 
@@ -313,7 +313,7 @@ LUA;
 		$this->assertKeysInDatabase(5100);
 
 		$this->journal->clean(array(Cache::TAGS => 'test.4356'));
-		$this->assertKeysInDatabase(0);
+		$this->assertKeysInDatabase(5099);
 	}
 
 
@@ -340,7 +340,7 @@ LUA;
 		$this->assertKeysInDatabase(200001);
 
 		$this->journal->clean(array(Cache::TAGS => 'kdyby'));
-		$this->assertKeysInDatabase(0);
+		$this->assertKeysInDatabase(200000);
 	}
 
 
@@ -362,26 +362,7 @@ LUA;
 	private function cacheGeneratorScripts()
 	{
 		$script = file_get_contents(__DIR__ . '/../../../src/Kdyby/Redis/scripts/common.lua');
-		$script .= <<<LUA
-local range = function (from, to, step)
-	step = step or 1
-	local f =
-		step > 0 and
-			function(_, lastvalue)
-				local nextvalue = lastvalue + step
-				if nextvalue <= to then return nextvalue end
-			end or
-		step < 0 and
-			function(_, lastvalue)
-				local nextvalue = lastvalue + step
-				if nextvalue >= to then return nextvalue end
-			end or
-			function(_, lastvalue) return lastvalue end
-	return f, nil, from - step
-end
 
-
-LUA;
 		return $script;
 	}
 
