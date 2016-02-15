@@ -26,23 +26,45 @@ class ExtensionTest extends Tester\TestCase
 {
 
 	/**
-	 * @return \SystemContainer|\Nette\DI\Container
+	 * @param string $path
+	 * @return Nette\DI\Container|\SystemContainer
 	 */
-	protected function createContainer()
+	protected function createContainer($path)
 	{
 		$config = new Nette\Configurator();
 		$config->setTempDirectory(TEMP_DIR);
 		Kdyby\Redis\DI\RedisExtension::register($config);
-		$config->addConfig(__DIR__ . '/files/config.neon', $config::NONE);
+		$config->addConfig($path, $config::NONE);
 
 		return $config->createContainer();
 	}
 
-
-
-	public function testFunctional()
+	/**
+	 * @return array
+	 */
+	public function getConfigs()
 	{
-		$dic = $this->createContainer();
+		$directory = __DIR__ . '/files';
+		$files = array_diff(scandir($directory), array('..', '.'));
+		$configs = array();
+		foreach ($files as $file) {
+			if (!preg_match('/config/', $file)) {
+				continue;
+			}
+			$path = $directory . '/' . $file;
+			$configs[] = array($path);
+		}
+		return $configs;
+	}
+
+
+	/**
+	 * @dataProvider getConfigs
+	 * @param string $path Path to neon config
+	 */
+	public function testFunctional($path)
+	{
+		$dic = $this->createContainer($path);
 		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
 		Assert::true($dic->getService('redis.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);
 		Assert::true($dic->getService('nette.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);

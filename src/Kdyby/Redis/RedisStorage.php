@@ -52,7 +52,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	/**
 	 * @var string
 	 */
-	private $keyPrefix = '';
+	private $namespace = '';
 
 	/**
 	 * @var bool
@@ -63,14 +63,14 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	/**
 	 * @param RedisClient $client
 	 * @param \Nette\Caching\Storages\IJournal $journal
-	 * @param string|null $keyPrefix
+	 * @param string|NULL $namespace
 	 */
-	public function __construct(RedisClient $client, IJournal $journal = NULL, $keyPrefix = null)
+	public function __construct(RedisClient $client, IJournal $journal = NULL, $namespace = NULL)
 	{
 		$this->client = $client;
 		$this->journal = $journal;
-		if (!empty($keyPrefix)) {
-			$this->keyPrefix = $keyPrefix . '_';
+		if (!empty($namespace)) {
+			$this->namespace = $namespace . ':';
 		}
 	}
 
@@ -283,7 +283,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	{
 		// cleaning using file iterator
 		if (!empty($conds[Cache::ALL])) {
-			if ($keys = $this->client->send('keys', array(self::NS_NETTE . ':*'))) {
+			if ($keys = $this->client->send('keys', array(self::NS_NETTE . ':' . $this->namespace . '*'))) {
 				$this->client->send('del', $keys);
 			}
 
@@ -309,8 +309,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 */
 	protected function formatEntryKey($key)
 	{
-		$prefixedKey = $this->keyPrefix . $key;
-		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $prefixedKey);
+		return self::NS_NETTE . ':' . $this->namespace . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
 	}
 
 

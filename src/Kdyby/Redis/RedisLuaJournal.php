@@ -49,7 +49,7 @@ class RedisLuaJournal extends RedisJournal implements Nette\Caching\Storages\IJo
 
 		$args = self::flattenDp($conds);
 
-		$result = $this->client->evalScript($this->getScript('clean'), array(), array($args));
+		$result = $this->client->evalScript($this->getScript('clean'), array(), array($args, $this->namespace));
 		if (!is_array($result) && $result !== TRUE) {
 			throw new RedisClientException("Failed to successfully execute lua script journal.clean(): " . $this->client->getDriver()->getLastError());
 		}

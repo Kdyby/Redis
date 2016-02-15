@@ -28,11 +28,6 @@ class ExclusiveLock extends Nette\Object
 	private $client;
 
 	/**
-	 * @var string
-	 */
-	private $keyPrefix = '';
-
-	/**
 	 * @var array
 	 */
 	private $keys = array();
@@ -55,14 +50,10 @@ class ExclusiveLock extends Nette\Object
 
 	/**
 	 * @param RedisClient $redisClient
-	 * @param string|null $keyPrefix
 	 */
-	public function __construct(RedisClient $redisClient, $keyPrefix = null)
+	public function __construct(RedisClient $redisClient)
 	{
 		$this->client = $redisClient;
-		if (!empty($keyPrefix)) {
-			$this->keyPrefix = $keyPrefix . '_';
-		}
 	}
 
 
@@ -224,7 +215,7 @@ class ExclusiveLock extends Nette\Object
 	 */
 	protected function formatLock($key)
 	{
-		return $this->keyPrefix . $key . ':lock';
+		return $key . ':lock';
 	}
 
 

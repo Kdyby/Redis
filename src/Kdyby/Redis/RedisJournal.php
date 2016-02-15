@@ -38,18 +38,18 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	/**
 	 * @var string
 	 */
-	private $keyPrefix = '';
+	protected $namespace = '';
 
 
 	/**
 	 * @param RedisClient $client
-	 * @param string|null $keyPrefix
+	 * @param string|NULL $namespace
 	 */
-	public function __construct(RedisClient $client, $keyPrefix = null)
+	public function __construct(RedisClient $client, $namespace = NULL)
 	{
 		$this->client = $client;
-		if (!empty($keyPrefix)) {
-			$this->keyPrefix = $keyPrefix . '_';
+		if (!empty($namespace)) {
+			$this->namespace = $namespace . ':';
 		}
 	}
 
@@ -190,7 +190,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	protected function formatKey($key, $suffix = NULL)
 	{
-		return self::NS_NETTE . ':' . $this->keyPrefix . $key . ($suffix ? ':' . $suffix : NULL);
+		return self::NS_NETTE . ':' . $this->namespace . $key . ($suffix ? ':' . $suffix : NULL);
 	}
 
 }
