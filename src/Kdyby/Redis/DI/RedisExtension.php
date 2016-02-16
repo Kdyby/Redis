@@ -51,7 +51,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'lockAcquireTimeout' => FALSE,
 		'debugger' => '%debugMode%',
 		'versionCheck' => TRUE,
-        'namespace' => NULL,
+		'namespace' => NULL,
 	);
 
 	/**
@@ -155,14 +155,14 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
-        $journalConfig = Nette\DI\Config\Helpers::merge(is_array($config['journal']) ? $config['journal'] : array(), array(
-            'namespace' => NULL,
-        ));
+		$journalConfig = Nette\DI\Config\Helpers::merge(is_array($config['journal']) ? $config['journal'] : array(), array(
+			'namespace' => NULL,
+		));
 
-        $constructParams = array(
-            $this->prefix('@client'),
-            $journalConfig['namespace'],
-        );
+		$constructParams = array(
+			$this->prefix('@client'),
+			$journalConfig['namespace'],
+		);
 
 		$builder->addDefinition($this->prefix('cacheJournal'))
 				->setClass('Kdyby\Redis\RedisLuaJournal', $constructParams);
@@ -185,17 +185,17 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$storageConfig = Nette\DI\Config\Helpers::merge(is_array($config['storage']) ? $config['storage'] : array(), array(
 			'locks' => TRUE,
-            'namespace' => NULL,
+			'namespace' => NULL,
 		));
 
-        $constructParams = array(
-            $this->prefix('@client'),
-            $this->prefix('@cacheJournal'),
-            $storageConfig['namespace'],
-        );
+		$constructParams = array(
+			$this->prefix('@client'),
+			$this->prefix('@cacheJournal'),
+			$storageConfig['namespace'],
+		);
 
-        $cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
-            ->setClass('Kdyby\Redis\RedisStorage', $constructParams);
+		$cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
+			->setClass('Kdyby\Redis\RedisStorage', $constructParams);
 
 		if (!$storageConfig['locks']) {
 			$cacheStorage->addSetup('disableLocking');
@@ -216,20 +216,20 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
-        $sessionConfig = Nette\DI\Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
-            'host' => $config['host'],
-            'port' => $config['port'],
-            'weight' => 1,
-            'timeout' => $config['timeout'],
-            'database' => $config['database'],
-            'prefix' => isset($config['namespace']) ? $config['namespace'] : self::DEFAULT_SESSION_PREFIX,
-            'auth' => $config['auth'],
-            'native' => TRUE,
-            'lockDuration' => $config['lockDuration'],
-            'lockAcquireTimeout' => $config['lockAcquireTimeout'],
-            'connectionAttempts' => $config['connectionAttempts'],
-            'persistent' => $config['persistent'],
-        ));
+		$sessionConfig = Nette\DI\Config\Helpers::merge(is_array($config['session']) ? $config['session'] : array(), array(
+			'host' => $config['host'],
+			'port' => $config['port'],
+			'weight' => 1,
+			'timeout' => $config['timeout'],
+			'database' => $config['database'],
+			'prefix' => isset($config['namespace']) ? $config['namespace'] : self::DEFAULT_SESSION_PREFIX,
+			'auth' => $config['auth'],
+			'native' => TRUE,
+			'lockDuration' => $config['lockDuration'],
+			'lockAcquireTimeout' => $config['lockAcquireTimeout'],
+			'connectionAttempts' => $config['connectionAttempts'],
+			'persistent' => $config['persistent'],
+		));
 		$sessionConfig = self::fixClientConfig($sessionConfig);
 
 		$this->buildClient('sessionHandler', array('debugger' => FALSE) + $sessionConfig);
@@ -239,10 +239,10 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			return;
 		}
 
-        $constructParams = array(
-            $this->prefix('@sessionHandler_client'),
-            $sessionConfig['namespace'],
-        );
+		$constructParams = array(
+			$this->prefix('@sessionHandler_client'),
+			$sessionConfig['namespace'],
+		);
 
 		$builder->addDefinition($this->prefix('sessionHandler'))
 			->setClass('Kdyby\Redis\RedisSessionHandler', $constructParams);
