@@ -1,0 +1,7 @@
+redis:
+	journal:
+		namespace: "instance1"
+	storage:
+		namespace: "instance2"
+	session:
+		namespace: "instance3"

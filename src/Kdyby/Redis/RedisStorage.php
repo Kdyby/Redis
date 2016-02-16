@@ -50,20 +50,28 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	private $journal;
 
 	/**
+	 * @var string
+	 */
+	private $namespace = '';
+
+	/**
 	 * @var bool
 	 */
 	private $useLocks = TRUE;
 
 
-
 	/**
 	 * @param RedisClient $client
 	 * @param \Nette\Caching\Storages\IJournal $journal
+	 * @param string|NULL $namespace
 	 */
-	public function __construct(RedisClient $client, IJournal $journal = NULL)
+	public function __construct(RedisClient $client, IJournal $journal = NULL, $namespace = NULL)
 	{
 		$this->client = $client;
 		$this->journal = $journal;
+		if (!empty($namespace)) {
+			$this->namespace = $namespace . ':';
+		}
 	}
 
 
@@ -275,7 +283,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	{
 		// cleaning using file iterator
 		if (!empty($conds[Cache::ALL])) {
-			if ($keys = $this->client->send('keys', array(self::NS_NETTE . ':*'))) {
+			if ($keys = $this->client->send('keys', array(self::NS_NETTE . ':' . $this->namespace . '*'))) {
 				$this->client->send('del', $keys);
 			}
 
@@ -301,7 +309,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 */
 	protected function formatEntryKey($key)
 	{
-		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
+		return self::NS_NETTE . ':' . $this->namespace . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
 	}
 
 

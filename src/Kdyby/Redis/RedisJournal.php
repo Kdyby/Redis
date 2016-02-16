@@ -14,7 +14,6 @@ use Nette;
 use Nette\Caching\Cache;
 
 
-
 /**
  * Redis journal for tags and priorities of cached values.
  *
@@ -36,14 +35,22 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	protected $client;
 
+	/**
+	 * @var string
+	 */
+	protected $namespace = '';
 
 
 	/**
 	 * @param RedisClient $client
+	 * @param string|NULL $namespace
 	 */
-	public function __construct(RedisClient $client)
+	public function __construct(RedisClient $client, $namespace = NULL)
 	{
 		$this->client = $client;
+		if (!empty($namespace)) {
+			$this->namespace = $namespace . ':';
+		}
 	}
 
 
@@ -183,7 +190,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	protected function formatKey($key, $suffix = NULL)
 	{
-		return self::NS_NETTE . ':' . $key . ($suffix ? ':' . $suffix : NULL);
+		return self::NS_NETTE . ':' . $this->namespace . $key . ($suffix ? ':' . $suffix : NULL);
 	}
 
 }

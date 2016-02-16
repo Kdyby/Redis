@@ -1,6 +1,13 @@
 
+local namespace = ARGV[2]
+if namespace == nil then
+    namespace = ""
+end
+
+rawset(_G, "namespace", namespace)
+
 local formatKey = function (key, suffix)
-    local res = "Nette.Journal:" .. key
+    local res = "Nette.Journal:" .. namespace .. key
     if suffix ~= nil then
         res = res .. ":" .. suffix
     end
@@ -9,7 +16,7 @@ local formatKey = function (key, suffix)
 end
 
 local formatStorageKey = function(key, suffix)
-    local res = "Nette.Storage:" .. key
+    local res = "Nette.Storage:" .. namespace .. key
     if suffix ~= nil then
         res = res .. ":" .. suffix
     end
@@ -45,3 +52,4 @@ local cleanEntry = function (keys)
         -- redis.call('exec')
     end
 end
+

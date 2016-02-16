@@ -3,7 +3,7 @@ local conds = cjson.decode(ARGV[1])
 
 if conds["all"] ~= nil then
     -- redis.call('multi')
-    for i, value in pairs(redis.call('keys', "Nette.Journal:*")) do
+    for i, value in pairs(redis.call('keys', "Nette.Journal:".. namespace .."*")) do
         redis.call('del', value)
     end
     -- redis.call('exec')

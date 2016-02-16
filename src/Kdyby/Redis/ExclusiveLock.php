@@ -48,7 +48,6 @@ class ExclusiveLock extends Nette\Object
 	public $acquireTimeout = FALSE;
 
 
-
 	/**
 	 * @param RedisClient $redisClient
 	 */

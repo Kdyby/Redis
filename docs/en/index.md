@@ -124,3 +124,41 @@ You can disable the native driver by this option (and the emulated will take con
 redis:
 	session: {native: off}
 ```
+
+## Key namespace
+
+Key namespace gives you availability to create prefixed keys in Redis storage.
+
+You can define namespace for: journal, session, storage.
+
+To use key prefixed with namespace, add `namespace` option in configuration, for example:
+
+Instance 1
+```yml
+redis:
+    host: 127.0.0.1
+    port: 6379
+    journal:
+        namespace: "instance1"
+    session: on
+    storage: on
+    debugger: off
+```
+
+Instance 2
+```yml
+redis:
+    host: 127.0.0.1
+    port: 6379
+    journal:
+        namespace: "instance2"
+    session: on
+    storage: on
+    debugger: off
+```
+
+After configuration all keys will be prefixed "namespace:key"
+
+Example use case:
+When you use two instances of one application with one Redis server, it is possible, that your data can be overwritten by second application instance.
+To avoid this problem you can define key namespaces in configuration.

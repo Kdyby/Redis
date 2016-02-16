@@ -17,7 +17,6 @@ use Nette\DI\Compiler;
 use Nette\DI\Config;
 
 
-
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
@@ -52,6 +51,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'lockAcquireTimeout' => FALSE,
 		'debugger' => '%debugMode%',
 		'versionCheck' => TRUE,
+		'namespace' => NULL,
 	);
 
 	/**
@@ -155,8 +155,17 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
+		$journalConfig = Nette\DI\Config\Helpers::merge(is_array($config['journal']) ? $config['journal'] : array(), array(
+			'namespace' => NULL,
+		));
+
+		$constructParams = array(
+			$this->prefix('@client'),
+			$journalConfig['namespace'],
+		);
+
 		$builder->addDefinition($this->prefix('cacheJournal'))
-			->setClass('Kdyby\Redis\RedisLuaJournal');
+				->setClass('Kdyby\Redis\RedisLuaJournal', $constructParams);
 
 		// overwrite
 		$journalService = $builder->getByType('Nette\Caching\Storages\IJournal') ?: 'nette.cacheJournal';
@@ -176,10 +185,17 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$storageConfig = Nette\DI\Config\Helpers::merge(is_array($config['storage']) ? $config['storage'] : array(), array(
 			'locks' => TRUE,
+			'namespace' => NULL,
 		));
 
+		$constructParams = array(
+			$this->prefix('@client'),
+			$this->prefix('@cacheJournal'),
+			$storageConfig['namespace'],
+		);
+
 		$cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
-			->setClass('Kdyby\Redis\RedisStorage');
+			->setClass('Kdyby\Redis\RedisStorage', $constructParams);
 
 		if (!$storageConfig['locks']) {
 			$cacheStorage->addSetup('disableLocking');
@@ -206,7 +222,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			'weight' => 1,
 			'timeout' => $config['timeout'],
 			'database' => $config['database'],
-			'prefix' => self::DEFAULT_SESSION_PREFIX,
+			'prefix' => isset($config['namespace']) ? $config['namespace'] : self::DEFAULT_SESSION_PREFIX,
 			'auth' => $config['auth'],
 			'native' => TRUE,
 			'lockDuration' => $config['lockDuration'],
@@ -220,15 +236,20 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		if ($sessionConfig['native']) {
 			$this->loadNativeSessionHandler($sessionConfig);
-
-		} else {
-			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass('Kdyby\Redis\RedisSessionHandler', array($this->prefix('@sessionHandler_client')));
-
-			$sessionService = $builder->getByType('Nette\Http\Session') ?: 'session';
-			$builder->getDefinition($sessionService)
-				->addSetup('?->bind(?)', array($this->prefix('@sessionHandler'), '@self'));
+			return;
 		}
+
+		$constructParams = array(
+			$this->prefix('@sessionHandler_client'),
+			$sessionConfig['namespace'],
+		);
+
+		$builder->addDefinition($this->prefix('sessionHandler'))
+			->setClass('Kdyby\Redis\RedisSessionHandler', $constructParams);
+
+		$sessionService = $builder->getByType('Nette\Http\Session') ?: 'session';
+		$builder->getDefinition($sessionService)
+			->addSetup('?->bind(?)', array($this->prefix('@sessionHandler'), '@self'));
 	}
 
 
