@@ -49,7 +49,7 @@ install:
   - travis_retry composer update --no-interaction --prefer-dist $COMPOSER_EXTRA_ARGS
   - travis_retry composer create-project --no-interaction jakub-onderka/php-parallel-lint /tmp/php-parallel-lint
   - travis_retry composer create-project --no-interaction kdyby/code-checker /tmp/code-checker
-  - tests/travis.redis.sh
+  - tests/travis.phpredis.sh
   - redis-cli info |grep version
 
 script:
