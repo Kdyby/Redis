@@ -13,6 +13,9 @@ php:
   - 7.0
   - hhvm
 
+services:
+  - redis-server
+
 env:
   matrix:
     - NETTE=nette-2.4-dev
