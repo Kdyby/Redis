@@ -40,14 +40,17 @@ before_install:
   - wget -O /tmp/composer-nette https://raw.githubusercontent.com/Kdyby/TesterExtras/master/bin/composer-nette.php
   - php /tmp/composer-nette
 
+addons:
+  apt:
+    packages:
+      - redis-server
+
 install:
   - travis_retry composer update --no-interaction --prefer-dist $COMPOSER_EXTRA_ARGS
   - travis_retry composer create-project --no-interaction jakub-onderka/php-parallel-lint /tmp/php-parallel-lint
   - travis_retry composer create-project --no-interaction kdyby/code-checker /tmp/code-checker
-  - which redis-server
-  - cat /etc/redis/redis.conf
   - tests/travis.redis.sh
-  - tests/travis.phpredis.sh
+  - redis-cli info |grep version
 
 script:
   - vendor/bin/tester -s -p php -c ./tests/php.ini-unix ./tests/KdybyTests/
