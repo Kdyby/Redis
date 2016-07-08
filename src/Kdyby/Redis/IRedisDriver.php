@@ -222,6 +222,6 @@ interface IRedisDriver
 	 * @param int $numKeys The number of arguments that should go into the KEYS array, vs. the ARGV array when Redis spins the script
 	 * @return mixed
 	 */
-	function evalsha($scriptSha, $argsArray = array(), $numKeys = 0);
+	function evalsha($scriptSha, $argsArray = [], $numKeys = 0);
 
 }

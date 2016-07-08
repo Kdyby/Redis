@@ -33,7 +33,7 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 	/**
 	 * @var array
 	 */
-	private $ssIds = array();
+	private $ssIds = [];
 
 	/**
 	 * @var RedisClient
@@ -84,7 +84,7 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 		if ($this->ttl === NULL) {
 			if ($this->session !== NULL) {
 				$options = $this->session->getOptions();
-				$ttl = min(array_filter(array($options['cookie_lifetime'], $options['gc_maxlifetime']), function ($v) { return $v > 0; })) ?: 0;
+				$ttl = min(array_filter([$options['cookie_lifetime'], $options['gc_maxlifetime']], function ($v) { return $v > 0; })) ?: 0;
 
 			} else {
 				$ttl = ini_get('session.gc_maxlifetime');
@@ -182,7 +182,7 @@ class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterfa
 		foreach ($this->ssIds as $id => $key) {
 			$this->client->unlock($key);
 		}
-		$this->ssIds = array();
+		$this->ssIds = [];
 
 		return TRUE;
 	}

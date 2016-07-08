@@ -220,9 +220,9 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	/**
 	 * @var array
 	 */
-	private static $exceptionCmd = array(
+	private static $exceptionCmd = [
 		'evalsha' => 0
-	);
+	];
 
 
 
@@ -295,7 +295,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 		}
 
 		$remaining = $this->connectionAttempts;
-		$errors = array();
+		$errors = [];
 
 		do {
 			try {
@@ -396,7 +396,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 * @throws RedisClientException
 	 * @return mixed
 	 */
-	public function send($cmd, array $args = array())
+	public function send($cmd, array $args = [])
 	{
 		if (!$this->isConnected) {
 			$this->connect();
@@ -409,7 +409,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				$this->panel->begin($request, $this->database);
 			}
 
-			$result = call_user_func_array(array($this->driver, $cmd), $args);
+			$result = call_user_func_array([$this->driver, $cmd], $args);
 
 			if ($result === TRUE && strtolower($cmd) === 'select') {
 				$this->database = $args[0];
@@ -457,7 +457,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 				return explode('=', $item, 2);
 			}, explode(',', $db));
 
-			$result = array();
+			$result = [];
 			foreach ($info as $item) {
 				$result[$item[0]] = $item[1];
 			}
@@ -537,7 +537,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function scan(&$iterator, $pattern = NULL, $count = NULL)
 	{
-		return call_user_func(array($this, 'send'), __FUNCTION__, array(&$iterator, $pattern, $count));
+		return call_user_func([$this, 'send'], __FUNCTION__, [&$iterator, $pattern, $count]);
 	}
 
 
@@ -553,7 +553,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function hScan($key, &$iterator, $pattern = NULL, $count = NULL)
 	{
-		return call_user_func(array($this, 'send'), __FUNCTION__, array($key, &$iterator, $pattern, $count));
+		return call_user_func([$this, 'send'], __FUNCTION__, [$key, &$iterator, $pattern, $count]);
 	}
 
 
@@ -569,7 +569,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function sScan($key, &$iterator, $pattern = NULL, $count = NULL)
 	{
-		return call_user_func(array($this, 'send'), __FUNCTION__, array($key, &$iterator, $pattern, $count));
+		return call_user_func([$this, 'send'], __FUNCTION__, [$key, &$iterator, $pattern, $count]);
 	}
 
 
@@ -585,7 +585,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function zScan($key, &$iterator, $pattern = NULL, $count = NULL)
 	{
-		return call_user_func(array($this, 'send'), __FUNCTION__, array($key, &$iterator, $pattern, $count));
+		return call_user_func([$this, 'send'], __FUNCTION__, [$key, &$iterator, $pattern, $count]);
 	}
 
 
@@ -593,15 +593,15 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	/**
 	 * Execute a Lua script server side
 	 */
-	public function evalScript($script, array $keys = array(), array $args = array())
+	public function evalScript($script, array $keys = [], array $args = [])
 	{
 		$script = trim($script);
 
-		$result = $this->send('evalsha', array(sha1($script), array_merge($keys, $args), count($keys)));
+		$result = $this->send('evalsha', [sha1($script), array_merge($keys, $args), count($keys)]);
 		if ($result === FALSE && stripos($this->driver->getLastError(), 'NOSCRIPT') !== FALSE) {
 			$this->driver->clearLastError();
 			$sha = $this->driver->script('load', $script);
-			$result = $this->send('evalsha', array($sha, array_merge($keys, $args), count($keys)));
+			$result = $this->send('evalsha', [$sha, array_merge($keys, $args), count($keys)]);
 		}
 
 		return $result;
@@ -733,7 +733,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function &__get($name)
 	{
-		$res = $this->send('get', array($name));
+		$res = $this->send('get', [$name]);
 		return $res;
 	}
 
@@ -747,7 +747,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function __set($name, $value)
 	{
-		return $this->send('set', array($name, $value));
+		return $this->send('set', [$name, $value]);
 	}
 
 
@@ -761,7 +761,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function __isset($name)
 	{
-		return $this->send('exists', array($name));
+		return $this->send('exists', [$name]);
 	}
 
 
@@ -773,7 +773,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 	 */
 	public function __unset($name)
 	{
-		return $this->send('del', array($name));
+		return $this->send('del', [$name]);
 	}
 
 

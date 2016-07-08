@@ -41,12 +41,12 @@ class Panel extends Nette\Object implements IBarPanel
 	/**
 	 * @var array
 	 */
-	private $queries = array();
+	private $queries = [];
 
 	/**
 	 * @var array
 	 */
-	private $errors = array();
+	private $errors = [];
 
 	/**
 	 * @var bool
@@ -86,7 +86,7 @@ class Panel extends Nette\Object implements IBarPanel
 			$cmd = '';
 
 		} else {
-			$cmd = array();
+			$cmd = [];
 			foreach ($args as $arg) {
 				if (!$arg instanceof \Closure) {
 					$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
@@ -95,12 +95,12 @@ class Panel extends Nette\Object implements IBarPanel
 			$cmd = implode(' ', $cmd);
 		}
 
-		$this->queries[] = (object) array(
-			'errors' => array(),
+		$this->queries[] = (object) [
+			'errors' => [],
 			'cmd' => $cmd,
 			'db' => $dbIndex,
 			'time' => 0
-		);
+		];
 
 		Debugger::timer(self::TIMER_NAME); // reset timer
 	}
@@ -212,10 +212,10 @@ class Panel extends Nette\Object implements IBarPanel
 			}
 
 			if ($panel !== NULL) {
-				$panel = array(
+				$panel = [
 					'tab' => 'Redis Response',
 					'panel' => $panel
-				);
+				];
 			}
 
 			return $panel;
@@ -229,7 +229,7 @@ class Panel extends Nette\Object implements IBarPanel
 	 */
 	public static function register()
 	{
-		self::getDebuggerBlueScreen()->addPanel(array($panel = new static(), 'renderException'));
+		self::getDebuggerBlueScreen()->addPanel([$panel = new static(), 'renderException']);
 		self::getDebuggerBar()->addPanel($panel);
 		return $panel;
 	}

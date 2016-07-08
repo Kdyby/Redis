@@ -63,7 +63,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 		$this->client->multi();
 
 		// add entry to each tag & tag to entry
-		$tags = empty($dp[Cache::TAGS]) ? array() : (array)$dp[Cache::TAGS];
+		$tags = empty($dp[Cache::TAGS]) ? [] : (array)$dp[Cache::TAGS];
 		foreach (array_unique($tags) as $tag) {
 			$this->client->sAdd($this->formatKey($tag, self::KEYS), $key);
 			$this->client->sAdd($this->formatKey($key, self::TAGS), $tag);
@@ -86,7 +86,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function cleanEntry($keys)
 	{
-		foreach (is_array($keys) ? $keys : array($keys) as $key) {
+		foreach (is_array($keys) ? $keys : [$keys] as $key) {
 			$entries = $this->entryTags($key);
 
 			$this->client->multi();
@@ -117,12 +117,12 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 			$all = $this->client->keys(self::NS_NETTE . ':*');
 
 			$this->client->multi();
-			call_user_func_array(array($this->client, 'del'), $all);
+			call_user_func_array([$this->client, 'del'], $all);
 			$this->client->exec();
 			return NULL;
 		}
 
-		$entries = array();
+		$entries = [];
 		if (!empty($conds[Cache::TAGS])) {
 			foreach ((array)$conds[Cache::TAGS] as $tag) {
 				$this->cleanEntry($found = $this->tagEntries($tag));
@@ -146,7 +146,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function priorityEntries($priority)
 	{
-		return $this->client->zRangeByScore($this->formatKey(self::PRIORITY), 0, (int)$priority) ?: array();
+		return $this->client->zRangeByScore($this->formatKey(self::PRIORITY), 0, (int)$priority) ?: [];
 	}
 
 
@@ -158,7 +158,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function entryTags($key)
 	{
-		return $this->client->sMembers($this->formatKey($key, self::TAGS)) ? : array();
+		return $this->client->sMembers($this->formatKey($key, self::TAGS)) ? : [];
 	}
 
 
@@ -170,7 +170,7 @@ class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJourn
 	 */
 	private function tagEntries($tag)
 	{
-		return $this->client->sMembers($this->formatKey($tag, self::KEYS)) ? : array();
+		return $this->client->sMembers($this->formatKey($tag, self::KEYS)) ? : [];
 	}
 
 

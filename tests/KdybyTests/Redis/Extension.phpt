@@ -48,7 +48,7 @@ class ExtensionTest extends Tester\TestCase
 		Assert::true($dic->getService('nette.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);
 		Assert::true($dic->getService('redis.cacheStorage') instanceof Kdyby\Redis\RedisStorage);
 		Assert::true($dic->getService('cacheStorage') instanceof Kdyby\Redis\RedisStorage);
-		Assert::same(array(
+		Assert::same([
 			'saveHandler' => 'redis',
 			'savePath' => 'tcp://127.0.0.1:6379?weight=1&timeout=10&database=0&prefix=Nette.Session%3A',
 			'referer_check' => '',
@@ -65,7 +65,7 @@ class ExtensionTest extends Tester\TestCase
 			'cache_expire' => NULL,
 			'hash_function' => NULL,
 			'hash_bits_per_character' => NULL,
-		), $dic->getService('session')->getOptions());
+		], $dic->getService('session')->getOptions());
 	}
 
 }

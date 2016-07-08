@@ -29,7 +29,7 @@ class RedisLuaJournal extends RedisJournal implements Nette\Caching\Storages\IJo
 	/**
 	 * @var array
 	 */
-	private $script = array();
+	private $script = [];
 
 
 
@@ -49,13 +49,13 @@ class RedisLuaJournal extends RedisJournal implements Nette\Caching\Storages\IJo
 
 		$args = self::flattenDp($conds);
 
-		$result = $this->client->evalScript($this->getScript('clean'), array(), array($args));
+		$result = $this->client->evalScript($this->getScript('clean'), [], [$args]);
 		if (!is_array($result) && $result !== TRUE) {
 			throw new RedisClientException("Failed to successfully execute lua script journal.clean(): " . $this->client->getDriver()->getLastError());
 		}
 
 		if ($storage instanceof RedisStorage) {
-			return array();
+			return [];
 		}
 
 		return is_array($result) ? array_unique($result) : NULL;
@@ -68,7 +68,7 @@ class RedisLuaJournal extends RedisJournal implements Nette\Caching\Storages\IJo
 		if (isset($array[Cache::TAGS])) {
 			$array[Cache::TAGS] = (array) $array[Cache::TAGS];
 		}
-		$filtered = array_intersect_key($array, array_flip(array(Cache::TAGS, Cache::PRIORITY, Cache::ALL, self::DELETE_ENTRIES)));
+		$filtered = array_intersect_key($array, array_flip([Cache::TAGS, Cache::PRIORITY, Cache::ALL, self::DELETE_ENTRIES]));
 
 		return Nette\Utils\Json::encode($filtered);
 	}

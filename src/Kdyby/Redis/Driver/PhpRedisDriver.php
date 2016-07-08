@@ -57,7 +57,7 @@ class PhpRedisDriver extends \Redis implements Kdyby\Redis\IRedisDriver
 	/**
 	 * {@inheritdoc}
 	 */
-	public function evalsha($scriptSha, $argsArray = array(), $numKeys = 0)
+	public function evalsha($scriptSha, $argsArray = [], $numKeys = 0)
 	{
 		$args = func_get_args();
 		return call_user_func_array('parent::evalsha', $args);

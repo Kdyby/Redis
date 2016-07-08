@@ -30,7 +30,7 @@ class ExclusiveLock extends Nette\Object
 	/**
 	 * @var array
 	 */
-	private $keys = array();
+	private $keys = [];
 
 	/**
 	 * Duration of the lock, this is time in seconds, how long any other process can't work with the row.

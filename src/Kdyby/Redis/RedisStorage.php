@@ -103,7 +103,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 */
 	public function multiRead(array $keys)
 	{
-		$values = array();
+		$values = [];
 		foreach ($this->doMultiRead($keys) as $key => $stored) {
 			$values[$key] = NULL;
 			if ($stored !== NULL && $this->verify($stored[0])) {
@@ -127,7 +127,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	{
 		do {
 			if (!empty($meta[self::META_DELTA])) {
-				$this->client->send('expire', array($this->formatEntryKey($meta[self::KEY]), $meta[self::META_DELTA]));
+				$this->client->send('expire', [$this->formatEntryKey($meta[self::KEY]), $meta[self::META_DELTA]]);
 
 			} elseif (!empty($meta[self::META_EXPIRE]) && $meta[self::META_EXPIRE] < time()) {
 				break;
@@ -193,9 +193,9 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 */
 	public function write($key, $data, array $dp)
 	{
-		$meta = array(
+		$meta = [
 			self::META_TIME => microtime(),
-		);
+		];
 
 		if (isset($dp[Cache::EXPIRATION])) {
 			if (empty($dp[Cache::SLIDING])) {
@@ -236,10 +236,10 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 
 		try {
 			if (isset($dp[Cache::EXPIRATION])) {
-				$this->client->send('setEX', array($cacheKey, $dp[Cache::EXPIRATION], $store));
+				$this->client->send('setEX', [$cacheKey, $dp[Cache::EXPIRATION], $store]);
 
 			} else {
-				$this->client->send('set', array($cacheKey, $store));
+				$this->client->send('set', [$cacheKey, $store]);
 			}
 
 			$this->unlock($key);
@@ -259,7 +259,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 */
 	public function remove($key)
 	{
-		$this->client->send('del', array($this->formatEntryKey($key)));
+		$this->client->send('del', [$this->formatEntryKey($key)]);
 	}
 
 
@@ -275,7 +275,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	{
 		// cleaning using file iterator
 		if (!empty($conds[Cache::ALL])) {
-			if ($keys = $this->client->send('keys', array(self::NS_NETTE . ':*'))) {
+			if ($keys = $this->client->send('keys', [self::NS_NETTE . ':*'])) {
 				$this->client->send('del', $keys);
 			}
 
@@ -329,7 +329,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 */
 	private function doRead($key)
 	{
-		if (!$stored = $this->client->send('get', array($this->formatEntryKey($key)))) {
+		if (!$stored = $this->client->send('get', [$this->formatEntryKey($key)])) {
 			return NULL;
 		}
 
@@ -344,10 +344,10 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 */
 	private function doMultiRead(array $keys)
 	{
-		$formatedKeys = array_map(array($this, 'formatEntryKey'), $keys);
+		$formatedKeys = array_map([$this, 'formatEntryKey'], $keys);
 
-		$result = array();
-		foreach ($this->client->send('mget', array($formatedKeys)) as $index => $stored) {
+		$result = [];
+		foreach ($this->client->send('mget', [$formatedKeys]) as $index => $stored) {
 			$key = $keys[$index];
 			$result[$key] = $stored !== FALSE ? self::processStoredValue($key, $stored) : NULL;
 		}
@@ -364,8 +364,8 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	 */
 	private static function processStoredValue($key, $storedValue)
 	{
-		list($meta, $data) = explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + array(NULL, NULL);
-		return array(array(self::KEY => $key) + json_decode($meta, TRUE), $data);
+		list($meta, $data) = explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + [NULL, NULL];
+		return [[self::KEY => $key] + json_decode($meta, TRUE), $data];
 	}
 
 
