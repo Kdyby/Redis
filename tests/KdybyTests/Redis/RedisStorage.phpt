@@ -288,7 +288,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 	public function testPriority()
 	{
-		$storage = new RedisStorage($this->client, new Nette\Caching\Storages\FileJournal(TEMP_DIR));
+		$storage = new RedisStorage($this->client, $this->createDefaultJournal());
 		$cache = new Cache($storage);
 
 		// Writing cache...
@@ -348,7 +348,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 	public function testTags()
 	{
-		$storage = new RedisStorage($this->client, new Nette\Caching\Storages\FileJournal(TEMP_DIR));
+		$storage = new RedisStorage($this->client, $this->createDefaultJournal());
 		$cache = new Cache($storage);
 
 		// Writing cache...
@@ -422,6 +422,24 @@ class RedisStorageTest extends AbstractRedisTestCase
 			'D' => NULL,
 			'E' => NULL,
 		], $storage->multiRead(['A', 'B', 'C', 'D', 'E']));
+	}
+
+
+
+	/**
+	 * @return \Nette\Caching\Storages\IJournal
+	 */
+	private function createDefaultJournal()
+	{
+		if (class_exists('Nette\Caching\Storages\SQLiteJournal')) {
+			return new Nette\Caching\Storages\SQLiteJournal(':memory:');
+		}
+
+		if (class_exists('Nette\Caching\Storages\FileJournal')) {
+			return new Nette\Caching\Storages\FileJournal(TEMP_DIR);
+		}
+
+		throw new \Exception('no journal available');
 	}
 
 }

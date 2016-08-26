@@ -35,7 +35,7 @@ class RedisClientTest extends AbstractRedisTestCase
 	public function setUp()
 	{
 		parent::setUp();
-		$this->ns = Nette\Utils\Strings::random();
+		$this->ns = Nette\Utils\Random::generate();
 	}
 
 
