@@ -100,7 +100,8 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 	protected function threadStress(\Closure $closure, $repeat = 100, $threads = 30)
 	{
 		$runTest = Tracy\Helpers::findTrace(debug_backtrace(), 'Tester\TestCase::runTest') ?: ['args' => [0 => 'test']];
-		$scriptFile = TEMP_DIR . '/scripts/' . str_replace('%5C', '_', urlencode(get_class($this))) . '.' . urlencode($runTest['args'][0]) . '.php';
+		$testName = ($runTest['args'][0] instanceof \ReflectionFunctionAbstract) ? $runTest['args'][0]->getName() : (string) $runTest['args'][0];
+		$scriptFile = TEMP_DIR . '/scripts/' . str_replace('%5C', '_', urlencode(get_class($this))) . '.' . urlencode($testName) . '.php';
 		FileSystem::createDir($dir = dirname($scriptFile));
 
 		$extractor = new ClosureExtractor($closure);
