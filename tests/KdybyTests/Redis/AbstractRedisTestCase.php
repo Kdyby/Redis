@@ -149,7 +149,7 @@ class ResultsCollector implements Tester\Runner\OutputHandler
 			$runTest = Tracy\Helpers::findTrace(debug_backtrace(), 'Tester\TestCase::runTest') ?: ['args' => [0 => 'test']];
 			$testName = $runTest['args'][0];
 		}
-		$this->testName = $testName;
+		$this->testName = $testName instanceof \ReflectionFunctionAbstract ? $testName->getName() : (string) $testName;
 	}
 
 
