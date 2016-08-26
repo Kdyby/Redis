@@ -107,16 +107,15 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		// close session
 		$session->close();
 
-		Assert::same([
-			['open' => ['', 'PHPSESSID']],
-			['read' => [$sessionId]],
-			['write' => [$sessionId, '__NF|a:3:{s:4:"Time";i:' . $T . ';s:1:"B";s:10:"' . $B . '";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:1;}}}']],
-			['close' => []],
-			['open' => ['', 'PHPSESSID']],
-			['read' => [$sessionId]],
-			['write' => [$sessionId, '__NF|a:3:{s:4:"Time";i:' . $T . ';s:1:"B";s:10:"' . $B . '";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}']],
-			['close' => []],
-		], $handler->methods);
+		Assert::same(['open', '', 'PHPSESSID'], $handler->series[0][0]);
+		Assert::same(['read', $sessionId], $handler->series[0][1]);
+		Assert::same('write', $handler->series[0][2][0]);
+		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:1;}}}', $handler->series[0][2][2]);
+
+		Assert::same(['open', '', 'PHPSESSID'], $handler->series[1][0]);
+		Assert::same(['read', $sessionId], $handler->series[1][1]);
+		Assert::same('write', $handler->series[1][2][0]);
+		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler->series[1][2][2]);
 
 		Assert::count(1, $this->client->keys('Nette.Session:*'));
 	}
@@ -195,7 +194,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		sleep(3); // working for a looong time :)
 
 		$session = self::createSession([session_name() => $sessionId]);
-		$session->setHandler($handler = new SessionHandlerDecorator(new RedisSessionHandler($client = new RedisClient())));
+		$session->setHandler(new SessionHandlerDecorator(new RedisSessionHandler($client = new RedisClient())));
 		$client->setupLockDuration(5, 2);
 
 		Assert::exception(function () use ($session) {
@@ -230,12 +229,10 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		// explicitly close
 		$session->close();
 
-		Assert::same([
-			['open' => ['', 'PHPSESSID']],
-			['read' => [$sessionId]],
-			['write' => [$sessionId, '__NF|a:3:{s:4:"Time";i:' . $_SESSION['__NF']['Time'] . ';s:1:"B";s:10:"' . $_SESSION['__NF']['B'] . '";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:0;}}}']],
-			['close' => []],
-		], $handler->methods);
+		Assert::same(['open', '', 'PHPSESSID'], $handler->series[0][0]);
+		Assert::same(['read', $sessionId], $handler->series[0][1]);
+		Assert::same('write', $handler->series[0][2][0]);
+		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:0;}}}', $handler->series[0][2][2]);
 
 		// only testing the behaviour of high concurency for one request, without regenerating the session id
 		// 30 processes will be started, but every one of them will work for at least 1 second
