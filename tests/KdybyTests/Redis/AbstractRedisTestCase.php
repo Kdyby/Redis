@@ -575,12 +575,17 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	/**
 	 * @var array
 	 */
-	public $methods = [];
+	public $series = [];
 
 	/**
 	 * @var bool
 	 */
 	public $log = FALSE;
+
+	/**
+	 * @var array
+	 */
+	public $openedSessionCalls = [];
 
 	/**
 	 * @var \SessionHandlerInterface
@@ -610,7 +615,7 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	public function open($save_path, $session_id)
 	{
 		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
-		$this->methods[] = [__FUNCTION__ => func_get_args()];
+		$this->openedSessionCalls[] = array_merge([__FUNCTION__], func_get_args());
 		return $this->handler->open($save_path, $session_id);
 	}
 
@@ -619,7 +624,9 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	public function close()
 	{
 		$this->log(__FUNCTION__);
-		$this->methods[] = [__FUNCTION__ => func_get_args()];
+		$this->openedSessionCalls[] = array_merge([__FUNCTION__], func_get_args());
+		$this->series[] = $this->openedSessionCalls;
+		$this->openedSessionCalls = [];
 		return $this->handler->close();
 	}
 
@@ -628,7 +635,7 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	public function read($session_id)
 	{
 		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
-		$this->methods[] = [__FUNCTION__ => func_get_args()];
+		$this->openedSessionCalls[] = array_merge([__FUNCTION__], func_get_args());
 		try {
 			return $this->handler->read($session_id);
 
@@ -643,7 +650,7 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	public function destroy($session_id)
 	{
 		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
-		$this->methods[] = [__FUNCTION__ => func_get_args()];
+		$this->openedSessionCalls[] = array_merge([__FUNCTION__], func_get_args());
 		try {
 			return $this->handler->destroy($session_id);
 
@@ -658,7 +665,7 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	public function write($session_id, $session_data)
 	{
 		$this->log(sprintf('%s: %s', __FUNCTION__, $session_id));
-		$this->methods[] = [__FUNCTION__ => func_get_args()];
+		$this->openedSessionCalls[] = array_merge([__FUNCTION__], func_get_args());
 		try {
 			return $this->handler->write($session_id, $session_data);
 
@@ -673,7 +680,7 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	public function gc($maxlifetime)
 	{
 		$this->log(__FUNCTION__);
-		$this->methods[] = [__FUNCTION__ => func_get_args()];
+		$this->openedSessionCalls[] = array_merge([__FUNCTION__], func_get_args());
 		return $this->handler->gc($maxlifetime);
 	}
 
