@@ -173,7 +173,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		Assert::same(['open', '', 'PHPSESSID'], $handler2->series[0][0]);
 		Assert::same(['read', $regeneratedId], $handler2->series[0][1]);
 		Assert::same('write', $handler2->series[0][2][0]);
-		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler2->series[0][2][3]);
+		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler2->series[0][2][2]);
 
 		Assert::count(1, $this->client->keys('Nette.Session:*'));
 	}
