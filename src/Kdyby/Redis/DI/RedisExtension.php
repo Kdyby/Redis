@@ -174,6 +174,10 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
+		$storageService = $builder->getByType('Nette\Caching\IStorage') ?: 'cacheStorage';
+		$builder->removeDefinition($storageService);
+		$builder->addDefinition($storageService)->setFactory($this->prefix('@cacheStorage'));
+
 		$storageConfig = Nette\DI\Config\Helpers::merge(is_array($config['storage']) ? $config['storage'] : [], [
 			'locks' => TRUE,
 		]);
