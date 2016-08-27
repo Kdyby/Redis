@@ -116,6 +116,8 @@ abstract class AbstractRedisTestCase extends Tester\TestCase
 		$runner->outputHandlers[] = $collector;
 		$runner->threadCount = $threads;
 		$runner->paths = [$scriptFile];
+
+		putenv(\Tester\Environment::COVERAGE); // unset coverage fur subprocesses
 		$runner->run();
 
 		return $runner->getResults();
