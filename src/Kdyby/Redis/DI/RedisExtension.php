@@ -66,7 +66,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$this->configuredClients = [];
 
 		$builder = $this->getContainerBuilder();
-		$config = self::fixClientConfig($this->getConfig($this->defaults + $this->clientDefaults));
+		$config = static::fixClientConfig($this->getConfig($this->defaults + $this->clientDefaults));
 
 		$this->buildClient(NULL, $config);
 
@@ -101,7 +101,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		}
 
 		$config = Config\Helpers::merge($config, $defaultConfig);
-		$config = array_intersect_key(self::fixClientConfig($config), $this->clientDefaults);
+		$config = array_intersect_key(static::fixClientConfig($config), $this->clientDefaults);
 
 		$client = $builder->addDefinition($clientName = $this->prefix(($name ? $name . '_' : '') . 'client'))
 			->setClass('Kdyby\Redis\RedisClient', [
@@ -214,7 +214,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			'connectionAttempts' => $config['connectionAttempts'],
 			'persistent' => $config['persistent'],
 		]);
-		$sessionConfig = self::fixClientConfig($sessionConfig);
+		$sessionConfig = static::fixClientConfig($sessionConfig);
 
 		$this->buildClient('sessionHandler', ['debugger' => FALSE] + $sessionConfig);
 
