@@ -260,6 +260,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	public function remove($key)
 	{
 		$this->client->send('del', [$this->formatEntryKey($key)]);
+		$this->unlock($key);
 	}
 
 
