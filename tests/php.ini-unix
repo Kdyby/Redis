@@ -1,5 +1,9 @@
 [php]
 session.gc_probability=0
+session.save_path = ""
 
 [redis]
 extension=redis.so
+extension=json.so
+extension=pdo.so
+extension=pdo_sqlite.so

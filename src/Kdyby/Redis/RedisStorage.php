@@ -209,7 +209,7 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 		if (isset($dp[Cache::ITEMS])) {
 			foreach ((array)$dp[Cache::ITEMS] as $itemName) {
 				$m = $this->readMeta($itemName);
-				$meta[self::META_ITEMS][$itemName] = $m[self::META_TIME]; // may be NULL
+				$meta[self::META_ITEMS][str_replace(Cache::NAMESPACE_SEPARATOR, ':', $itemName)] = $m[self::META_TIME]; // may be NULL, json_decode make (PHP 5.6) \u00xxxxxxxx as '', so replace \u00 with : here
 				unset($m);
 			}
 		}

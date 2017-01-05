@@ -61,10 +61,6 @@ class ExtensionTest extends Tester\TestCase
 			'cookie_secure' => FALSE,
 			'cookie_httponly' => TRUE,
 			'gc_maxlifetime' => 10800,
-			'cache_limiter' => NULL,
-			'cache_expire' => NULL,
-			'hash_function' => NULL,
-			'hash_bits_per_character' => NULL,
 		], $dic->getService('session')->getOptions());
 	}
 
