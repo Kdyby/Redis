@@ -84,13 +84,13 @@ class SessionHandlerTest extends AbstractRedisTestCase
 	public function testIntegration_existingSession()
 	{
 		$sessionId = md5(1);
-		$session = self::createSession([session_name() => $sessionId, 'nette-browser' => $B = '1lm7e5iqsk']);
+		$session = self::createSession([session_name() => $sessionId]);
 
 		$session->setHandler($handler = new SessionHandlerDecorator(new RedisSessionHandler($this->client)));
 		$this->client->setupLockDuration(60, 20);
 
 		// fake session
-		$this->client->set('Nette.Session:' . $sessionId, '__NF|' . serialize(['Time' => $T = time() - 1000, 'B' => $B]));
+		$this->client->set('Nette.Session:' . $sessionId, '__NF|' . serialize(['Time' => $T = time() - 1000]));
 
 		$counter = $session->getSection('counter');
 		$counter->visits += 1;
@@ -110,12 +110,12 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		Assert::same(['open', '', 'PHPSESSID'], $handler->series[0][0]);
 		Assert::same(['read', $sessionId], $handler->series[0][1]);
 		Assert::same('write', $handler->series[0][2][0]);
-		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:1;}}}', $handler->series[0][2][2]);
+		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:1;}}}', $handler->series[0][2][2]);
 
 		Assert::same(['open', '', 'PHPSESSID'], $handler->series[1][0]);
 		Assert::same(['read', $sessionId], $handler->series[1][1]);
 		Assert::same('write', $handler->series[1][2][0]);
-		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler->series[1][2][2]);
+		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler->series[1][2][2]);
 
 		Assert::count(1, $this->client->keys('Nette.Session:*'));
 	}
@@ -139,7 +139,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 
 		$session1->close();
 
-		Assert::count(3, $handler1->series);
+		Assert::count(2, $handler1->series);
 
 		// open & destroy
 		Assert::same(['open', '', 'PHPSESSID'], $handler1->series[0][0]);
@@ -147,19 +147,19 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		Assert::same(['destroy', $sessionId], $handler1->series[0][2]);
 
 		// open regenerated
-		Assert::same(['open', '', 'PHPSESSID'], $handler1->series[1][0]);
-		Assert::same('read', $handler1->series[1][1][0]);
-		Assert::match('%S%', $regeneratedId = $handler1->series[1][1][1]);
-		Assert::same('write', $handler1->series[1][2][0]);
-		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";}', $handler1->series[1][2][2]);
+		Assert::same('write', $handler1->series[0][3][0]);
+		Assert::match('%S%', $regeneratedId = $handler1->series[0][3][1]);
+		Assert::match('__NF|a:1:{s:4:"Time";i:%S%;}', $handler1->series[0][3][2]);
 
 		// close session
-		Assert::same('write', $handler1->series[2][2][0]);
-		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:1;}}}', $handler1->series[2][2][2]);
+		Assert::same(['open', '', 'PHPSESSID'], $handler1->series[1][0]);
+		Assert::same('read', $handler1->series[1][1][0]);
+		Assert::same('write', $handler1->series[1][2][0]);
+		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:1;}}}', $handler1->series[1][2][2]);
 
 		Assert::notSame($sessionId, $regeneratedId);
 
-		$session2 = self::createSession([session_name() => $regeneratedId, 'nette-browser' => $_SESSION['__NF']['B']]); // no browser, empty session
+		$session2 = self::createSession([session_name() => $regeneratedId]); // no browser, empty session
 		$session2->setHandler($handler2 = new SessionHandlerDecorator(new RedisSessionHandler($client = new RedisClient())));
 		$client->setupLockDuration(60, 20);
 
@@ -173,7 +173,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		Assert::same(['open', '', 'PHPSESSID'], $handler2->series[0][0]);
 		Assert::same(['read', $regeneratedId], $handler2->series[0][1]);
 		Assert::same('write', $handler2->series[0][2][0]);
-		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler2->series[0][2][2]);
+		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler2->series[0][2][2]);
 
 		Assert::count(1, $this->client->keys('Nette.Session:*'));
 	}
@@ -216,11 +216,11 @@ class SessionHandlerTest extends AbstractRedisTestCase
 	{
 		$sessionId = md5(1);
 
-		$session = self::createSession([session_name() => $sessionId, 'nette-browser' => $B = '1lm7e5iqsk']);
+		$session = self::createSession([session_name() => $sessionId]);
 		$session->setHandler($handler = new SessionHandlerDecorator(new RedisSessionHandler($client = new RedisClient())));
 
 		// fake session
-		$client->set('Nette.Session:' . $sessionId, '__NF|' . serialize(['Time' => $T = time() - 1000, 'B' => $B]));
+		$client->set('Nette.Session:' . $sessionId, '__NF|' . serialize(['Time' => $T = time() - 1000]));
 
 		// open session
 		$counter = $session->getSection('counter');
@@ -232,19 +232,18 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		Assert::same(['open', '', 'PHPSESSID'], $handler->series[0][0]);
 		Assert::same(['read', $sessionId], $handler->series[0][1]);
 		Assert::same('write', $handler->series[0][2][0]);
-		Assert::match('__NF|a:3:{s:4:"Time";i:%S%;s:1:"B";s:10:"%S%";s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:0;}}}', $handler->series[0][2][2]);
+		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:0;}}}', $handler->series[0][2][2]);
 
 		// only testing the behaviour of high concurency for one request, without regenerating the session id
 		// 30 processes will be started, but every one of them will work for at least 1 second
 		// a fuckload (~66%) of the processes should actually fail, because the timeout for lock acquire is 10 sec
-		$result = $this->threadStress(function () use ($sessionId, $B) {
+		$result = $this->threadStress(function () use ($sessionId) {
 			$_COOKIE[session_name()] = $sessionId;
-			$_COOKIE['nette-browser'] = $B;
 
 			$session = new Nette\Http\Session(
 				new Nette\Http\Request(
 					new Nette\Http\UrlScript('http://www.kdyby.org'),
-					NULL, [], [], [session_name() => $sessionId, 'nette-browser' => $B], [], 'GET'
+					NULL, [], [], [session_name() => $sessionId], [], 'GET'
 				),
 				new Nette\Http\Response()
 			);
