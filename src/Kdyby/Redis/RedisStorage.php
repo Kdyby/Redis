@@ -360,10 +360,13 @@ class RedisStorage extends Nette\Object implements IMultiReadStorage
 	/**
 	 * @param string $key
 	 * @param string $storedValue
-	 * @return array
+	 * @return array|NULL
 	 */
 	private static function processStoredValue($key, $storedValue)
 	{
+		if ($storedValue === '+QUEUED') {
+			return NULL;
+		}
 		list($meta, $data) = explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + [NULL, NULL];
 		return [[self::KEY => $key] + json_decode($meta, TRUE), $data];
 	}
