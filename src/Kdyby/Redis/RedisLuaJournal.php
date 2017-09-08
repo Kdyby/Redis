@@ -68,7 +68,7 @@ class RedisLuaJournal extends RedisJournal implements Nette\Caching\Storages\IJo
 		if (isset($array[Cache::TAGS])) {
 			$array[Cache::TAGS] = (array) $array[Cache::TAGS];
 		}
-		$filtered = array_intersect_key($array, array_flip([Cache::TAGS, Cache::PRIORITY, Cache::ALL, self::DELETE_ENTRIES]));
+		$filtered = array_intersect_key($array, array_flip([Cache::TAGS, Cache::NAMESPACES, Cache::PRIORITY, Cache::ALL, self::DELETE_ENTRIES]));
 
 		return Nette\Utils\Json::encode($filtered);
 	}

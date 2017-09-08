@@ -52,6 +52,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'lockAcquireTimeout' => FALSE,
 		'debugger' => '%debugMode%',
 		'versionCheck' => TRUE,
+		'namespace' => ""
 	];
 
 	/**
@@ -160,8 +161,12 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder->removeDefinition($journalService);
 		$builder->addDefinition($journalService)->setFactory($this->prefix('@cacheJournal'));
 
+		$namespace = NULL;
+		if(isset($config['namespace']))
+			$namespace = $config['namespace'];
+
 		$builder->addDefinition($this->prefix('cacheJournal'))
-			->setClass('Kdyby\Redis\RedisLuaJournal');
+			->setClass('Kdyby\Redis\RedisLuaJournal', [$builder->getDefinition('redis.client'), $namespace]);
 	}
 
 
@@ -206,7 +211,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			'weight' => 1,
 			'timeout' => $config['timeout'],
 			'database' => $config['database'],
-			'prefix' => self::DEFAULT_SESSION_PREFIX,
+			'prefix' => self::DEFAULT_SESSION_PREFIX . $config['namespace'],
 			'auth' => $config['auth'],
 			'native' => TRUE,
 			'lockDuration' => $config['lockDuration'],

@@ -11,6 +11,18 @@ if conds["all"] ~= nil then
     return redis.status_reply("Ok")
 end
 
+if conds["namespaces"] ~= nil then
+    for i, namespace in pairs(conds["namespaces"]) do
+        -- redis.call('multi')
+        for i, value in pairs(redis.call('keys', "Nette.Journal:" .. namespace .. ":*")) do
+           redis.call('del', value)
+        end
+        -- redis.call('exec')
+    end
+
+    return redis.status_reply("Ok")
+end
+
 local entries = {}
 if conds["tags"] ~= nil then
     for i, tag in pairs(conds["tags"]) do
