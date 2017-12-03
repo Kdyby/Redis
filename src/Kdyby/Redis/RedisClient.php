@@ -154,8 +154,9 @@ use Tracy\Debugger;
  *
  * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisClient extends Nette\Object implements \ArrayAccess
+class RedisClient implements \ArrayAccess
 {
+	use Nette\SmartObject;
 
 	/** @deprecated */
 	const WITH_SCORES = 'WITHSCORES';

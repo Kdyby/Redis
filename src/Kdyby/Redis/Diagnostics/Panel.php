@@ -22,8 +22,9 @@ use Tracy\IBarPanel;
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
-class Panel extends Nette\Object implements IBarPanel
+class Panel implements IBarPanel
 {
+	use Nette\SmartObject;
 
 	/** @internal */
 	const TIMER_NAME = 'redis-client-timer';

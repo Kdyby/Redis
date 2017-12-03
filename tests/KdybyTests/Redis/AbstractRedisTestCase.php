@@ -203,8 +203,9 @@ class ResultsCollector implements Tester\Runner\OutputHandler
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
-class ClosureExtractor extends Nette\Object
+class ClosureExtractor
 {
+	use Nette\SmartObject;
 
 	/**
 	 * @var GlobalFunction
@@ -263,8 +264,9 @@ DOC;
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
-class NamespaceUses extends Nette\Object
+class NamespaceUses
 {
+	use Nette\SmartObject;
 
 	/**
 	 * @var \ReflectionClass
@@ -395,8 +397,9 @@ class NamespaceUses extends Nette\Object
 /**
  * @author Filip Procházka <filip@prochazka.su>
  */
-class FunctionCode extends Nette\Object
+class FunctionCode
 {
+	use Nette\SmartObject;
 
 	/**
 	 * @var \ReflectionFunctionAbstract

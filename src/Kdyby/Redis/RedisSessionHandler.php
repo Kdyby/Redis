@@ -24,8 +24,9 @@ use Nette;
  *
  * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisSessionHandler extends Nette\Object implements \SessionHandlerInterface
+class RedisSessionHandler implements \SessionHandlerInterface
 {
+	use Nette\SmartObject;
 
 	/** @internal cache structure */
 	const NS_NETTE = 'Nette.Session:';
