@@ -49,8 +49,8 @@ class ExtensionTest extends Tester\TestCase
 		Assert::true($dic->getService('redis.cacheStorage') instanceof Kdyby\Redis\RedisStorage);
 		Assert::true($dic->getService('cacheStorage') instanceof Kdyby\Redis\RedisStorage);
 		Assert::same([
-			'saveHandler' => 'redis',
-			'savePath' => 'tcp://127.0.0.1:6379?weight=1&timeout=10&database=0&prefix=Nette.Session%3A',
+			'save_handler' => 'redis',
+			'save_path' => 'tcp://127.0.0.1:6379?weight=1&timeout=10&database=0&prefix=Nette.Session%3A',
 			'referer_check' => '',
 			'use_cookies' => 1,
 			'use_only_cookies' => 1,
@@ -61,10 +61,6 @@ class ExtensionTest extends Tester\TestCase
 			'cookie_secure' => FALSE,
 			'cookie_httponly' => TRUE,
 			'gc_maxlifetime' => 10800,
-			'cache_limiter' => NULL,
-			'cache_expire' => NULL,
-			'hash_function' => NULL,
-			'hash_bits_per_character' => NULL,
 		], $dic->getService('session')->getOptions());
 	}
 
