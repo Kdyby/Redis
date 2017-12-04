@@ -20,8 +20,9 @@ use Nette\Caching\Cache;
  *
  * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisJournal extends Nette\Object implements Nette\Caching\Storages\IJournal
+class RedisJournal implements Nette\Caching\Storages\IJournal
 {
+	use Nette\SmartObject;
 
 	/** @internal cache structure */
 	const NS_NETTE = 'Nette.Journal';

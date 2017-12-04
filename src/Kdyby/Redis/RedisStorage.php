@@ -22,8 +22,9 @@ use Nette\Caching\Storages\IJournal;
  *
  * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisStorage extends Nette\Object implements IMultiReadStorage
+class RedisStorage implements IMultiReadStorage
 {
+	use Nette\SmartObject;
 
 	/** @internal cache structure */
 	const NS_NETTE = 'Nette.Storage';
