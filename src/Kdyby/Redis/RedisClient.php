@@ -323,7 +323,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 			} catch (\Exception $e) {
 				$errors[] = $e;
-				if (!Debugger::$productionMode) {
+				if (class_exists('Tracy\Debugger') && !Debugger::$productionMode) {
 					break;
 				}
 
