@@ -46,7 +46,7 @@ class PhpRedisDriver extends \Redis implements Kdyby\Redis\IRedisDriver
 	/**
 	 * {@inheritdoc}
 	 */
-	public function script($command, $script = NULL)
+	public function script($command, $script)
 	{
 		$args = func_get_args();
 		return call_user_func_array('parent::script', $args);
