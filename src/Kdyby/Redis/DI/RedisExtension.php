@@ -52,7 +52,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'lockAcquireTimeout' => FALSE,
 		'debugger' => '%debugMode%',
 		'versionCheck' => TRUE,
-		'namespace' => ""
+		'namespace' => ''
 	];
 
 	/**
@@ -161,12 +161,10 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder->removeDefinition($journalService);
 		$builder->addDefinition($journalService)->setFactory($this->prefix('@cacheJournal'));
 
-		$namespace = NULL;
-		if(isset($config['namespace']))
-			$namespace = $config['namespace'];
+		$namespace = $config['namespace'] ?? null;
 
 		$builder->addDefinition($this->prefix('cacheJournal'))
-			->setClass('Kdyby\Redis\RedisLuaJournal', [$builder->getDefinition('redis.client'), $namespace]);
+			->setClass('Kdyby\Redis\RedisLuaJournal')->setArguments([$builder->getDefinition('redis.client'), $namespace]);
 	}
 
 

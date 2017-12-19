@@ -46,9 +46,9 @@ class RedisJournal implements Nette\Caching\Storages\IJournal
 
 	/**
 	 * @param RedisClient $client
-	 * @param [string] $namespace
+	 * @param string $namespace
 	 */
-	public function __construct(RedisClient $client, $namespace = "")
+	public function __construct(RedisClient $client, $namespace = '')
 	{
 		$this->client = $client;
 		$this->namespace = $namespace;
