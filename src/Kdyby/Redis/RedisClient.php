@@ -154,8 +154,9 @@ use Tracy\Debugger;
  *
  * @author Filip Procházka <filip@prochazka.su>
  */
-class RedisClient extends Nette\Object implements \ArrayAccess
+class RedisClient implements \ArrayAccess
 {
+	use Nette\SmartObject;
 
 	/** @deprecated */
 	const WITH_SCORES = 'WITHSCORES';
@@ -323,7 +324,7 @@ class RedisClient extends Nette\Object implements \ArrayAccess
 
 			} catch (\Exception $e) {
 				$errors[] = $e;
-				if (!Debugger::$productionMode) {
+				if (class_exists('Tracy\Debugger') && !Debugger::$productionMode) {
 					break;
 				}
 
