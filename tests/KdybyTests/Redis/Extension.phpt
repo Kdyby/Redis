@@ -43,11 +43,17 @@ class ExtensionTest extends Tester\TestCase
 	public function testFunctional()
 	{
 		$dic = $this->createContainer();
-		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
-		Assert::true($dic->getService('redis.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);
-		Assert::true($dic->getService('nette.cacheJournal') instanceof Kdyby\Redis\RedisLuaJournal);
-		Assert::true($dic->getService('redis.cacheStorage') instanceof Kdyby\Redis\RedisStorage);
-		Assert::true($dic->getService('cacheStorage') instanceof Kdyby\Redis\RedisStorage);
+
+		/** @var Kdyby\Redis\RedisClient $redisClient */
+		$redisClient = $dic->getService('redis.client');
+
+		Assert::type(Kdyby\Redis\RedisClient::class, $redisClient);
+		Assert::type(Kdyby\Redis\RedisLuaJournal::class, $dic->getService('redis.cacheJournal'));
+		Assert::type(Kdyby\Redis\RedisLuaJournal::class, $dic->getService('nette.cacheJournal'));
+		Assert::type(Kdyby\Redis\RedisStorage::class, $dic->getService('redis.cacheStorage'));
+		Assert::type(Kdyby\Redis\RedisStorage::class, $dic->getService('cacheStorage'));
+		Assert::type(Kdyby\Redis\Driver\PhpRedisDriver::class, $dic->getService('redis.driver'));
+		Assert::type(Kdyby\Redis\Driver\PhpRedisDriver::class, $redisClient->getDriver());
 		Assert::same([
 			'save_handler' => 'redis',
 			'save_path' => 'tcp://127.0.0.1:6379?weight=1&timeout=10&database=0&prefix=Nette.Session%3A',
@@ -62,6 +68,22 @@ class ExtensionTest extends Tester\TestCase
 			'cookie_httponly' => TRUE,
 			'gc_maxlifetime' => 10800,
 		], $dic->getService('session')->getOptions());
+	}
+
+
+
+	private function DriverChange()
+	{
+		$dic = $this->createContainer();
+
+		$dic->removeService('redis.driver');
+		$dic->addService('redis.driver', NullDriver::class);
+
+		/** @var Kdyby\Redis\RedisClient $redisClient */
+		$redisClient = $dic->getService('redis.client');
+
+		Assert::type(NullDriver::class, $dic->getService('redis.driver'));
+		Assert::type(NullDriver::class, $redisClient->getDriver());
 	}
 
 }

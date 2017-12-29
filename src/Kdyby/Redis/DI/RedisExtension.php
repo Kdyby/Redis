@@ -68,11 +68,10 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$config = self::fixClientConfig($this->getConfig($this->defaults + $this->clientDefaults));
 
-		$this->buildClient(NULL, $config);
-
 		$builder->addDefinition($this->prefix('driver'))
-			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
-			->setFactory($this->prefix('@client') . '::getDriver');
+			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver');
+
+		$this->buildClient(NULL, $config);
 
 		$this->loadJournal($config);
 		$this->loadStorage($config);
@@ -130,6 +129,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$client->addSetup('setupLockDuration', [$config['lockDuration'], $config['lockAcquireTimeout']]);
 		$client->addSetup('setConnectionAttempts', [$config['connectionAttempts']]);
+		$client->addSetup('setDriver', [$builder->getDefinition($this->prefix('driver'))]);
 		$client->addTag('redis.client');
 
 		if (array_key_exists('debugger', $config) && $config['debugger']) {

@@ -164,7 +164,7 @@ class RedisClient implements \ArrayAccess
 	const DEFAULT_PORT = 6379;
 
 	/**
-	 * @var Driver\PhpRedisDriver
+	 * @var IRedisDriver|NULL
 	 */
 	private $driver;
 
@@ -254,6 +254,16 @@ class RedisClient implements \ArrayAccess
 	public function __destruct()
 	{
 		$this->close();
+	}
+
+
+
+	/**
+	 * @param IRedisDriver $driver
+	 */
+	public function setDriver(IRedisDriver $driver)
+	{
+		$this->driver = $driver;
 	}
 
 
