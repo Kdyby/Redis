@@ -77,7 +77,7 @@ class ExtensionTest extends Tester\TestCase
 		$dic = $this->createContainer();
 
 		$dic->removeService('redis.driver');
-		$dic->addService('redis.driver', NullDriver::class);
+		$dic->addService('redis.driver', new NullDriver());
 
 		/** @var Kdyby\Redis\RedisClient $redisClient */
 		$redisClient = $dic->getService('redis.client');
