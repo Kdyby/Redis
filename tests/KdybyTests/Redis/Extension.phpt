@@ -72,7 +72,7 @@ class ExtensionTest extends Tester\TestCase
 
 
 
-	private function DriverChange()
+	private function testDriverChange()
 	{
 		$dic = $this->createContainer();
 
