@@ -196,6 +196,13 @@ interface IRedisDriver
 	function close();
 
 	/**
+	 * Get actual selected database
+	 *
+	 * @return int
+	 */
+	function getDatabase();
+
+	/**
 	 * The last error message (if any)
 	 *
 	 * @return string|NULL

@@ -22,6 +22,12 @@ class PhpRedisDriver extends \Redis implements Kdyby\Redis\IRedisDriver
 {
 
 	/**
+	 * @var integer
+	 */
+	private $database = 0;
+
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function connect($host, $port = NULL, $timeout = 0)
@@ -38,7 +44,13 @@ class PhpRedisDriver extends \Redis implements Kdyby\Redis\IRedisDriver
 	public function select($database)
 	{
 		$args = func_get_args();
-		return call_user_func_array('parent::select', $args);
+		$result = call_user_func_array('parent::select', $args);
+
+		if ($result === TRUE) {
+			$this->database = (int) $database;
+		}
+
+		return $result;
 	}
 
 
@@ -61,6 +73,16 @@ class PhpRedisDriver extends \Redis implements Kdyby\Redis\IRedisDriver
 	{
 		$args = func_get_args();
 		return call_user_func_array('parent::evalsha', $args);
+	}
+
+
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDatabase()
+	{
+		return $this->database;
 	}
 
 }
