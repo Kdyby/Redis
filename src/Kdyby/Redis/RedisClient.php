@@ -259,7 +259,7 @@ class RedisClient implements \ArrayAccess
 
 
 	/**
-	 * @return \Kdyby\Redis\IRedisDriver
+	 * @return \Kdyby\Redis\IRedisDriver|\Kdyby\Redis\IRedisDriverOld
 	 */
 	public function getDriver()
 	{
@@ -288,7 +288,7 @@ class RedisClient implements \ArrayAccess
 		}
 
 		if (!$this->driver) {
-			$this->driver = new Driver\PhpRedisDriver();
+			$this->driver = phpversion('redis') >= '4.0.0' ? new Driver\PhpRedisDriver() : new Driver\PhpRedisDriverOld();
 		}
 
 		if ($this->driver->isConnected()) {
