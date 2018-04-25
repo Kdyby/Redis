@@ -19,8 +19,9 @@ use Nette;
  * @author Ondřej Nešpor
  * @author Filip Procházka <filip@prochazka.su>
  */
-class ExclusiveLock extends Nette\Object
+class ExclusiveLock
 {
+	use Nette\SmartObject;
 
 	/**
 	 * @var RedisClient
