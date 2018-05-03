@@ -178,6 +178,7 @@ interface IRedisDriver
 	 * @param string $host can be a host, or the path to a unix domain socket
 	 * @param int $port
 	 * @param int $timeout value in seconds (optional, default is 0 meaning unlimited)
+     * @param int $retry_interval value in seconds
 	 * @return bool
 	 */
 	function connect($host, $port = NULL, $timeout = NULL, $retry_interval = NULL);
@@ -210,8 +211,8 @@ interface IRedisDriver
 	/**
 	 * Execute the Redis SCRIPT command to perform various operations on the scripting subsystem.
 	 *
-	 * @param $command
-	 * @param $script
+	 * @param $cmd
+	 * @param ...$args
 	 * @return mixed
 	 */
 	function script($cmd, ...$args);

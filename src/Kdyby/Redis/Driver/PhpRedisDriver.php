@@ -48,8 +48,8 @@ class PhpRedisDriver extends \Redis implements Kdyby\Redis\IRedisDriver
 	 */
 	public function script($cmd, ...$args)
 	{
-		$args = func_get_args();
-		return call_user_func_array('parent::script', $args);
+		$function_args = func_get_args();
+		return call_user_func_array('parent::script', $function_args);
 	}
 
 
