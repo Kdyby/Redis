@@ -70,8 +70,11 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$this->buildClient(NULL, $config);
 
+		$phpRedisDriverClass = phpversion('redis') >= '4.0.0' ? Kdyby\Redis\Driver\PhpRedisDriver::class : Kdyby\Redis\Driver\PhpRedisDriverOld::class;
+		$phpRedisDriverInterface = phpversion('redis') >= '4.0.0' ? Kdyby\Redis\IRedisDriver::class : Kdyby\Redis\IRedisDriverOld::class;
+
 		$builder->addDefinition($this->prefix('driver'))
-			->setClass(class_exists('Redis') ? 'Kdyby\Redis\Driver\PhpRedisDriver' : 'Kdyby\Redis\IRedisDriver')
+			->setClass(class_exists('Redis') ? $phpRedisDriverClass : $phpRedisDriverInterface)
 			->setFactory($this->prefix('@client') . '::getDriver');
 
 		$this->loadJournal($config);
@@ -104,7 +107,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$config = array_intersect_key(self::fixClientConfig($config), $this->clientDefaults);
 
 		$client = $builder->addDefinition($clientName = $this->prefix(($name ? $name . '_' : '') . 'client'))
-			->setClass('Kdyby\Redis\RedisClient', [
+			->setClass(Kdyby\Redis\RedisClient::class, [
 				'host' => $config['host'],
 				'port' => $config['port'],
 				'database' => $config['database'],
@@ -118,7 +121,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 			$this->configuredClients['default'] = $config;
 			$builder->addDefinition($this->prefix('default_client'))
-				->setClass('Kdyby\Redis\RedisClient')
+				->setClass(Kdyby\Redis\RedisClient::class)
 				->setFactory('@' . $clientName)
 				->setAutowired(FALSE);
 
@@ -134,8 +137,8 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		if (array_key_exists('debugger', $config) && $config['debugger']) {
 			$builder->addDefinition($panelName = $clientName . '.panel')
-				->setClass('Kdyby\Redis\Diagnostics\Panel')
-				->setFactory('Kdyby\Redis\Diagnostics\Panel::register')
+				->setClass(Kdyby\Redis\Diagnostics\Panel::class)
+				->setFactory(Kdyby\Redis\Diagnostics\Panel::class . '::register')
 				->addSetup('$renderPanel', [$config['debugger'] !== self::PANEL_COUNT_MODE])
 				->addSetup('$name', [$name ?: 'default']);
 
@@ -156,12 +159,12 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 
 		// overwrite
-		$journalService = $builder->getByType('Nette\Caching\Storages\IJournal') ?: 'nette.cacheJournal';
+		$journalService = $builder->getByType(Nette\Caching\Storages\IJournal::class) ?: 'nette.cacheJournal';
 		$builder->removeDefinition($journalService);
 		$builder->addDefinition($journalService)->setFactory($this->prefix('@cacheJournal'));
 
 		$builder->addDefinition($this->prefix('cacheJournal'))
-			->setClass('Kdyby\Redis\RedisLuaJournal');
+			->setClass(Kdyby\Redis\RedisLuaJournal::class);
 	}
 
 
@@ -178,12 +181,12 @@ class RedisExtension extends Nette\DI\CompilerExtension
 			'locks' => TRUE,
 		]);
 
-		$storageService = $builder->getByType('Nette\Caching\IStorage') ?: 'cacheStorage';
+		$storageService = $builder->getByType(Nette\Caching\IStorage::class) ?: 'cacheStorage';
 		$builder->removeDefinition($storageService);
 		$builder->addDefinition($storageService)->setFactory($this->prefix('@cacheStorage'));
 
 		$cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
-			->setClass('Kdyby\Redis\RedisStorage');
+			->setClass(Kdyby\Redis\RedisStorage::class);
 
 		if (!$storageConfig['locks']) {
 			$cacheStorage->addSetup('disableLocking');
@@ -223,9 +226,9 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		} else {
 			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass('Kdyby\Redis\RedisSessionHandler', [$this->prefix('@sessionHandler_client')]);
+				->setClass(Kdyby\Redis\RedisSessionHandler::class, [$this->prefix('@sessionHandler_client')]);
 
-			$sessionService = $builder->getByType('Nette\Http\Session') ?: 'session';
+			$sessionService = $builder->getByType(Nette\Http\Session::class) ?: 'session';
 			$builder->getDefinition($sessionService)
 				->addSetup('?->bind(?)', [$this->prefix('@sessionHandler'), '@self']);
 		}

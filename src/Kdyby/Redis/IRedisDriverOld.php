@@ -152,7 +152,7 @@ use Nette;
  * @method zScore(string $key, string $member) Get the score associated with the given member in a sorted set
  * @method zUnionStore(string $destination, string $numkeys, string $key1, string $key2 = NULL, $option1 = NULL, $option2 = NULL) Add multiple sorted sets and store the resulting sorted set in a new key</ul>
  */
-interface IRedisDriver
+interface IRedisDriverOld
 {
 
 	/**
@@ -180,7 +180,7 @@ interface IRedisDriver
 	 * @param int $timeout value in seconds (optional, default is 0 meaning unlimited)
 	 * @return bool
 	 */
-	function connect($host, $port = NULL, $timeout = NULL, $retry_interval = NULL);
+	function connect($host, $port = NULL, $timeout = 0);
 
 	/**
 	 * Change the selected database for the current connection.
@@ -214,7 +214,7 @@ interface IRedisDriver
 	 * @param $script
 	 * @return mixed
 	 */
-	function script($cmd, ...$args);
+	function script($command, $script = NULL);
 
 	/**
 	 * @param string $scriptSha The sha1 encoded hash of the script you want to run.
