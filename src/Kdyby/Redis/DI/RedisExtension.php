@@ -167,11 +167,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$namespace = $config['namespace'] ?? null;
 
 		$builder->addDefinition($this->prefix('cacheJournal'))
-<<<<<<< HEAD
 			->setClass('Kdyby\Redis\RedisLuaJournal')->setArguments([$builder->getDefinition('redis.client'), $namespace]);
-=======
-			->setClass(Kdyby\Redis\RedisLuaJournal::class);
->>>>>>> master
 	}
 
 
