@@ -75,7 +75,7 @@ class ExclusiveLock
 	 */
 	public function calculateTimeout()
 	{
-		return time() + abs((int)$this->duration) + 1;
+		return time() + $this->calculateRelativeTimeout() + 1;
 	}
 
 
@@ -93,36 +93,27 @@ class ExclusiveLock
 			return $this->increaseLockTimeout($key);
 		}
 
-		$start = microtime(TRUE);
-
 		$lockKey = $this->formatLock($key);
-		$maxAttempts = 10;
-		do {
-			$sleepTime = 5000;
-			do {
-				if ($this->client->setNX($lockKey, $timeout = $this->calculateTimeout())) {
-					$this->keys[$key] = $timeout;
-					return TRUE;
-				}
+		if ($this->client->sAdd($lockKey . ':control', $lockKey) > 0) {
+			$this->client->del($lockKey);
+			$this->client->rPush($lockKey, 1);
+		}
+		try {
+			$result = $this->client->blPop($lockKey, $this->calculateRelativeTimeout());
+		} catch (Kdyby\Redis\RedisClientException $e) {
+			LockException::highConcurrency();
+		}
+		if (empty($result)) {
+			throw LockException::acquireTimeout();
+		}
 
-				if ($this->acquireTimeout !== FALSE && (microtime(TRUE) - $start) >= $this->acquireTimeout) {
-					throw LockException::acquireTimeout();
-				}
+		$timeout = $this->calculateTimeout();
+		$this->client->set($lockKey . ':timeout', $timeout);
+		$this->client->expireAt($lockKey . ':timeout', $timeout);
+		$this->client->expireAt($lockKey . ':control', $timeout);
+		$this->keys[$key] = $timeout;
 
-				$lockExpiration = $this->client->get($lockKey);
-				$sleepTime += 2500;
-
-			} while (empty($lockExpiration) || ($lockExpiration >= time() && !usleep($sleepTime)));
-
-			$oldExpiration = $this->client->getSet($lockKey, $timeout = $this->calculateTimeout());
-			if ($oldExpiration === $lockExpiration) {
-				$this->keys[$key] = $timeout;
-				return TRUE;
-			}
-
-		} while (--$maxAttempts > 0);
-
-		throw LockException::highConcurrency();
+		return TRUE;
 	}
 
 
@@ -136,14 +127,15 @@ class ExclusiveLock
 			return FALSE;
 		}
 
-		if ($this->keys[$key] <= time()) {
-			unset($this->keys[$key]);
-			return FALSE;
+		$timeout = $this->keys[$key];
+		$lockKey = $this->formatLock($key);
+		$this->client->del($lockKey . ':timeout');
+		if ($timeout > time()) {
+			$this->client->rPush($lockKey, 1);
 		}
-
-		$this->client->del($this->formatLock($key));
 		unset($this->keys[$key]);
-		return TRUE;
+
+		return $timeout > time();
 	}
 
 
@@ -162,11 +154,17 @@ class ExclusiveLock
 			throw LockException::durabilityTimedOut();
 		}
 
-		$oldTimeout = $this->client->getSet($this->formatLock($key), $timeout = $this->calculateTimeout());
-		if ((int)$oldTimeout !== (int)$this->keys[$key]) {
+		$lockKey = $this->formatLock($key);
+		$timeout = $this->calculateTimeout();
+		$oldTimeout = $this->client->getSet($lockKey . ':timeout', $timeout);
+		if ((int) $oldTimeout !== (int) $this->keys[$key]) {
 			throw LockException::invalidDuration();
 		}
+
+		$this->client->expireAt($lockKey . ':timeout', $timeout);
+		$this->client->expireAt($lockKey . ':control', $timeout);
 		$this->keys[$key] = $timeout;
+
 		return TRUE;
 	}
 
@@ -218,6 +216,13 @@ class ExclusiveLock
 	protected function formatLock($key)
 	{
 		return $key . ':lock';
+	}
+
+
+
+	protected function calculateRelativeTimeout()
+	{
+		return abs((int) ($this->acquireTimeout !== FALSE && $this->acquireTimeout > $this->duration ? $this->acquireTimeout : $this->duration));
 	}
 
 

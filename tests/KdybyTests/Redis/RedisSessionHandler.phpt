@@ -73,7 +73,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 
 		$handler->close(); // unlock
 
-		Assert::count(1, $this->client->keys('Nette.Session:*'));
+		Assert::count(3, $this->client->keys('Nette.Session:*'));
 	}
 
 
@@ -117,7 +117,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		Assert::same('write', $handler->series[1][2][0]);
 		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler->series[1][2][2]);
 
-		Assert::count(1, $this->client->keys('Nette.Session:*'));
+		Assert::count(3, $this->client->keys('Nette.Session:*'));
 	}
 
 
@@ -175,7 +175,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 		Assert::same('write', $handler2->series[0][2][0]);
 		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler2->series[0][2][2]);
 
-		Assert::count(1, $this->client->keys('Nette.Session:*'));
+		Assert::count(5, $this->client->keys('Nette.Session:*'));
 	}
 
 
@@ -203,7 +203,7 @@ class SessionHandlerTest extends AbstractRedisTestCase
 			Assert::same(1, $counter->visits);
 		}, 'Kdyby\Redis\SessionHandlerException', sprintf('Cannot work with non-locked session id %s: Lock couldn\'t be acquired. The locking mechanism is giving up. You should kill the request.', $sessionId));
 
-		Assert::count(1, $this->client->keys('Nette.Session:*'));
+		Assert::count(2, $this->client->keys('Nette.Session:*'));
 	}
 
 
@@ -259,18 +259,18 @@ class SessionHandlerTest extends AbstractRedisTestCase
 			$session->close(); // explicit close with unlock
 		}, 100, 30); // silence, I kill you!
 
-		self::assertRange(30, 40, $result[Tester\Runner\Runner::PASSED]);
+		self::assertRange(30, 45, $result[Tester\Runner\Runner::PASSED]);
 
-			// hard unlock
-		$client->del('Nette.Session:' . $sessionId . ':lock');
+		// hard unlock
+		$client->rPush('Nette.Session:' . $sessionId . ':lock', 1);
 
 		// open session for visits verify, for second time
 		$counter = $session->getSection('counter');
-		self::assertRange(30, 40, $counter->visits);
+		self::assertRange(30, 45, $counter->visits);
 
 		$session->close(); // unlocking drops the key
 
-		Assert::count(1, $this->client->keys('Nette.Session:*'));
+		Assert::count(3, $this->client->keys('Nette.Session:*'));
 	}
 
 
