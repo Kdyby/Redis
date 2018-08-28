@@ -35,6 +35,14 @@ redis:
 	session: on
 ```
 
+### Default database
+
+By default, the extension will connect to redis database `0`. It may be beneficial to change this if there are multiple applications connecting to the same redis server. Default database can be changed by using the configuration option
+
+```yml
+redis:
+	database: 2	# default selected database on redis server will be 2
+```
 
 ## Journal
 
