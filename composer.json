@@ -17,7 +17,7 @@
 		"issues": "https://github.com/kdyby/redis/issues"
 	},
 	"require": {
-		"php": ">=5.4",
+		"php": ">=7.1",
 		"nette/di": "~2.3@dev",
 		"nette/caching": "~2.3@dev",
 		"nette/http": "~2.3@dev",
