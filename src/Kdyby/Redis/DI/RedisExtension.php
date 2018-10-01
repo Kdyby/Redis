@@ -34,6 +34,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		'journal' => FALSE,
 		'storage' => FALSE,
 		'session' => FALSE,
+		'cacheKey' => NULL,
 		'clients' => [],
 	];
 
@@ -162,9 +163,17 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$journalService = $builder->getByType(Nette\Caching\Storages\IJournal::class) ?: 'nette.cacheJournal';
 		$builder->removeDefinition($journalService);
 		$builder->addDefinition($journalService)->setFactory($this->prefix('@cacheJournal'));
+		if ($config['cacheKey']) {
+			$builder->addDefinition($this->prefix('cacheJournal'))
+				->setClass(Kdyby\Redis\RedisJournal::class, [
+						'cacheKey' => $config['cacheKey'],
+					]
+				);
 
-		$builder->addDefinition($this->prefix('cacheJournal'))
-			->setClass(Kdyby\Redis\RedisLuaJournal::class);
+		} else {
+			$builder->addDefinition($this->prefix('cacheJournal'))
+				->setClass(Kdyby\Redis\RedisLuaJournal::class);
+		}
 	}
 
 
@@ -186,7 +195,10 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder->addDefinition($storageService)->setFactory($this->prefix('@cacheStorage'));
 
 		$cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
-			->setClass(Kdyby\Redis\RedisStorage::class);
+			->setClass(Kdyby\Redis\RedisStorage::class, [
+					'cacheKey' => $config['cacheKey'],
+				]
+			);
 
 		if (!$storageConfig['locks']) {
 			$cacheStorage->addSetup('disableLocking');

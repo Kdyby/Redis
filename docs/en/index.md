@@ -27,12 +27,14 @@ extensions:
 
 By default, the extension doesn't do much, but trying to reach the database server.
 There are three main configuration options, that when enabled, each one replaces or configures the original service provided by Nette.
+CacheKey option for specifying cache namespace. If namespace is specified RedisJournal is used instead of RedisLuaJournal.
 
 ```yml
 redis:
 	journal: on
 	storage: on
 	session: on
+	cacheKey: 'staging'
 ```
 
 
