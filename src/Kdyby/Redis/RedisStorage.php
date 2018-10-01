@@ -41,6 +41,11 @@ class RedisStorage implements IMultiReadStorage
 	const KEY = 'key';
 
 	/**
+	 * @var string
+	 */
+	protected $cacheKey;
+
+	/**
 	 * @var RedisClient
 	 */
 	private $client;
@@ -57,14 +62,15 @@ class RedisStorage implements IMultiReadStorage
 
 
 
-	/**
-	 * @param RedisClient $client
-	 * @param \Nette\Caching\Storages\IJournal $journal
-	 */
-	public function __construct(RedisClient $client, IJournal $journal = NULL)
+	public function __construct(
+		RedisClient $client,
+		IJournal $journal = NULL,
+		$cacheKey = NULL
+	)
 	{
 		$this->client = $client;
 		$this->journal = $journal;
+		$this->cacheKey = $cacheKey ? self::NS_NETTE . '.' . $cacheKey : self::NS_NETTE;
 	}
 
 
@@ -276,7 +282,7 @@ class RedisStorage implements IMultiReadStorage
 	{
 		// cleaning using file iterator
 		if (!empty($conds[Cache::ALL])) {
-			if ($keys = $this->client->send('keys', [self::NS_NETTE . ':*'])) {
+			if ($keys = $this->client->send('keys', [$this->cacheKey . ':*'])) {
 				$this->client->send('del', $keys);
 			}
 
@@ -302,7 +308,7 @@ class RedisStorage implements IMultiReadStorage
 	 */
 	protected function formatEntryKey($key)
 	{
-		return self::NS_NETTE . ':' . str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
+		return $this->cacheKey . ':' . str_replace(\Nette\Caching\Cache::NAMESPACE_SEPARATOR, ':', $key);
 	}
 
 
