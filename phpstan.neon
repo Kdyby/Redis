@@ -1,0 +1,12 @@
+parameters:
+	ignoreErrors:
+		- '#Result of function usleep \(void\) is used.#'
+		- '#Constant TEMP_DIR not found.#'
+		-
+			message: '#Negated boolean expression is always true.#'
+			path: *src/Kdyby/Redis/ExclusiveLock.php
+
+	excludes_analyse:
+		- *src/Kdyby/Redis/DI/ClassAliasMap.php
+
+	reportUnmatchedIgnoredErrors: FALSE

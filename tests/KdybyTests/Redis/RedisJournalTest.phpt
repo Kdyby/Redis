@@ -1,17 +1,16 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * Test: Kdyby\Redis\RedisJournal.
  *
  * @testCase Kdyby\Redis\RedisJournalTest
- * @author Filip Procházka <filip@prochazka.su>
- * @package Kdyby\Redis
  */
 
 namespace KdybyTests\Redis;
 
 use Kdyby\Redis\RedisLuaJournal;
-use Nette;
 use Nette\Caching\Cache;
 use Tester;
 use Tester\Assert;
@@ -20,29 +19,22 @@ require_once __DIR__ . '/../bootstrap.php';
 
 
 
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class RedisJournalTest extends AbstractRedisTestCase
+class RedisJournalTest extends \KdybyTests\Redis\AbstractRedisTestCase
 {
 
 	/**
-	 * @var RedisLuaJournal|Nette\Caching\Storages\IJournal
+	 * @var \Kdyby\Redis\RedisLuaJournal|\Nette\Caching\Storages\IJournal
 	 */
 	private $journal;
 
-
-
-	protected function setUp()
+	protected function setUp(): void
 	{
 		parent::setUp();
 
 		$this->journal = new RedisLuaJournal($this->getClient());
 	}
 
-
-
-	public function testRemoveByTag()
+	public function testRemoveByTag(): void
 	{
 		// Assert::same(0, count($this->getClient()->keys('*')));
 		$this->assertKeysInDatabase(0);
@@ -55,52 +47,44 @@ class RedisJournalTest extends AbstractRedisTestCase
 		$this->assertKeysInDatabase(2);
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage']]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test1', $result[0]);
 	}
 
-
-
-	public function testRemovingByMultipleTags_OneIsNotDefined()
+	public function testRemovingByMultipleTagsOneIsNotDefined(): void
 	{
 		$this->journal->write('ok_test2', [
 			Cache::TAGS => ['test:homepage', 'test:homepage2'],
 		]);
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage2']]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test2', $result[0]);
 	}
 
-
-
-	public function testRemovingByMultipleTags_BothAreOnOneEntry()
+	public function testRemovingByMultipleTagsBothAreOnOneEntry(): void
 	{
 		$this->journal->write('ok_test2b', [
 			Cache::TAGS => ['test:homepage', 'test:homepage2'],
 		]);
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage', 'test:homepage2']]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test2b', $result[0]);
 	}
 
-
-
-	public function testRemoveByMultipleTags_TwoSameTags()
+	public function testRemoveByMultipleTagsTwoSameTags(): void
 	{
 		$this->journal->write('ok_test2c', [
 			Cache::TAGS => ['test:homepage', 'test:homepage'],
 		]);
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage', 'test:homepage']]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test2c', $result[0]);
 	}
 
-
-
-	public function testRemoveByTagAndPriority()
+	public function testRemoveByTagAndPriority(): void
 	{
 		$this->journal->write('ok_test2d', [
 			Cache::TAGS => ['test:homepage'],
@@ -108,26 +92,22 @@ class RedisJournalTest extends AbstractRedisTestCase
 		]);
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage'], Cache::PRIORITY => 20]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test2d', $result[0]);
 	}
 
-
-
-	public function testRemoveByPriority()
+	public function testRemoveByPriority(): void
 	{
 		$this->journal->write('ok_test3', [
 			Cache::PRIORITY => 10,
 		]);
 
 		$result = $this->journal->clean([Cache::PRIORITY => 10]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test3', $result[0]);
 	}
 
-
-
-	public function testPriorityAndTag_CleanByTag()
+	public function testPriorityAndTagCleanByTag(): void
 	{
 		$this->journal->write('ok_test4', [
 			Cache::TAGS => ['test:homepage'],
@@ -135,13 +115,11 @@ class RedisJournalTest extends AbstractRedisTestCase
 		]);
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage']]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test4', $result[0]);
 	}
 
-
-
-	public function testPriorityAndTag_CleanByPriority()
+	public function testPriorityAndTagCleanByPriority(): void
 	{
 		$this->journal->write('ok_test5', [
 			Cache::TAGS => ['test:homepage'],
@@ -149,13 +127,11 @@ class RedisJournalTest extends AbstractRedisTestCase
 		]);
 
 		$result = $this->journal->clean([Cache::PRIORITY => 10]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test5', $result[0]);
 	}
 
-
-
-	public function testMultipleWritesAndMultipleClean()
+	public function testMultipleWritesAndMultipleClean(): void
 	{
 		for ($i = 1; $i <= 10; $i++) {
 			$this->journal->write('ok_test6_' . $i, [
@@ -165,115 +141,103 @@ class RedisJournalTest extends AbstractRedisTestCase
 		}
 
 		$result = $this->journal->clean([Cache::PRIORITY => 5]);
-		Assert::same(5, count($result), "clean priority lower then 5");
-		Assert::same('ok_test6_1', $result[0], "clean priority lower then 5");
+		Assert::same(5, \count($result), 'clean priority lower then 5');
+		Assert::same('ok_test6_1', $result[0], 'clean priority lower then 5');
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage/7']]);
-		Assert::same(1, count($result), "clean tag homepage/7");
-		Assert::same('ok_test6_7', $result[0], "clean tag homepage/7");
+		Assert::same(1, \count($result), 'clean tag homepage/7');
+		Assert::same('ok_test6_7', $result[0], 'clean tag homepage/7');
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage/4']]);
-		Assert::same(0, count($result), "clean non exists tag");
+		Assert::same(0, \count($result), 'clean non exists tag');
 
 		$result = $this->journal->clean([Cache::PRIORITY => 4]);
-		Assert::same(0, count($result), "clean non exists priority");
+		Assert::same(0, \count($result), 'clean non exists priority');
 
 		$result = $this->journal->clean([Cache::TAGS => ['test:homepage']]);
-		Assert::same(4, count($result), "clean other");
-		sort($result);
-		Assert::same(['ok_test6_10', 'ok_test6_6', 'ok_test6_8', 'ok_test6_9'], $result, "clean other");
+		Assert::same(4, \count($result), 'clean other');
+		\sort($result);
+		Assert::same(['ok_test6_10', 'ok_test6_6', 'ok_test6_8', 'ok_test6_9'], $result, 'clean other');
 	}
 
-
-
-	public function testSpecialChars()
+	public function testSpecialChars(): void
 	{
 		$this->journal->write('ok_test7ščřžýáíé', [
-			Cache::TAGS => ['čšřýýá', 'ýřžčýž/10']
+			Cache::TAGS => ['čšřýýá', 'ýřžčýž/10'],
 		]);
 
 		$result = $this->journal->clean([Cache::TAGS => ['čšřýýá']]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test7ščřžýáíé', $result[0]);
 	}
 
-
-
-	public function testDuplicates_SameTag()
+	public function testDuplicatesSameTag(): void
 	{
 		$this->journal->write('ok_test_a', [
-			Cache::TAGS => ['homepage']
+			Cache::TAGS => ['homepage'],
 		]);
 
 		$this->journal->write('ok_test_a', [
-			Cache::TAGS => ['homepage']
+			Cache::TAGS => ['homepage'],
 		]);
 
 		$result = $this->journal->clean([Cache::TAGS => ['homepage']]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test_a', $result[0]);
 	}
 
-
-
-	public function testDuplicates_SamePriority()
+	public function testDuplicatesSamePriority(): void
 	{
 		$this->journal->write('ok_test_b', [
-			Cache::PRIORITY => 12
+			Cache::PRIORITY => 12,
 		]);
 
 		$this->journal->write('ok_test_b', [
-			Cache::PRIORITY => 12
+			Cache::PRIORITY => 12,
 		]);
 
 		$result = $this->journal->clean([Cache::PRIORITY => 12]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test_b', $result[0]);
 	}
 
-
-
-	public function testDuplicates_DifferentTags()
+	public function testDuplicatesDifferentTags(): void
 	{
 		$this->journal->write('ok_test_ba', [
-			Cache::TAGS => ['homepage']
+			Cache::TAGS => ['homepage'],
 		]);
 
 		$this->journal->write('ok_test_ba', [
-			Cache::TAGS => ['homepage2']
+			Cache::TAGS => ['homepage2'],
 		]);
 
 		$result = $this->journal->clean([Cache::TAGS => ['homepage']]);
-		Assert::same(0, count($result));
+		Assert::same(0, \count($result));
 
 		$result2 = $this->journal->clean([Cache::TAGS => ['homepage2']]);
-		Assert::same(1, count($result2));
+		Assert::same(1, \count($result2));
 		Assert::same('ok_test_ba', $result2[0]);
 	}
 
-
-
-	public function testDuplicates_DifferentPriorities()
+	public function testDuplicatesDifferentPriorities(): void
 	{
 		$this->journal->write('ok_test_bb', [
-			Cache::PRIORITY => 15
+			Cache::PRIORITY => 15,
 		]);
 
 		$this->journal->write('ok_test_bb', [
-			Cache::PRIORITY => 20
+			Cache::PRIORITY => 20,
 		]);
 
 		$result = $this->journal->clean([Cache::PRIORITY => 30]);
-		Assert::same(1, count($result));
+		Assert::same(1, \count($result));
 		Assert::same('ok_test_bb', $result[0]);
 	}
 
-
-
-	public function testCleanAll()
+	public function testCleanAll(): void
 	{
 		$this->journal->write('ok_test_all_tags', [
-			Cache::TAGS => ['test:all', 'test:all']
+			Cache::TAGS => ['test:all', 'test:all'],
 		]);
 
 		$this->journal->write('ok_test_all_priority', [
@@ -287,12 +251,10 @@ class RedisJournalTest extends AbstractRedisTestCase
 		Assert::true(empty($result2));
 	}
 
-
-
-	public function testBigCache()
+	public function testBigCache(): void
 	{
-		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-			Tester\Helpers::skip("Linux only");
+		if (\strtoupper(\substr(PHP_OS, 0, 3)) === 'WIN') {
+			Tester\Helpers::skip('Linux only');
 		}
 
 		$script = $this->cacheGeneratorScripts();
@@ -316,12 +278,10 @@ LUA;
 		$this->assertKeysInDatabase(0);
 	}
 
-
-
-	public function testBigCache_ShitloadOfEntries()
+	public function testBigCacheShitloadOfEntries(): void
 	{
-		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-			Tester\Helpers::skip("Linux only");
+		if (\strtoupper(\substr(PHP_OS, 0, 3)) === 'WIN') {
+			Tester\Helpers::skip('Linux only');
 		}
 
 		$script = $this->cacheGeneratorScripts();
@@ -343,9 +303,7 @@ LUA;
 		$this->assertKeysInDatabase(0);
 	}
 
-
-
-	protected function assertKeysInDatabase($number)
+	protected function assertKeysInDatabase(int $number): void
 	{
 		$dbNum = $this->getClient()->getDriver()->getDBNum();
 		$dbInfo = $this->getClient()->info('db' . $dbNum);
@@ -357,11 +315,9 @@ LUA;
 		Assert::equal($number, $dbInfo ? (int) $dbInfo['keys'] : 0);
 	}
 
-
-
-	private function cacheGeneratorScripts()
+	private function cacheGeneratorScripts(): string
 	{
-		$script = file_get_contents(__DIR__ . '/../../../src/Kdyby/Redis/scripts/common.lua');
+		$script = \file_get_contents(__DIR__ . '/../../../src/Kdyby/Redis/scripts/common.lua');
 		$script .= <<<LUA
 local range = function (from, to, step)
 	step = step or 1
@@ -385,21 +341,19 @@ LUA;
 		return $script;
 	}
 
-
-
-	public function testNullByte()
+	public function testNullByte(): void
 	{
 		$key = "prefix\x00test:\\2";
 		$this->journal->write($key, [
-			Cache::TAGS => ["test:nullByte"]
+			Cache::TAGS => ['test:nullByte'],
 		]);
 
 		$result = $this->journal->clean([
-			Cache::TAGS => ["test:nullByte"]
+			Cache::TAGS => ['test:nullByte'],
 		]);
 		Assert::same([$key], $result);
 	}
 
 }
 
-\run(new RedisJournalTest());
+(new RedisJournalTest())->run();

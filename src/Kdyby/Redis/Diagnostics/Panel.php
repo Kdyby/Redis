@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
@@ -10,24 +12,19 @@
 
 namespace Kdyby\Redis\Diagnostics;
 
-use Kdyby;
-use Kdyby\Redis\RedisClientException;
-use Nette;
+use Closure;
 use Nette\PhpGenerator as Code;
+use Tracy\Bar;
+use Tracy\BlueScreen;
 use Tracy\Debugger;
-use Tracy\IBarPanel;
 
-
-
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class Panel implements IBarPanel
+class Panel implements \Tracy\IBarPanel
 {
-	use Nette\SmartObject;
+
+	use \Nette\SmartObject;
 
 	/** @internal */
-	const TIMER_NAME = 'redis-client-timer';
+	private const TIMER_NAME = 'redis-client-timer';
 
 	/**
 	 * @var int
@@ -59,29 +56,24 @@ class Panel implements IBarPanel
 	 */
 	public $name;
 
-
-
-	/**
-	 * @return int
-	 */
-	public function getQueryCount()
+	public function getQueryCount(): int
 	{
-		return count($this->queries);
+		return \count($this->queries);
 	}
 
-
-
 	/**
-	 * @return int milliseconds
+	 * @return float milliseconds
 	 */
-	public function getTotalTime()
+	public function getTotalTime(): float
 	{
 		return $this->totalTime * 1000;
 	}
 
-
-
-	public function begin($args, $dbIndex)
+	/**
+	 * @param array<mixed> $args
+	 * @param int $dbIndex
+	 */
+	public function begin(array $args, int $dbIndex): void
 	{
 		if (!$this->renderPanel) {
 			$cmd = '';
@@ -89,57 +81,53 @@ class Panel implements IBarPanel
 		} else {
 			$cmd = [];
 			foreach ($args as $arg) {
-				if (!$arg instanceof \Closure) {
-					$cmd[] = is_array($arg) ? urldecode(http_build_query($arg, '', ' ')) : $arg;
+				if (!$arg instanceof Closure) {
+					$cmd[] = \is_array($arg) ? \urldecode(\http_build_query($arg, '', ' ')) : $arg;
 				}
 			}
-			$cmd = implode(' ', $cmd);
+			$cmd = \implode(' ', $cmd);
 		}
 
 		$this->queries[] = (object) [
 			'errors' => [],
 			'cmd' => $cmd,
 			'db' => $dbIndex,
-			'time' => 0
+			'time' => 0,
 		];
 
 		Debugger::timer(self::TIMER_NAME); // reset timer
 	}
 
-
-
 	/**
 	 * @param \Exception|\Throwable $e
 	 */
-	public function error($e)
+	public function error($e): void
 	{
 		$this->errors[] = $e;
-		if ($query = end($this->queries)) {
+		$query = \end($this->queries);
+		if ($query) {
 			$query->errors[] = $e;
 		}
 	}
 
-
-
-	public function end()
+	public function end(): void
 	{
 		$time = Debugger::timer(self::TIMER_NAME);
-		if ($query = end($this->queries)) {
+		$query = \end($this->queries);
+		if ($query) {
 			$query->time = $time;
 		}
 		$this->totalTime += $time;
 	}
 
-
-
 	/**
 	 * Renders HTML code for custom tab.
+	 *
 	 * @return string
 	 */
-	public function getTab()
+	public function getTab(): string
 	{
-		return
-			'<style>
+		return '<style>
 				#nette-debug div.kdyby-RedisClientPanel table td,
 				#tracy-debug div.kdyby-RedisClientPanel table td { text-align: right }
 				#nette-debug div.kdyby-RedisClientPanel table td.kdyby-RedisClientPanel-cmd,
@@ -148,21 +136,20 @@ class Panel implements IBarPanel
 				#tracy-debug .kdyby-redis-panel svg { vertical-align: bottom; max-height: 1.55em; width: 1.50em; }
 			</style>' .
 			'<span title="Redis Storage' . ($this->name ? ' - ' . $this->name : '') . '" class="kdyby-redis-panel">' .
-			file_get_contents(__DIR__ . '/logo.svg') .
+			\file_get_contents(__DIR__ . '/logo.svg') .
 			'<span class="tracy-label">' .
-				count($this->queries) . ' queries' .
-				($this->errors ? ' / ' . count($this->errors) . ' errors' : '') .
-				($this->queries ? ' / ' . sprintf('%0.1f', $this->totalTime * 1000) . ' ms' : '') .
+				\count($this->queries) . ' queries' .
+				($this->errors ? ' / ' . \count($this->errors) . ' errors' : '') .
+				($this->queries ? ' / ' . \sprintf('%0.1f', $this->totalTime * 1000) . ' ms' : '') .
 			'</span></span>';
 	}
 
-
-
 	/**
 	 * Renders HTML code for custom panel.
+	 *
 	 * @return string
 	 */
-	public function getPanel()
+	public function getPanel(): string
 	{
 		if (!$this->renderPanel) {
 			return '';
@@ -171,15 +158,15 @@ class Panel implements IBarPanel
 		$s = '';
 		$h = 'htmlSpecialChars';
 		foreach ($this->queries as $query) {
-			$s .= '<tr><td>' . sprintf('%0.3f', $query->time * 1000000);
+			$s .= '<tr><td>' . \sprintf('%0.3f', $query->time * 1000000);
 			$s .= '</td><td class="kdyby-RedisClientPanel-dbindex">' . $query->db;
 			$s .= '</td><td class="kdyby-RedisClientPanel-cmd">' .
-				$h(substr(Code\Helpers::dump(self::$maxLength ? substr($query->cmd, 0, self::$maxLength) : $query->cmd), 1, -1));
+				$h(\substr(Code\Helpers::dump(self::$maxLength ? \substr($query->cmd, 0, self::$maxLength) : $query->cmd), 1, -1));
 			$s .= '</td></tr>';
 		}
 
 		return empty($this->queries) ? '' :
-			'<h1>Queries: ' . count($this->queries) . ($this->totalTime ? ', time: ' . sprintf('%0.3f', $this->totalTime * 1000) . ' ms' : '') . '</h1>
+			'<h1>Queries: ' . \count($this->queries) . ($this->totalTime ? ', time: ' . \sprintf('%0.3f', $this->totalTime * 1000) . ' ms' : '') . '</h1>
 			<div class="nette-inner tracy-inner kdyby-RedisClientPanel">
 			<table>
 				<tr><th>Time&nbsp;µs</th><th title="Database index">DB</th><th>Command</th></tr>' . $s . '
@@ -187,70 +174,54 @@ class Panel implements IBarPanel
 			</div>';
 	}
 
-
-
 	/**
-	 * @param \Exception|RedisClientException $e
-	 *
-	 * @return array
+	 * @param \Exception|\Kdyby\Redis\Exception\RedisClientException $e
+	 * @return array<mixed>|NULL
 	 */
-	public static function renderException($e)
+	public static function renderException($e): ?array
 	{
-		if ($e instanceof RedisClientException) {
+		if ($e instanceof \Kdyby\Redis\Exception\RedisClientException) {
 			$panel = NULL;
 			if ($e->request) {
 				$panel .= '<h3>Redis Request</h3>' .
 					'<pre class="nette-dump"><span class="php-string">' .
-					nl2br(htmlSpecialChars(implode(' ', $e->request))) .
+					\nl2br(\htmlspecialchars(\implode(' ', $e->request))) .
 					'</span></pre>';
 			}
 			if ($e->response) {
 				$response = Code\Helpers::dump($e->response);
-				$panel .= '<h3>Redis Response (' . strlen($e->response) . ')</h3>' .
+				$panel .= '<h3>Redis Response (' . \strlen($e->response) . ')</h3>' .
 					'<pre class="nette-dump"><span class="php-string">' .
-					htmlSpecialChars($response) .
+					\htmlspecialchars($response) .
 					'</span></pre>';
 			}
 
 			if ($panel !== NULL) {
 				$panel = [
 					'tab' => 'Redis Response',
-					'panel' => $panel
+					'panel' => $panel,
 				];
 			}
 
 			return $panel;
 		}
+
+		return NULL;
 	}
 
-
-
-	/**
-	 * @return \Kdyby\Redis\Diagnostics\Panel
-	 */
-	public static function register()
+	public static function register(): \Kdyby\Redis\Diagnostics\Panel
 	{
 		self::getDebuggerBlueScreen()->addPanel([$panel = new static(), 'renderException']);
 		self::getDebuggerBar()->addPanel($panel);
 		return $panel;
 	}
 
-
-
-	/**
-	 * @return \Tracy\Bar
-	 */
-	private static function getDebuggerBar()
+	private static function getDebuggerBar(): Bar
 	{
 		return Debugger::getBar();
 	}
 
-
-
-	/**
-	 * @return \Tracy\BlueScreen
-	 */
-	private static function getDebuggerBlueScreen()
+	private static function getDebuggerBlueScreen(): BlueScreen
 	{
 		return Debugger::getBlueScreen();
 	}

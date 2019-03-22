@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
@@ -10,21 +12,13 @@
 
 namespace Kdyby\Redis;
 
-use Kdyby;
-use Nette;
-
-
-
-/**
- * @author Ondřej Nešpor
- * @author Filip Procházka <filip@prochazka.su>
- */
 class ExclusiveLock
 {
-	use Nette\SmartObject;
+
+	use \Nette\SmartObject;
 
 	/**
-	 * @var RedisClient
+	 * @var \Kdyby\Redis\RedisClient
 	 */
 	private $client;
 
@@ -48,73 +42,57 @@ class ExclusiveLock
 	 */
 	public $acquireTimeout = FALSE;
 
-
-
-	/**
-	 * @param RedisClient $redisClient
-	 */
 	public function __construct(RedisClient $redisClient)
 	{
 		$this->client = $redisClient;
 	}
 
-
-
-	/**
-	 * @param RedisClient $client
-	 */
-	public function setClient(RedisClient $client)
+	public function setClient(RedisClient $client): void
 	{
 		$this->client = $client;
 	}
 
-
-
-	/**
-	 * @return int
-	 */
-	public function calculateTimeout()
+	public function calculateTimeout(): int
 	{
-		return time() + abs((int)$this->duration) + 1;
+		return \time() + \abs((int) $this->duration) + 1;
 	}
-
-
 
 	/**
 	 * Tries to acquire a key lock, otherwise waits until it's released and repeats.
 	 *
 	 * @param string $key
-	 * @throws LockException
+	 * @throws \Kdyby\Redis\Exception\LockException
 	 * @return bool
 	 */
-	public function acquireLock($key)
+	public function acquireLock(string $key): bool
 	{
 		if (isset($this->keys[$key])) {
 			return $this->increaseLockTimeout($key);
 		}
 
-		$start = microtime(TRUE);
+		$start = \microtime(TRUE);
 
 		$lockKey = $this->formatLock($key);
 		$maxAttempts = 10;
 		do {
 			$sleepTime = 5000;
 			do {
-				if ($this->client->setNX($lockKey, $timeout = $this->calculateTimeout())) {
+				$timeout = $this->calculateTimeout();
+				if ($this->client->setNX($lockKey, (string) $timeout)) {
 					$this->keys[$key] = $timeout;
 					return TRUE;
 				}
 
-				if ($this->acquireTimeout !== FALSE && (microtime(TRUE) - $start) >= $this->acquireTimeout) {
-					throw LockException::acquireTimeout();
+				if ($this->acquireTimeout !== FALSE && (\microtime(TRUE) - $start) >= $this->acquireTimeout) {
+					throw \Kdyby\Redis\Exception\LockException::acquireTimeout();
 				}
 
 				$lockExpiration = $this->client->get($lockKey);
 				$sleepTime += 2500;
 
-			} while (empty($lockExpiration) || ($lockExpiration >= time() && !usleep($sleepTime)));
+			} while (empty($lockExpiration) || ($lockExpiration >= \time() && !\usleep($sleepTime)));
 
-			$oldExpiration = $this->client->getSet($lockKey, $timeout = $this->calculateTimeout());
+			$oldExpiration = $this->client->getSet($lockKey, (string) $timeout = $this->calculateTimeout());
 			if ($oldExpiration === $lockExpiration) {
 				$this->keys[$key] = $timeout;
 				return TRUE;
@@ -122,21 +100,16 @@ class ExclusiveLock
 
 		} while (--$maxAttempts > 0);
 
-		throw LockException::highConcurrency();
+		throw \Kdyby\Redis\Exception\LockException::highConcurrency();
 	}
 
-
-
-	/**
-	 * @param string $key
-	 */
-	public function release($key)
+	public function release(string $key): bool
 	{
 		if (!isset($this->keys[$key])) {
 			return FALSE;
 		}
 
-		if ($this->keys[$key] <= time()) {
+		if ($this->keys[$key] <= \time()) {
 			unset($this->keys[$key]);
 			return FALSE;
 		}
@@ -146,81 +119,62 @@ class ExclusiveLock
 		return TRUE;
 	}
 
-
-
 	/**
 	 * @param string $key
-	 * @throws LockException
+	 * @return bool
+	 * @throws \Kdyby\Redis\Exception\LockException
 	 */
-	public function increaseLockTimeout($key)
+	public function increaseLockTimeout(string $key): bool
 	{
 		if (!isset($this->keys[$key])) {
 			return FALSE;
 		}
 
-		if ($this->keys[$key] <= time()) {
-			throw LockException::durabilityTimedOut();
+		if ($this->keys[$key] <= \time()) {
+			throw \Kdyby\Redis\Exception\LockException::durabilityTimedOut();
 		}
 
-		$oldTimeout = $this->client->getSet($this->formatLock($key), $timeout = $this->calculateTimeout());
-		if ((int)$oldTimeout !== (int)$this->keys[$key]) {
-			throw LockException::invalidDuration();
+		$oldTimeout = $this->client->getSet($this->formatLock($key), (string) $timeout = $this->calculateTimeout());
+		if ((int) $oldTimeout !== (int) $this->keys[$key]) {
+			throw \Kdyby\Redis\Exception\LockException::invalidDuration();
 		}
 		$this->keys[$key] = $timeout;
 		return TRUE;
 	}
 
-
-
 	/**
 	 * Release all acquired locks.
 	 */
-	public function releaseAll()
+	public function releaseAll(): void
 	{
-		foreach ((array)$this->keys as $key => $timeout) {
+		foreach (\array_keys($this->keys) as $key) {
 			$this->release($key);
 		}
 	}
 
-
-
 	/**
 	 * Updates the indexing locks timeout.
 	 */
-	public function increaseLocksTimeout()
+	public function increaseLocksTimeout(): void
 	{
-		foreach ($this->keys as $key => $timeout) {
+		foreach (\array_keys($this->keys) as $key) {
 			$this->increaseLockTimeout($key);
 		}
 	}
 
-
-
-	/**
-	 * @param string $key
-	 * @return int
-	 */
-	public function getLockTimeout($key)
+	public function getLockTimeout(string $key): int
 	{
 		if (!isset($this->keys[$key])) {
 			return 0;
 		}
 
-		return $this->keys[$key] - time();
+		return $this->keys[$key] - \time();
 	}
 
-
-
-	/**
-	 * @param string $key
-	 * @return string
-	 */
-	protected function formatLock($key)
+	protected function formatLock(string $key): string
 	{
 		return $key . ':lock';
 	}
-
-
 
 	public function __destruct()
 	{

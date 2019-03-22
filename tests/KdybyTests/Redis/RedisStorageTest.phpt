@@ -1,30 +1,26 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * Test: Kdyby\Redis\RedisStorage.
  *
  * @testCase Kdyby\Redis\RedisStorageTest
- * @author Filip Procházka <filip@prochazka.su>
- * @package Kdyby\Redis
  */
 
 namespace KdybyTests\Redis;
 
 use Kdyby\Redis\RedisLuaJournal;
 use Kdyby\Redis\RedisStorage;
-use Nette;
 use Nette\Caching\Cache;
-use Tester;
+use Nette\Caching\Storages\IJournal;
 use Tester\Assert;
 
 require_once __DIR__ . '/../bootstrap.php';
 
 
 
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class RedisStorageTest extends AbstractRedisTestCase
+class RedisStorageTest extends \KdybyTests\Redis\AbstractRedisTestCase
 {
 
 	/**
@@ -32,53 +28,45 @@ class RedisStorageTest extends AbstractRedisTestCase
 	 */
 	private $storage;
 
-
-
-	public function setUp()
+	public function setUp(): void
 	{
 		parent::setUp();
 		$this->storage = new RedisStorage($this->client);
 	}
 
-
-
 	/**
 	 * key and data with special chars
 	 *
-	 * @return array
+	 * @return array<mixed>
 	 */
-	public function basicData()
+	public function basicData(): array
 	{
 		return [
-			$key = [1, TRUE],
-			$value = range("\x00", "\xFF"),
+			[1, TRUE],
+			\range("\x00", "\xFF"),
 		];
 	}
 
-
-
-	public function testBasics()
+	public function testBasics(): void
 	{
-		list($key, $value) = $this->basicData();
+		[$key, $value] = $this->basicData();
 
 		$cache = new Cache($this->storage);
-		Assert::null($cache->load($key), "Cache content");
+		Assert::null($cache->load($key), 'Cache content');
 
 		// Writing cache...
 		$cache->save($key, $value);
-		Assert::same($value, $cache->load($key), "Is cache ok?");
+		Assert::same($value, $cache->load($key), 'Is cache ok?');
 
 		// Removing from cache using unset()...
 		$cache->remove($key);
-		Assert::false($cache->load($key) !== NULL, "Is cached?");
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 
 		// Removing from cache using set NULL...
 		$cache->save($key, $value);
 		$cache->save($key, NULL);
-		Assert::false($cache->load($key) !== NULL, "Is cached?");
+		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
-
-
 
 	/**
 	 * @param mixed $val
@@ -89,15 +77,13 @@ class RedisStorageTest extends AbstractRedisTestCase
 		return $val;
 	}
 
-
-
-	public function testCallbacks()
+	public function testCallbacks(): void
 	{
 		$key = 'nette';
 		$value = 'rulez';
 
 		$cache = new Cache($this->storage);
-		$cb = get_called_class() . '::dependency';
+		$cb = static::class . '::dependency';
 
 		// Writing cache...
 		$cache->save($key, $value, [
@@ -114,9 +100,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
-
-
-	public function testCleanAll()
+	public function testCleanAll(): void
 	{
 		$cacheA = new Cache($this->storage);
 		$cacheB = new Cache($this->storage, 'B');
@@ -126,7 +110,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		$cacheB->save('test1', 'divaD');
 		$cacheB->save('test2', 'ldurG');
 
-		Assert::same('David Grudl divaD ldurG', implode(' ', [
+		Assert::same('David Grudl divaD ldurG', \implode(' ', [
 			$cacheA->load('test1'),
 			$cacheA->load('test2'),
 			$cacheB->load('test1'),
@@ -141,9 +125,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::null($cacheB->load('test2'));
 	}
 
-
-
-	public function testExpiration()
+	public function testExpiration(): void
 	{
 		$key = 'nette';
 		$value = 'rulez';
@@ -152,25 +134,23 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 		// Writing cache...
 		$cache->save($key, $value, [
-			Cache::EXPIRATION => time() + 3,
+			Cache::EXPIRATION => \time() + 3,
 		]);
 
 		// Sleeping 1 second
-		sleep(1);
+		\sleep(1);
 		Assert::true($cache->load($key) !== NULL, 'Is cached?');
 
 		// Sleeping 3 seconds
-		sleep(3);
+		\sleep(3);
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
-
-
-	public function testIntKeys()
+	public function testIntKeys(): void
 	{
 		// key and data with special chars
 		$key = 0;
-		$value = range("\x00", "\xFF");
+		$value = \range("\x00", "\xFF");
 
 		$cache = new Cache($this->storage);
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
@@ -191,9 +171,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
-
-
-	public function testDependentItems()
+	public function testDependentItems(): void
 	{
 		$key = 'nette';
 		$value = 'rulez';
@@ -217,7 +195,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::true($cache->load($key) !== NULL, 'Is cached?');
 
 		// Modifing dependent cached item
-		sleep(2);
+		\sleep(2);
 		$cache->save('dependent', 'hello europe');
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 
@@ -232,23 +210,19 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
-
-
-	/**
-	 */
-	public function testLoadOrSave()
+	public function testLoadOrSave(): void
 	{
 		// key and data with special chars
-		$key = '../' . implode('', range("\x00", "\x1F"));
-		$value = range("\x00", "\xFF");
+		$key = '../' . \implode('', \range("\x00", "\x1F"));
+		$value = \range("\x00", "\xFF");
 
 		$cache = new Cache($this->storage);
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 
 		// Writing cache using Closure...
-		$res = $cache->load($key, function (& $dp) use ($value) {
+		$res = $cache->load($key, static function (& $dp) use ($value) {
 			$dp = [
-				Cache::EXPIRATION => time() + 2,
+				Cache::EXPIRATION => \time() + 2,
 			];
 
 			return $value;
@@ -258,13 +232,11 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::same($value, $cache->load($key), 'Is cache ok?');
 
 		// Sleeping 3 seconds
-		sleep(3);
+		\sleep(3);
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 	}
 
-
-
-	public function testNamespace()
+	public function testNamespace(): void
 	{
 		$cacheA = new Cache($this->storage, 'a');
 		$cacheB = new Cache($this->storage, 'b');
@@ -284,9 +256,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::false($cacheB->load('key') !== NULL, 'Is cached #2?');
 	}
 
-
-
-	public function testPriority()
+	public function testPriority(): void
 	{
 		$storage = new RedisStorage($this->client, $this->createDefaultJournal());
 		$cache = new Cache($storage);
@@ -314,9 +284,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::true($cache->load('key4') !== NULL, 'Is cached key4?');
 	}
 
-
-
-	public function testPriority_Optimized()
+	public function testPriorityOptimized(): void
 	{
 		$storage = new RedisStorage($this->client, new RedisLuaJournal($this->client));
 		$cache = new Cache($storage);
@@ -344,9 +312,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::true($cache->load('key4') !== NULL, 'Is cached key4?');
 	}
 
-
-
-	public function testTags()
+	public function testTags(): void
 	{
 		$storage = new RedisStorage($this->client, $this->createDefaultJournal());
 		$cache = new Cache($storage);
@@ -374,9 +340,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::true($cache->load('key4') !== NULL, 'Is cached key4?');
 	}
 
-
-
-	public function testTags_Optimized()
+	public function testTagsOptimized(): void
 	{
 		$storage = new RedisStorage($this->client, new RedisLuaJournal($this->client));
 		$cache = new Cache($storage);
@@ -404,9 +368,7 @@ class RedisStorageTest extends AbstractRedisTestCase
 		Assert::true($cache->load('key4') !== NULL, 'Is cached key4?');
 	}
 
-
-
-	public function testMultiRead()
+	public function testMultiRead(): void
 	{
 		$storage = $this->storage;
 
@@ -424,19 +386,13 @@ class RedisStorageTest extends AbstractRedisTestCase
 		], $storage->multiRead(['A', 'B', 'C', 'D', 'E']));
 	}
 
-
-
 	/**
-	 * @return \Nette\Caching\Storages\IJournal
+	 * @throws \Exception
 	 */
-	private function createDefaultJournal()
+	private function createDefaultJournal(): IJournal
 	{
-		if (class_exists('Nette\Caching\Storages\SQLiteJournal')) {
-			return new Nette\Caching\Storages\SQLiteJournal(':memory:');
-		}
-
-		if (class_exists('Nette\Caching\Storages\FileJournal')) {
-			return new Nette\Caching\Storages\FileJournal(TEMP_DIR);
+		if (\class_exists(\Nette\Caching\Storages\SQLiteJournal::class)) {
+			return new \Nette\Caching\Storages\SQLiteJournal(':memory:');
 		}
 
 		throw new \Exception('no journal available');
@@ -444,4 +400,4 @@ class RedisStorageTest extends AbstractRedisTestCase
 
 }
 
-\run(new RedisStorageTest());
+(new RedisStorageTest())->run();
