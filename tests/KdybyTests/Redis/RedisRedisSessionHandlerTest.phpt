@@ -106,12 +106,24 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		Assert::same(['open', '', 'PHPSESSID'], $handler->series[0][0]);
 		Assert::same(['read', $sessionId], $handler->series[0][1]);
 		Assert::same('write', $handler->series[0][2][0]);
-		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:1;}}}', $handler->series[0][2][2]);
+		$unserialize022 = \unserialize(\str_replace('__NF|', '', $handler->series[0][2][2]));
+		Assert::same($time, $unserialize022['Time']);
+		Assert::same([
+			'counter' => [
+				'visits' => 1,
+			],
+		], $unserialize022['DATA']);
 
 		Assert::same(['open', '', 'PHPSESSID'], $handler->series[1][0]);
 		Assert::same(['read', $sessionId], $handler->series[1][1]);
 		Assert::same('write', $handler->series[1][2][0]);
-		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler->series[1][2][2]);
+		$unserialize122 = \unserialize(\str_replace('__NF|', '', $handler->series[1][2][2]));
+		Assert::same($time, $unserialize122['Time']);
+		Assert::same([
+			'counter' => [
+				'visits' => 2,
+			] ,
+		], $unserialize122['DATA']);
 
 		Assert::count(1, $this->client->keys('Nette.Session:*'));
 	}
@@ -145,7 +157,6 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		Assert::same('read', $handler1->series[1][1][0]);
 		Assert::match('%S%', $regeneratedId = $handler1->series[1][1][1]);
 		Assert::same('write', $handler1->series[1][2][0]);
-		Assert::match('__NF|a:1:{s:4:"Time";i:%S%;}', $handler1->series[1][2][2]);
 
 		// close session
 		Assert::same('write', $handler1->series[2][2][0]);
@@ -172,7 +183,13 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		Assert::same(['open', '', 'PHPSESSID'], $handler2->series[0][0]);
 		Assert::same(['read', $regeneratedId], $handler2->series[0][1]);
 		Assert::same('write', $handler2->series[0][2][0]);
-		Assert::match('__NF|a:2:{s:4:"Time";i:%S%;s:4:"DATA";a:1:{s:7:"counter";a:1:{s:6:"visits";i:2;}}}', $handler2->series[0][2][2]);
+
+		$unserialize022 = \unserialize(\str_replace('__NF|', '', $handler2->series[0][2][2]));
+		Assert::same([
+			'counter' => [
+				'visits' => 2,
+			],
+		], $unserialize022['DATA']);
 
 		Assert::count(1, $this->client->keys('Nette.Session:*'));
 	}

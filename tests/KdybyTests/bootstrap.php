@@ -16,6 +16,9 @@ if (!$loader) {
 	exit(1);
 }
 
+// because of old nette/tester
+error_reporting(E_ALL & ~(E_DEPRECATED | E_WARNING));
+
 // configure environment
 Tester\Environment::setup();
 \class_alias('Tester\Assert', 'Assert');
@@ -37,6 +40,7 @@ $_SERVER = \array_intersect_key($_SERVER, \array_flip([
 	'OS',
 	'argc', 'argv']));
 $_SERVER['REQUEST_TIME'] = 1234567890;
+// phpcs:disable SlevomatCodingStandard.Variables.UnusedVariable.UnusedVariable
 $_ENV = $_GET = $_POST = [];
 
 return $loader;
