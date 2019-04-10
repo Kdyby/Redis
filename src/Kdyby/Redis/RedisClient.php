@@ -663,7 +663,9 @@ class RedisClient implements \ArrayAccess
 	 */
 	public function &__get(string $name)
 	{
-		return $this->send('get', [$name]);
+		$send = $this->send('get', [$name]);
+
+		return $send;
 	}
 
 	/**
