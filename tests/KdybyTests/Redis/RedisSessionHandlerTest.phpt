@@ -122,7 +122,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		Assert::same([
 			'counter' => [
 				'visits' => 2,
-			] ,
+			],
 		], $unserialize122['DATA']);
 
 		Assert::count(1, $this->client->keys('Nette.Session:*'));

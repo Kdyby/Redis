@@ -663,6 +663,7 @@ class RedisClient implements \ArrayAccess
 	 */
 	public function &__get(string $name)
 	{
+		// phpcs:disable SlevomatCodingStandard.Variables.UselessVariable.UselessVariable
 		$send = $this->send('get', [$name]);
 
 		return $send;
