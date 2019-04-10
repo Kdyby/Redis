@@ -159,13 +159,13 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		Assert::same('write', $handler1->series[1][2][0]);
 
 		// close session
-		Assert::same('write', $handler1->series[2][2][0]);
-		$unserialize222 = \unserialize(\str_replace('__NF|', '', $handler1->series[2][2][2]));
+		Assert::same('write', $handler1->series[1][2][0]);
+		$unserialize122 = \unserialize(\str_replace('__NF|', '', $handler1->series[1][2][2]));
 		Assert::same([
 			'counter' => [
 				'visits' => 1,
 			],
-		], $unserialize222['DATA']);
+		], $unserialize122['DATA']);
 
 		Assert::notSame($sessionId, $regeneratedId);
 
