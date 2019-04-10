@@ -68,17 +68,21 @@ class ExtensionTest extends \Tester\TestCase
 			Assert::same('', $sessionOptions['referer_check']);
 		}
 
-		Assert::true(isset($sessionOptions['use_cookies']));
-		Assert::same(1, $sessionOptions['use_cookies']);
+		if (isset($sessionOptions['use_cookies'])) {
+			Assert::same(1, $sessionOptions['use_cookies']);
+		}
 
-		Assert::true(isset($sessionOptions['use_only_cookies']));
-		Assert::same(1, $sessionOptions['use_only_cookies']);
+		if (isset($sessionOptions['use_only_cookies'])) {
+			Assert::same(1, $sessionOptions['use_only_cookies']);
+		}
 
-		Assert::true(isset($sessionOptions['use_trans_sid']));
-		Assert::same(0, $sessionOptions['use_trans_sid']);
+		if (isset($sessionOptions['use_trans_sid'])) {
+			Assert::same(0, $sessionOptions['use_trans_sid']);
+		}
 
-		Assert::true(isset($sessionOptions['cookie_httponly']));
-		Assert::same(TRUE, $sessionOptions['cookie_httponly']);
+		if (isset($sessionOptions['cookie_httponly'])) {
+			Assert::same(TRUE, $sessionOptions['cookie_httponly']);
+		}
 
 		Assert::true(isset($sessionOptions['gc_maxlifetime']));
 		Assert::same(10800, $sessionOptions['gc_maxlifetime']);
