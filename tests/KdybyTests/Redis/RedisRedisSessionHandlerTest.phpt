@@ -145,7 +145,12 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 
 		$session1->close();
 
-		Assert::count(2, $handler1->series);
+		if (\count($handler1->series) === 2) {
+			$secondVisit = $handler1->series[1][2];
+
+		} else {
+			$secondVisit = $handler1->series[2][2];
+		}
 
 		// open & destroy
 		Assert::same(['open', '', 'PHPSESSID'], $handler1->series[0][0]);
@@ -156,11 +161,11 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		Assert::same(['open', '', 'PHPSESSID'], $handler1->series[1][0]);
 		Assert::same('read', $handler1->series[1][1][0]);
 		Assert::match('%S%', $regeneratedId = $handler1->series[1][1][1]);
-		Assert::same('write', $handler1->series[1][2][0]);
+		Assert::same('write', $secondVisit[0]);
 
 		// close session
-		Assert::same('write', $handler1->series[1][2][0]);
-		$unserialize122 = \unserialize(\str_replace('__NF|', '', $handler1->series[1][2][2]));
+		Assert::same('write', $secondVisit[0]);
+		$unserialize122 = \unserialize(\str_replace('__NF|', '', $secondVisit[2]));
 		Assert::same([
 			'counter' => [
 				'visits' => 1,
