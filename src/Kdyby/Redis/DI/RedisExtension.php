@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
@@ -13,19 +15,13 @@ namespace Kdyby\Redis\DI;
 use Kdyby;
 use Kdyby\Redis\RedisClient;
 use Nette;
-use Nette\DI\Compiler;
 use Nette\DI\Config;
 
-
-
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class RedisExtension extends Nette\DI\CompilerExtension
+class RedisExtension extends \Nette\DI\CompilerExtension
 {
 
-	const DEFAULT_SESSION_PREFIX = Kdyby\Redis\RedisSessionHandler::NS_NETTE;
-	const PANEL_COUNT_MODE = 'count';
+	public const DEFAULT_SESSION_PREFIX = Kdyby\Redis\RedisSessionHandler::NS_NETTE;
+	private const PANEL_COUNT_MODE = 'count';
 
 	/**
 	 * @var array
@@ -59,22 +55,21 @@ class RedisExtension extends Nette\DI\CompilerExtension
 	 */
 	private $configuredClients = [];
 
-
-
-	public function loadConfiguration()
+	public function loadConfiguration(): void
 	{
 		$this->configuredClients = [];
 
 		$builder = $this->getContainerBuilder();
-		$config = self::fixClientConfig($this->getConfig($this->defaults + $this->clientDefaults));
+		$config = self::fixClientConfig(
+			Config\Helpers::merge($this->getConfig(), $this->defaults + $this->clientDefaults)
+		);
 
 		$this->buildClient(NULL, $config);
 
-		$phpRedisDriverClass = phpversion('redis') >= '4.0.0' ? Kdyby\Redis\Driver\PhpRedisDriver::class : Kdyby\Redis\Driver\PhpRedisDriverOld::class;
-		$phpRedisDriverInterface = phpversion('redis') >= '4.0.0' ? Kdyby\Redis\IRedisDriver::class : Kdyby\Redis\IRedisDriverOld::class;
+		$phpRedisDriverClass = \phpversion('redis') >= '4.0.0' ? Kdyby\Redis\Driver\PhpRedisDriver::class : Kdyby\Redis\Driver\PhpRedisDriverOld::class;
 
 		$builder->addDefinition($this->prefix('driver'))
-			->setClass(class_exists('Redis') ? $phpRedisDriverClass : $phpRedisDriverInterface)
+			->setType($phpRedisDriverClass)
 			->setFactory($this->prefix('@client') . '::getDriver');
 
 		$this->loadJournal($config);
@@ -86,28 +81,28 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		}
 	}
 
-
-
 	/**
-	 * @param string $name
-	 * @param array $config
-	 * @return Nette\DI\ServiceDefinition
+	 * @param string|NULL $name
+	 * @param array<mixed> $config
+	 * @return \Nette\DI\ServiceDefinition
 	 */
-	protected function buildClient($name, $config)
+	protected function buildClient(?string $name, array $config): Nette\DI\ServiceDefinition
 	{
 		$builder = $this->getContainerBuilder();
 
-		$defaultConfig = $this->getConfig($this->clientDefaults);
-		if ($parentName = Config\Helpers::takeParent($config)) {
+		$defaultConfig = Config\Helpers::merge($this->getConfig(), $this->clientDefaults);
+		$parentName = Config\Helpers::takeParent($config);
+		if ($parentName) {
 			Nette\Utils\Validators::assertField($this->configuredClients, $parentName, 'array', "parent configuration '%', are you sure it's defined?");
 			$defaultConfig = Config\Helpers::merge($this->configuredClients[$parentName], $defaultConfig);
 		}
 
 		$config = Config\Helpers::merge($config, $defaultConfig);
-		$config = array_intersect_key(self::fixClientConfig($config), $this->clientDefaults);
+		$config = \array_intersect_key(self::fixClientConfig($config), $this->clientDefaults);
 
 		$client = $builder->addDefinition($clientName = $this->prefix(($name ? $name . '_' : '') . 'client'))
-			->setClass(Kdyby\Redis\RedisClient::class, [
+			->setType(Kdyby\Redis\RedisClient::class)
+			->setArguments([
 				'host' => $config['host'],
 				'port' => $config['port'],
 				'database' => $config['database'],
@@ -121,7 +116,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 			$this->configuredClients['default'] = $config;
 			$builder->addDefinition($this->prefix('default_client'))
-				->setClass(Kdyby\Redis\RedisClient::class)
+				->setType(Kdyby\Redis\RedisClient::class)
 				->setFactory('@' . $clientName)
 				->setAutowired(FALSE);
 
@@ -135,9 +130,9 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$client->addSetup('setConnectionAttempts', [$config['connectionAttempts']]);
 		$client->addTag('redis.client');
 
-		if (array_key_exists('debugger', $config) && $config['debugger']) {
+		if (\array_key_exists('debugger', $config) && $config['debugger']) {
 			$builder->addDefinition($panelName = $clientName . '.panel')
-				->setClass(Kdyby\Redis\Diagnostics\Panel::class)
+				->setType(Kdyby\Redis\Diagnostics\Panel::class)
 				->setFactory(Kdyby\Redis\Diagnostics\Panel::class . '::register')
 				->addSetup('$renderPanel', [$config['debugger'] !== self::PANEL_COUNT_MODE])
 				->addSetup('$name', [$name ?: 'default']);
@@ -148,9 +143,10 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		return $client;
 	}
 
-
-
-	protected function loadJournal(array $config)
+	/**
+	 * @param array<mixed> $config
+	 */
+	protected function loadJournal(array $config): void
 	{
 		if (!$config['journal']) {
 			return;
@@ -164,12 +160,13 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder->addDefinition($journalService)->setFactory($this->prefix('@cacheJournal'));
 
 		$builder->addDefinition($this->prefix('cacheJournal'))
-			->setClass(Kdyby\Redis\RedisLuaJournal::class);
+			->setType(Kdyby\Redis\RedisLuaJournal::class);
 	}
 
-
-
-	protected function loadStorage(array $config)
+	/**
+	 * @param array<mixed> $config
+	 */
+	protected function loadStorage(array $config): void
 	{
 		if (!$config['storage']) {
 			return;
@@ -177,7 +174,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
-		$storageConfig = Nette\DI\Config\Helpers::merge(is_array($config['storage']) ? $config['storage'] : [], [
+		$storageConfig = Nette\DI\Config\Helpers::merge(\is_array($config['storage']) ? $config['storage'] : [], [
 			'locks' => TRUE,
 		]);
 
@@ -186,16 +183,17 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		$builder->addDefinition($storageService)->setFactory($this->prefix('@cacheStorage'));
 
 		$cacheStorage = $builder->addDefinition($this->prefix('cacheStorage'))
-			->setClass(Kdyby\Redis\RedisStorage::class);
+			->setType(Kdyby\Redis\RedisStorage::class);
 
 		if (!$storageConfig['locks']) {
 			$cacheStorage->addSetup('disableLocking');
 		}
 	}
 
-
-
-	protected function loadSession(array $config)
+	/**
+	 * @param array<mixed> $config
+	 */
+	protected function loadSession(array $config): void
 	{
 		if (!$config['session']) {
 			return;
@@ -203,7 +201,7 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
-		$sessionConfig = Nette\DI\Config\Helpers::merge(is_array($config['session']) ? $config['session'] : [], [
+		$sessionConfig = Nette\DI\Config\Helpers::merge(\is_array($config['session']) ? $config['session'] : [], [
 			'host' => $config['host'],
 			'port' => $config['port'],
 			'weight' => 1,
@@ -226,26 +224,36 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		} else {
 			$builder->addDefinition($this->prefix('sessionHandler'))
-				->setClass(Kdyby\Redis\RedisSessionHandler::class, [$this->prefix('@sessionHandler_client')]);
+				->setType(Kdyby\Redis\RedisSessionHandler::class)
+				->setArguments([$this->prefix('@sessionHandler_client')]);
 
-			$sessionService = $builder->getByType(Nette\Http\Session::class) ?: 'session';
-			$builder->getDefinition($sessionService)
+			try {
+				/** @var \Nette\DI\Definitions\ServiceDefinition $sessionService */
+				$sessionService = $builder->getDefinitionByType(Nette\Http\Session::class);
+
+			} catch (\Nette\DI\MissingServiceException $exception) {
+				/** @var \Nette\DI\Definitions\ServiceDefinition $sessionService */
+				$sessionService = $builder->getDefinitionByType('session');
+			}
+
+			$sessionService
 				->addSetup('?->bind(?)', [$this->prefix('@sessionHandler'), '@self']);
 		}
 	}
 
-
-
-	protected function loadNativeSessionHandler(array $session)
+	/**
+	 * @param array<mixed> $session
+	 */
+	protected function loadNativeSessionHandler(array $session): void
 	{
 		$builder = $this->getContainerBuilder();
 
-		$params = array_intersect_key($session, array_flip(['weight', 'timeout', 'database', 'prefix', 'auth', 'persistent']));
-		if (substr($session['host'], 0, 1) === '/') {
+		$params = \array_intersect_key($session, \array_flip(['weight', 'timeout', 'database', 'prefix', 'auth', 'persistent']));
+		if (\substr($session['host'], 0, 1) === '/') {
 			$savePath = $session['host'];
 
 		} else {
-			$savePath = sprintf('tcp://%s:%d', $session['host'], $session['port']);
+			$savePath = \sprintf('tcp://%s:%d', $session['host'], $session['port']);
 		}
 
 		if (!$params['persistent']) {
@@ -258,11 +266,13 @@ class RedisExtension extends Nette\DI\CompilerExtension
 
 		$options = [
 			'saveHandler' => 'redis',
-			'savePath' => $savePath . ($params ? '?' . http_build_query($params, '', '&') : ''),
+			'savePath' => $savePath . ($params ? '?' . \http_build_query($params, '', '&') : ''),
 		];
 
-		foreach ($builder->getDefinition('session')->setup as $statement) {
-			if ($statement->entity === 'setOptions') {
+		/** @var \Nette\DI\Definitions\ServiceDefinition $serviceDefinition */
+		$serviceDefinition = $builder->getDefinition('session.session');
+		foreach ($serviceDefinition->getSetup() as $statement) {
+			if ($statement->getEntity() === 'setOptions') {
 				$statement->arguments[0] = Nette\DI\Config\Helpers::merge($options, $statement->arguments[0]);
 				unset($options);
 				break;
@@ -270,17 +280,17 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		}
 
 		if (isset($options)) {
-			$builder->getDefinition('session')
+			/** @var \Nette\DI\Definitions\ServiceDefinition $serviceDefinition */
+			$serviceDefinition = $builder->getDefinition('session.session');
+			$serviceDefinition
 				->addSetup('setOptions', [$options]);
 		}
 	}
 
-
-
 	/**
 	 * Verify, that redis is installed, working and has the right version.
 	 */
-	public function beforeCompile()
+	public function beforeCompile(): void
 	{
 		foreach ($this->configuredClients as $config) {
 			if (!$config['versionCheck']) {
@@ -293,9 +303,11 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		}
 	}
 
-
-
-	protected static function fixClientConfig(array $config)
+	/**
+	 * @param array<mixed> $config
+	 * @return array<mixed>
+	 */
+	protected static function fixClientConfig(array $config): array
 	{
 		if ($config['host'][0] === '/') {
 			$config['port'] = NULL; // sockets have no ports
@@ -305,18 +317,6 @@ class RedisExtension extends Nette\DI\CompilerExtension
 		}
 
 		return $config;
-	}
-
-
-
-	/**
-	 * @param \Nette\Configurator $config
-	 */
-	public static function register(Nette\Configurator $config)
-	{
-		$config->onCompile[] = function ($config, Compiler $compiler) {
-			$compiler->addExtension('redis', new RedisExtension());
-		};
 	}
 
 }
