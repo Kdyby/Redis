@@ -10,13 +10,13 @@ class ClosureExtractor
 	use \Nette\SmartObject;
 
 	/**
-	 * @var \Nette\Reflection\GlobalFunction
+	 * @var \ReflectionFunction
 	 */
 	private $closure;
 
 	public function __construct(\Closure $closure)
 	{
-		$this->closure = new \Nette\Reflection\GlobalFunction($closure);
+		$this->closure = new \ReflectionFunction($closure);
 	}
 
 	public function buildScript(
