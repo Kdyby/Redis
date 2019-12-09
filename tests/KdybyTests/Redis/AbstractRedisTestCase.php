@@ -6,7 +6,6 @@ namespace KdybyTests\Redis;
 
 use Closure;
 use Kdyby\Redis\RedisClient;
-use Nette\Reflection\ClassType;
 use Nette\Utils\FileSystem;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
@@ -91,10 +90,10 @@ abstract class AbstractRedisTestCase extends \Tester\TestCase
 		FileSystem::createDir($dir = \dirname($scriptFile));
 
 		$extractor = new ClosureExtractor($closure);
-		\file_put_contents($scriptFile, $extractor->buildScript(ClassType::from($this), $repeat));
+		$testRefl = new ReflectionClass($this);
+		\file_put_contents($scriptFile, $extractor->buildScript($testRefl, $repeat));
 		@\chmod($scriptFile, 0755);
 
-		$testRefl = new ReflectionClass($this);
 		$collector = new ResultsCollector(\dirname($testRefl->getFileName()) . '/output', $runTest['args'][0]);
 
 		// todo: fix for hhvm
