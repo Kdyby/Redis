@@ -10,7 +10,7 @@ Kdyby/Redis
 Requirements
 ------------
 
-Kdyby/Redis requires PHP 7.0 or higher.
+Kdyby/Redis requires PHP 7.1 to PHP 7.3.
 
 - [Nette Framework](https://github.com/nette/nette)
 - [Redis database](http://redis.io)
