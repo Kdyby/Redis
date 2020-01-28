@@ -220,7 +220,7 @@ class RedisStorageTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		Assert::false($cache->load($key) !== NULL, 'Is cached?');
 
 		// Writing cache using Closure...
-		$res = $cache->load($key, static function (& $dp) use ($value) {
+		$res = $cache->load($key, static function (&$dp) use ($value) {
 			$dp = [
 				Cache::EXPIRATION => \time() + 2,
 			];
