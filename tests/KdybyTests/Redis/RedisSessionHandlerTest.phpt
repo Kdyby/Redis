@@ -13,7 +13,6 @@ namespace KdybyTests\Redis;
 use Kdyby\Redis\RedisClient;
 use Kdyby\Redis\RedisSessionHandler;
 use Nette;
-use Tester;
 use Tester\Assert;
 use Tracy\Debugger;
 
@@ -53,7 +52,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 			$handler->write($sessionId, \serialize($session));
 			$handler->close();
 		});
-		Assert::same(100, $result[Tester\Runner\Runner::PASSED]);
+		Assert::same(100, $result->getPassingResults());
 
 		$handler = new RedisSessionHandler($this->client);
 
@@ -296,7 +295,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 			$session->close(); // explicit close with unlock
 		}, 100, 30); // silence, I kill you!
 
-		self::assertRange(30, 40, $result[Tester\Runner\Runner::PASSED]);
+		self::assertRange(30, 40, $result->getPassingResults());
 
 			// hard unlock
 		$client->del('Nette.Session:' . $sessionId . ':lock');

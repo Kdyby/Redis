@@ -10,7 +10,12 @@ class ResultsCollector implements \Tester\Runner\OutputHandler
 	/**
 	 * @var array
 	 */
-	public $results;
+	private $results;
+
+	/**
+	 * @var int
+	 */
+	private $passingResults;
 
 	/**
 	 * @var string
@@ -46,6 +51,7 @@ class ResultsCollector implements \Tester\Runner\OutputHandler
 	public function begin(): void
 	{
 		$this->results = [];
+		$this->passingResults = 0;
 
 		if (\is_dir($this->dir)) {
 			foreach (\glob(\sprintf('%s/%s.*.actual', $this->dir, \urlencode($this->testName))) as $file) {
@@ -54,23 +60,19 @@ class ResultsCollector implements \Tester\Runner\OutputHandler
 		}
 	}
 
-	/**
-	 * @param string $testName
-	 * @param int $result
-	 * @param mixed $message
-	 */
-	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
-	public function result(
-		$testName,
-		$result,
-		$message
-	): void
+	public function prepare(\Tester\Runner\Test $test): void
 	{
-		$message = \Tester\Dumper::removeColors(\trim((string) $message));
+	}
 
-		if ($result !== \Tester\Runner\Runner::PASSED) {
-			$this->results[] = [$testName, $message];
+	public function finish(\Tester\Runner\Test $test): void
+	{
+		$message = \Tester\Dumper::removeColors(\trim((string) $test->message));
+
+		if ($test->getResult() === \Tester\Runner\Test::PASSED) {
+			$this->passingResults++;
 		}
+
+		$this->results[] = [$test->getSignature(), $message];
 	}
 
 	public function end(): void
@@ -89,6 +91,11 @@ class ResultsCollector implements \Tester\Runner\OutputHandler
 			$filename = \urlencode($this->testName) . '.' . \urlencode($args) . '.actual';
 			\file_put_contents($this->dir . '/' . $filename, $process[1]);
 		}
+	}
+
+	public function getPassingResults(): int
+	{
+		return $this->passingResults;
 	}
 
 }
