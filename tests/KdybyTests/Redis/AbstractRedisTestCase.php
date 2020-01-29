@@ -11,6 +11,7 @@ use ReflectionClass;
 use ReflectionFunctionAbstract;
 use Tester;
 use Tester\Environment;
+use Tester\Runner\PhpInterpreter;
 use Tracy;
 
 abstract class AbstractRedisTestCase extends \Tester\TestCase
@@ -79,10 +80,9 @@ abstract class AbstractRedisTestCase extends \Tester\TestCase
 	 * @param \Closure $closure
 	 * @param int $repeat
 	 * @param int $threads
-	 * @return array<mixed>
 	 * @throws \ReflectionException
 	 */
-	protected function threadStress(Closure $closure, int $repeat = 100, int $threads = 30): array
+	protected function threadStress(Closure $closure, int $repeat = 100, int $threads = 30): ResultsCollector
 	{
 		$runTest = Tracy\Helpers::findTrace(\debug_backtrace(), 'Tester\TestCase::runTest') ?: ['args' => [0 => 'test']];
 		$testName = $runTest['args'][0] instanceof ReflectionFunctionAbstract ? $runTest['args'][0]->getName() : (string) $runTest['args'][0];
@@ -96,8 +96,8 @@ abstract class AbstractRedisTestCase extends \Tester\TestCase
 
 		$collector = new ResultsCollector(\dirname($testRefl->getFileName()) . '/output', $runTest['args'][0]);
 
-		// todo: fix for hhvm
-		$runner = new Tester\Runner\Runner(new Tester\Runner\ZendPhpInterpreter('php-cgi', ' -c ' . Tester\Helpers::escapeArg(__DIR__ . '/../../php.ini-unix')));
+		$interpreter = $this->createInterpreter();
+		$runner = new Tester\Runner\Runner($interpreter);
 		$runner->outputHandlers[] = $collector;
 		$runner->threadCount = $threads;
 		$runner->paths = [$scriptFile];
@@ -105,7 +105,18 @@ abstract class AbstractRedisTestCase extends \Tester\TestCase
 		\putenv(Environment::COVERAGE); // unset coverage fur subprocesses
 		$runner->run();
 
-		return $runner->getResults();
+		return $collector;
+	}
+
+	private function createInterpreter(): PhpInterpreter
+	{
+		$args = strlen((string) php_ini_scanned_files())
+			? []
+			: ['-n'];
+		if (php_ini_loaded_file()) {
+			array_push($args, '-c', php_ini_loaded_file());
+		}
+		return new Tester\Runner\PhpInterpreter(PHP_BINARY, $args);
 	}
 
 }
