@@ -133,7 +133,8 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 			if (!empty($meta[self::META_ITEMS])) {
 				foreach ($meta[self::META_ITEMS] as $itemKey => $time) {
 					$m = $this->readMeta($itemKey);
-					if ($m[self::META_TIME] !== $time || ($m && !$this->verify($m))) {
+					$metaTime = $m[self::META_TIME] ?? NULL;
+					if ($metaTime !== $time || ($m && !$this->verify($m))) {
 						break 2;
 					}
 				}
@@ -191,7 +192,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 		if (isset($dp[Cache::ITEMS])) {
 			foreach ((array) $dp[Cache::ITEMS] as $itemName) {
 				$m = $this->readMeta($itemName);
-				$meta[self::META_ITEMS][$itemName] = $m[self::META_TIME]; // may be NULL
+				$meta[self::META_ITEMS][$itemName] = $m[self::META_TIME] ?? NULL; // may be NULL
 				unset($m);
 			}
 		}
