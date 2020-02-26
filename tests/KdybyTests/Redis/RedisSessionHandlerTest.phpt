@@ -273,7 +273,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 				[],
 				'GET',
 			];
-			if (\class_exists(\Nette\DI\Definitions\ServiceDefinition::class)) {
+			if (\class_exists(\Nette\Http\UrlImmutable::class)) {
 				unset($arguments[1]);
 			}
 
@@ -336,7 +336,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 			[],
 			'GET',
 		];
-		if (\class_exists(\Nette\DI\Definitions\ServiceDefinition::class)) {
+		if (\class_exists(\Nette\Http\UrlImmutable::class)) {
 			unset($arguments[1]);
 		}
 
