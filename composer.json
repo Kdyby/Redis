@@ -22,7 +22,7 @@
 		"nette/di": "~2.4.10 || ~3.0",
 		"nette/caching": "~3.0",
 		"nette/http": "~2.4.7 || ~3.0",
-		"nette/utils": "~2.5 || ~3.0"
+		"nette/utils": "~3.0"
 	},
 	"suggest": {
 		"ext-redis": "The php redis extension https://github.com/nicolasff/phpredis/ is required for connecting to redis server"
