@@ -30,9 +30,9 @@ There are three main configuration options, that when enabled, each one replaces
 
 ```yml
 redis:
-	journal: on
-	storage: on
-	session: on
+	journal: true
+	storage: true
+	session: true
 ```
 
 
@@ -77,7 +77,8 @@ You can disable the locks using the configuration option on storage
 
 ```yml
 redis:
-	storage: {locks: off}
+	storage:
+		locks: false
 ```
 
 
@@ -100,7 +101,8 @@ The default database is `0`, so when you configure the session to be stored in d
 
 ```yml
 redis:
-	session: {database: 1}
+	session:
+		database: 1
 ```
 
 Then on deploy simply call from console `redis-cli -n 0 flushdb` and it will delete all the cache.
@@ -122,5 +124,6 @@ You can disable the native driver by this option (and the emulated will take con
 
 ```yml
 redis:
-	session: {native: off}
+	session:
+		native: false
 ```
