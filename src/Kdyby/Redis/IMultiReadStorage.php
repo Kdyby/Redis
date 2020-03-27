@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
@@ -10,19 +12,15 @@
 
 namespace Kdyby\Redis;
 
-use Nette;
-
-
-
-interface IMultiReadStorage extends Nette\Caching\IStorage
+interface IMultiReadStorage extends \Nette\Caching\IStorage
 {
 
 	/**
 	 * Read multiple entries from cache
 	 *
-	 * @param array $keys
-	 * @return array
+	 * @param array<mixed> $keys
+	 * @return array<mixed>
 	 */
-	function multiRead(array $keys);
+	public function multiRead(array $keys): array;
 
 }

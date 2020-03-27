@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
@@ -10,57 +12,42 @@
 
 namespace Kdyby\Redis\Driver;
 
-use Kdyby;
-use Nette;
-
-
-
-/**
- * @author Filip Procházka <filip@prochazka.su>
- */
-class PhpRedisDriverOld extends \Redis implements Kdyby\Redis\IRedisDriverOld
+class PhpRedisDriverOld extends \Kdyby\Redis\Driver\PhpRedisDriver
 {
 
 	/**
-	 * {@inheritdoc}
+	 * Connects to a Redis instance or reuse a connection already established with pconnect/popen.
+	 *
+	 * The connection will not be closed on close or end of request until the php process ends.
+	 * So be patient on to many open FD's (specially on redis server side)
+	 * when using persistent connections on many servers connecting to one redis server.
+	 *
+	 * Also more than one persistent connection can be made identified
+	 * by either host + port + timeout or host + persistent_id or unix socket + timeout.
+	 *
+	 * This feature is not available in threaded versions.
+	 * pconnect and popen then working like their non persistent equivalents.
+	 *
+	 * @param string $host can be a host, or the path to a unix domain socket
+	 * @param int $port
+	 * @param int $timeout value in seconds (optional, default is 0 meaning unlimited)
+	 * @return bool
 	 */
-	public function connect($host, $port = NULL, $timeout = 0)
+	public function connect(string $host, ?int $port = NULL, int $timeout = 0): bool
 	{
-		$args = func_get_args();
-		return @call_user_func_array('parent::connect', $args); // intentionally @ - from v3.1.0 Redis::connect() throws warning on failed
+		return parent::connect($host, $port, $timeout);
 	}
 
-
-
 	/**
-	 * {@inheritdoc}
-	 */
-	public function select($database)
-	{
-		$args = func_get_args();
-		return call_user_func_array('parent::select', $args);
-	}
-
-
-
-	/**
-	 * {@inheritdoc}
+	 * Execute the Redis SCRIPT command to perform various operations on the scripting subsystem.
+	 *
+	 * @param mixed $command
+	 * @param mixed $script
+	 * @return mixed
 	 */
 	public function script($command, $script = NULL)
 	{
-		$args = func_get_args();
-		return call_user_func_array('parent::script', $args);
-	}
-
-
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function evalsha($scriptSha, $argsArray = [], $numKeys = 0)
-	{
-		$args = func_get_args();
-		return call_user_func_array('parent::evalsha', $args);
+		return parent::script($command, $script);
 	}
 
 }

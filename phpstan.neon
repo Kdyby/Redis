@@ -1,0 +1,19 @@
+parameters:
+	ignoreErrors:
+		- '#Result of function usleep \(void\) is used.#'
+		- '#Constant TEMP_DIR not found.#'
+		- '#Unsafe usage of new static().#'
+		-
+			message: '#Negated boolean expression is always true.#'
+			path: src/Kdyby/Redis/ExclusiveLock.php
+		-
+			message: '#Declaration of Kdyby\\Redis\\Driver\\PhpRedisDriverOld::script\(.*\) should be compatible with Redis::script\(.*\)#'
+			path: src/Kdyby/Redis/Driver/PhpRedisDriverOld.php
+		-
+			message: '#Declaration of Kdyby\\Redis\\Driver\\PhpRedisDriverOld::connect\(.*\): bool should be compatible with Redis::connect\(.*\)#'
+			path: src/Kdyby/Redis/Driver/PhpRedisDriverOld.php
+
+	excludes_analyse:
+		- src/Kdyby/Redis/DI/ClassAliasMap.php
+
+	reportUnmatchedIgnoredErrors: FALSE

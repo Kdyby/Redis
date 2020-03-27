@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
@@ -10,10 +12,7 @@
 
 namespace Kdyby\Redis;
 
-use Kdyby;
 use Nette;
-
-
 
 /**
  * Redis session handler allows to store session in redis using Nette\Http\Session.
@@ -21,15 +20,14 @@ use Nette;
  * <code>
  * $session->setStorage(new Kdyby\Redis\RedisSessionHandler($redisClient));
  * </code>
- *
- * @author Filip Procházka <filip@prochazka.su>
  */
 class RedisSessionHandler implements \SessionHandlerInterface
 {
-	use Nette\SmartObject;
+
+	use \Nette\SmartObject;
 
 	/** @internal cache structure */
-	const NS_NETTE = 'Nette.Session:';
+	public const NS_NETTE = 'Nette.Session:';
 
 	/**
 	 * @var array
@@ -37,58 +35,48 @@ class RedisSessionHandler implements \SessionHandlerInterface
 	private $ssIds = [];
 
 	/**
-	 * @var RedisClient
+	 * @var \Kdyby\Redis\RedisClient
 	 */
 	private $client;
 
 	/**
-	 * @var Nette\Http\Session
+	 * @var \Nette\Http\Session
 	 */
 	private $session;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	private $ttl;
 
-
-
-	/**
-	 * @param RedisClient $redisClient
-	 */
 	public function __construct(RedisClient $redisClient)
 	{
 		$this->client = $redisClient;
 	}
 
-
-
 	/**
 	 * @internal
-	 * @param Nette\Http\Session $session
-	 * @return RedisSessionHandler
+	 * @param \Nette\Http\Session $session
+	 * @return \Kdyby\Redis\RedisSessionHandler
 	 */
-	public function bind(Nette\Http\Session $session)
+	public function bind(Nette\Http\Session $session): RedisSessionHandler
 	{
 		$this->session = $session;
 		$session->setHandler($this);
 		return $this;
 	}
 
-
-
-	/**
-	 * @return int|string
-	 */
-	protected function getTtl()
+	protected function getTtl(): int
 	{
 		if ($this->ttl === NULL) {
 			if ($this->session !== NULL) {
 				$options = $this->session->getOptions();
-				$ttl = min(array_filter([$options['cookie_lifetime'], $options['gc_maxlifetime']], function ($v) { return $v > 0; })) ?: 0;
+				$ttl = \min(\array_filter([$options['cookie_lifetime'], $options['gc_maxlifetime']], static function ($v) {
+					return $v > 0;
+				})) ?: 0;
 
 			} else {
-				$ttl = ini_get('session.gc_maxlifetime');
+				$ttl = (int) \ini_get('session.gc_maxlifetime');
 			}
 
 			if ($ttl <= 0) {
@@ -101,71 +89,51 @@ class RedisSessionHandler implements \SessionHandlerInterface
 		return $this->ttl;
 	}
 
-
-
-	/**
-	 * @param int $ttl
-	 */
-	public function setTtl($ttl)
+	public function setTtl(int $ttl): void
 	{
-		$this->ttl = max($ttl, 0);
+		$this->ttl = \max($ttl, 0);
 	}
 
-
-
-	/**
-	 * @param string $savePath
-	 * @param string $sessionName
-	 * @return bool
-	 */
-	public function open($savePath, $sessionName)
+	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	public function open($savePath, $sessionName): bool
 	{
 		return TRUE;
 	}
 
-
-
 	/**
 	 * @param string $id
-	 * @throws SessionHandlerException
+	 * @throws \Kdyby\Redis\SessionHandlerException
 	 * @return string
 	 */
-	public function read($id)
+	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	public function read($id): string
 	{
 		return (string) $this->client->get($this->lock($id));
 	}
 
-
-
-	/**
-	 * @param string $id
-	 * @param string $data
-	 * @return bool
-	 */
-	public function write($id, $data)
+	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	public function write($id, $data): bool
 	{
 		if (!isset($this->ssIds[$id])) {
 			return FALSE;
 		}
 
-		return $this->client->setex($this->formatKey($id), $this->getTtl(), $data);
+		return $this->client->setEX($this->formatKey($id), $this->getTtl(), $data);
 	}
-
-
 
 	/**
 	 * @param string $id
-	 *
-	 * @return bool
+	 * @throws \Exception
 	 */
-	public function destroy($id)
+	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	public function destroy($id): bool
 	{
 		if (!isset($this->ssIds[$id])) {
 			return FALSE;
 		}
 
 		$key = $this->formatKey($id);
-		$this->client->multi(function (RedisClient $client) use ($key) {
+		$this->client->multi(static function (RedisClient $client) use ($key): void {
 			$client->del($key);
 			$client->unlock($key);
 		});
@@ -173,14 +141,10 @@ class RedisSessionHandler implements \SessionHandlerInterface
 		return TRUE;
 	}
 
-
-
-	/**
-	 * @return bool
-	 */
-	public function close()
+	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	public function close(): bool
 	{
-		foreach ($this->ssIds as $id => $key) {
+		foreach ($this->ssIds as $key) {
 			$this->client->unlock($key);
 		}
 		$this->ssIds = [];
@@ -188,25 +152,13 @@ class RedisSessionHandler implements \SessionHandlerInterface
 		return TRUE;
 	}
 
-
-
-	/**
-	 * @param int $maxLifeTime
-	 *
-	 * @return bool
-	 */
-	public function gc($maxLifeTime)
+	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	public function gc($maxLifeTime): bool
 	{
 		return TRUE;
 	}
 
-
-
-	/**
-	 * @param string $id
-	 * @return string
-	 */
-	protected function lock($id)
+	protected function lock(string $id): string
 	{
 		try {
 			$key = $this->formatKey($id);
@@ -215,19 +167,12 @@ class RedisSessionHandler implements \SessionHandlerInterface
 
 			return $key;
 
-		} catch (LockException $e) {
-			throw new SessionHandlerException(sprintf('Cannot work with non-locked session id %s: %s', $id, $e->getMessage()), 0, $e);
+		} catch (\Kdyby\Redis\Exception\LockException $e) {
+			throw new \Kdyby\Redis\Exception\SessionHandlerException(\sprintf('Cannot work with non-locked session id %s: %s', $id, $e->getMessage()), 0, $e);
 		}
 	}
 
-
-
-	/**
-	 * @param string $id
-	 *
-	 * @return string
-	 */
-	private function formatKey($id)
+	private function formatKey(string $id): string
 	{
 		return self::NS_NETTE . $id;
 	}

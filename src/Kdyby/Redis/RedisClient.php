@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 /**
  * This file is part of the Kdyby (http://www.kdyby.org)
  *
@@ -10,12 +12,9 @@
 
 namespace Kdyby\Redis;
 
-use Kdyby;
-use Nette;
-use Nette\Utils\Callback;
+use Kdyby\Redis\Driver\PhpRedisDriver;
+use Redis;
 use Tracy\Debugger;
-
-
 
 /**
  * <code>
@@ -151,20 +150,16 @@ use Tracy\Debugger;
  * @method int          zRevRank(string $key, string $member) Determine the index of a member in a sorted set, with scores ordered from high to low
  * @method float        zScore(string $key, string $member) Get the score associated with the given member in a sorted set
  * @method int          zUnion(string $destination, array $setKeys, array $weights = array(), string $aggregateFunction = NULL) Add multiple sorted sets and store the resulting sorted set in a new key</ul>
- *
- * @author Filip Procházka <filip@prochazka.su>
  */
 class RedisClient implements \ArrayAccess
 {
-	use Nette\SmartObject;
 
-	/** @deprecated */
-	const WITH_SCORES = 'WITHSCORES';
+	use \Nette\SmartObject;
 
-	const DEFAULT_PORT = 6379;
+	public const DEFAULT_PORT = 6379;
 
 	/**
-	 * @var Driver\PhpRedisDriver
+	 * @var \Kdyby\Redis\Driver\PhpRedisDriver|NULL
 	 */
 	private $driver;
 
@@ -179,7 +174,7 @@ class RedisClient implements \ArrayAccess
 	private $connectionAttempts = 1;
 
 	/**
-	 * @var Diagnostics\Panel
+	 * @var \Kdyby\Redis\Diagnostics\Panel|NULL
 	 */
 	private $panel;
 
@@ -189,7 +184,7 @@ class RedisClient implements \ArrayAccess
 	private $host;
 
 	/**
-	 * @var string
+	 * @var int
 	 */
 	private $port;
 
@@ -204,7 +199,7 @@ class RedisClient implements \ArrayAccess
 	private $database;
 
 	/**
-	 * @var ExclusiveLock
+	 * @var \Kdyby\Redis\ExclusiveLock|NULL
 	 */
 	private $lock;
 
@@ -222,10 +217,8 @@ class RedisClient implements \ArrayAccess
 	 * @var array
 	 */
 	private static $exceptionCmd = [
-		'evalsha' => 0
+		'evalsha' => 0,
 	];
-
-
 
 	/**
 	 * @param string $host
@@ -234,9 +227,9 @@ class RedisClient implements \ArrayAccess
 	 * @param int $timeout
 	 * @param string $auth
 	 * @param bool $persistent
-	 * @throws MissingExtensionException
+	 * @throws \Kdyby\Redis\Exception\MissingExtensionException
 	 */
-	public function __construct($host = '127.0.0.1', $port = NULL, $database = 0, $timeout = 10, $auth = NULL, $persistent = FALSE)
+	public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, int $timeout = 10, ?string $auth = NULL, bool $persistent = FALSE)
 	{
 		$this->host = $host;
 		$this->port = $port;
@@ -246,8 +239,6 @@ class RedisClient implements \ArrayAccess
 		$this->persistent = $persistent;
 	}
 
-
-
 	/**
 	 * Close the connection
 	 */
@@ -256,39 +247,30 @@ class RedisClient implements \ArrayAccess
 		$this->close();
 	}
 
-
-
-	/**
-	 * @return \Kdyby\Redis\IRedisDriver|\Kdyby\Redis\IRedisDriverOld
-	 */
-	public function getDriver()
+	public function getDriver(): PhpRedisDriver
 	{
 		$this->connect();
 		return $this->driver;
 	}
-
-
 
 	/**
 	 * Returns database index
 	 *
 	 * @return int
 	 */
-	public function getDatabase()
+	public function getDatabase(): int
 	{
 		return $this->database;
 	}
 
-
-
-	public function connect()
+	public function connect(): void
 	{
-		if (!extension_loaded('redis')) {
-			throw new MissingExtensionException("Please install and enable the redis extension. \nhttps://github.com/nicolasff/phpredis/");
+		if (!\extension_loaded('redis')) {
+			throw new \Kdyby\Redis\Exception\MissingExtensionException("Please install and enable the redis extension. \nhttps://github.com/nicolasff/phpredis/");
 		}
 
 		if (!$this->driver) {
-			$this->driver = phpversion('redis') >= '4.0.0' ? new Driver\PhpRedisDriver() : new Driver\PhpRedisDriverOld();
+			$this->driver = \phpversion('redis') >= '4.0.0' ? new Driver\PhpRedisDriver() : new Driver\PhpRedisDriverOld();
 		}
 
 		if ($this->driver->isConnected()) {
@@ -310,7 +292,7 @@ class RedisClient implements \ArrayAccess
 				if (!$isConnected || !$this->driver->isConnected()) {
 					$errorMessage = $this->driver->getLastError();
 					$this->driver->clearLastError();
-					throw new ConnectionException(sprintf('Connecting to %s failed: %s', $this->formatServerAddress(), $errorMessage));
+					throw new \Kdyby\Redis\Exception\ConnectionException(\sprintf('Connecting to %s failed: %s', $this->formatServerAddress(), $errorMessage));
 				}
 
 				if (isset($this->auth)) {
@@ -324,32 +306,31 @@ class RedisClient implements \ArrayAccess
 
 			} catch (\Exception $e) {
 				$errors[] = $e;
-				if (class_exists('Tracy\Debugger') && !Debugger::$productionMode) {
+				if (\class_exists('Tracy\Debugger') && !Debugger::$productionMode) {
 					break;
 				}
 
-				usleep(1000 * $this->connectionAttempts);
+				\usleep(1000 * $this->connectionAttempts);
 
 			} catch (\Throwable $e) {
 				$errors[] = $e;
 				break;
 			}
 
-		} while(--$remaining > 0);
+		} while (--$remaining > 0);
 
-		if ($e = reset($errors)) {
+		$error = \reset($errors);
+		if ($error) {
 			$errorMessage = $this->driver->getLastError();
 			$this->driver->clearLastError();
-			throw new RedisClientException(sprintf('Client of %s; %s; %s', $this->formatServerAddress(), $e->getMessage(), $errorMessage), $e->getCode(), $e);
+			throw new \Kdyby\Redis\Exception\RedisClientException(\sprintf('Client of %s; %s; %s', $this->formatServerAddress(), $e->getMessage(), $errorMessage), $e->getCode(), $e);
 		}
 	}
-
-
 
 	/**
 	 * Close the connection
 	 */
-	public function close()
+	public function close(): void
 	{
 		try {
 			if ($this->driver && $this->driver->isConnected()) {
@@ -364,40 +345,25 @@ class RedisClient implements \ArrayAccess
 		$this->isConnected = FALSE;
 	}
 
-
-
-	/**
-	 * @param int $attempts
-	 * @return RedisClient
-	 */
-	public function setConnectionAttempts($attempts)
+	public function setConnectionAttempts(int $attempts): RedisClient
 	{
-		$this->connectionAttempts = max((int) $attempts, 1);
+		$this->connectionAttempts = \max((int) $attempts, 1);
 		return $this;
 	}
 
-
-
-	/**
-	 * @param Diagnostics\Panel $panel
-	 */
-	public function setPanel(Diagnostics\Panel $panel)
+	public function setPanel(Diagnostics\Panel $panel): void
 	{
 		$this->panel = $panel;
 	}
 
-
-
 	/**
 	 * @internal
 	 * @param string $cmd
-	 * @param array $args
-	 *
-	 * @throws \RedisException
-	 * @throws RedisClientException
+	 * @param array<mixed> $args
+	 * @throws \Kdyby\Redis\Exception\RedisClientException
 	 * @return mixed
 	 */
-	public function send($cmd, array $args = [])
+	public function send(string $cmd, array $args = [])
 	{
 		if (!$this->isConnected) {
 			$this->connect();
@@ -406,20 +372,22 @@ class RedisClient implements \ArrayAccess
 		try {
 			if ($this->panel) {
 				$request = $args;
-				array_unshift($request, $cmd);
+				\array_unshift($request, $cmd);
 				$this->panel->begin($request, $this->database);
 			}
 
-			$result = call_user_func_array([$this->driver, $cmd], $args);
+			$result = \call_user_func_array([$this->driver, $cmd], $args);
 
-			if ($result === TRUE && strtolower($cmd) === 'select') {
+			if ($result === TRUE && \strtolower($cmd) === 'select') {
 				$this->database = $args[0];
 			}
 
-			if ($result instanceof \Redis) {
-				$result = strtolower($cmd) === 'multi' ? 'OK' : 'QUEUED';
-			} elseif ($result === FALSE && ($msg = $this->driver->getLastError())) {
-				if (!isset(self::$exceptionCmd[strtolower($cmd)])) {
+			if ($result instanceof Redis) {
+				$result = \strtolower($cmd) === 'multi' ? 'OK' : 'QUEUED';
+
+			} elseif ($result === FALSE) {
+				$msg = $this->driver->getLastError();
+				if ($msg && !isset(self::$exceptionCmd[\strtolower($cmd)])) {
 					throw new \RedisException($msg);
 				}
 
@@ -435,28 +403,27 @@ class RedisClient implements \ArrayAccess
 			if ($this->panel) {
 				$this->panel->error($e);
 			}
-			throw new RedisClientException(sprintf('Client of %s; %s', $this->formatServerAddress(), $e->getMessage()), $e->getCode(), $e);
+			throw new \Kdyby\Redis\Exception\RedisClientException(\sprintf('Client of %s; %s', $this->formatServerAddress(), $e->getMessage()), $e->getCode(), $e);
 		}
 
 		return $result;
 	}
 
-
-
 	/**
 	 * Get information and statistics about the server
 	 *
 	 * @param string $returnKey
-	 * @return array|string
+	 * @return array<mixed>|string
+	 * @throws \RedisException
 	 */
-	public function info($returnKey = NULL)
+	public function info(?string $returnKey = NULL)
 	{
-		$info = $this->send('info');
+		$info = $this->send(__FUNCTION__);
 
-		$dbs = array_map(function ($db) {
-			$info = array_map(function ($item) {
-				return explode('=', $item, 2);
-			}, explode(',', $db));
+		$dbs = \array_map(static function ($db) {
+			$info = \array_map(static function ($item) {
+				return \explode('=', $item, 2);
+			}, \explode(',', $db));
 
 			$result = [];
 			foreach ($info as $item) {
@@ -464,29 +431,26 @@ class RedisClient implements \ArrayAccess
 			}
 
 			return $result;
-
-		}, preg_grep('~^keys=[0-9]+,~', $info));
+		}, \preg_grep('~^keys=[0-9]+,~', $info));
 
 		$info = $dbs + $info; // replace
 
 		if ($returnKey !== NULL) {
-			return array_key_exists($returnKey, $info) ? $info[$returnKey] : NULL;
+			return \array_key_exists($returnKey, $info) ? $info[$returnKey] : NULL;
 		}
 
 		return $info;
 	}
 
-
-
 	/**
 	 * Mark the start of a transaction block
 	 *
 	 * @param callable $callback
-	 * @throws \Exception|RedisClientException
+	 * @throws \Exception|\Kdyby\Redis\Exception\RedisClientException
 	 * @throws \Exception
 	 * @return mixed
 	 */
-	public function multi($callback = NULL)
+	public function multi(?callable $callback = NULL)
 	{
 		$ok = $this->send('multi');
 
@@ -495,10 +459,10 @@ class RedisClient implements \ArrayAccess
 		}
 
 		try {
-			Callback::invoke($callback, $this);
+			$callback($this);
 			return $this->exec();
 
-		} catch (RedisClientException $e) {
+		} catch (\Kdyby\Redis\Exception\RedisClientException $e) {
 			throw $e;
 
 		} catch (\Exception $e) {
@@ -511,109 +475,103 @@ class RedisClient implements \ArrayAccess
 		}
 	}
 
-
-
 	/**
-	 * @return array|bool|null|string
-	 * @throws TransactionException
+	 * @return mixed
+	 * @throws \Kdyby\Redis\Exception\TransactionException
+	 * @throws \RedisException
 	 */
 	public function exec()
 	{
 		$response = $this->send('exec');
 		if ($response === NULL || $response === FALSE) {
-			throw new TransactionException(sprintf('Client of %s; Transaction was aborted', $this->formatServerAddress()));
+			throw new \Kdyby\Redis\Exception\TransactionException(\sprintf('Client of %s; Transaction was aborted', $this->formatServerAddress()));
 		}
 		return $response;
 	}
 
-
-
 	/**
 	 * Scan the keyspace for keys (Redis >= 2.8)
 	 *
-	 * @param null|int $iterator Iterator reference, initialized to NULL
+	 * @param int|null $iterator Iterator reference, initialized to NULL
 	 * @param string $pattern Optional pattern to match
 	 * @param int $count Count of keys per iteration (only a suggestion to Redis)
-	 * @return array|bool array of keys of FALSE if there are no more keys
+	 * @return array<mixed>|bool array of keys of FALSE if there are no more keys
+	 * @throws \RedisException
 	 */
-	public function scan(&$iterator, $pattern = NULL, $count = NULL)
+	public function scan(?int &$iterator, ?string $pattern = NULL, ?int $count = NULL)
 	{
-		return call_user_func([$this, 'send'], __FUNCTION__, [&$iterator, $pattern, $count]);
+		return $this->send(__FUNCTION__, [&$iterator, $pattern, $count]);
 	}
-
-
 
 	/**
 	 * Scan a HASH value for members (Redis >= 2.8)
 	 *
 	 * @param string $key
-	 * @param null|int $iterator Iterator reference, initialized to NULL
+	 * @param int|null $iterator Iterator reference, initialized to NULL
 	 * @param string $pattern Optional pattern to match
 	 * @param int $count Count of hash members per iteration (only a suggestion to Redis)
-	 * @return array|bool list of members or FALSE  if there are no more members
+	 * @return array<mixed>|bool list of members or FALSE  if there are no more members
+	 * @throws \RedisException
 	 */
-	public function hScan($key, &$iterator, $pattern = NULL, $count = NULL)
+	public function hScan(string $key, ?int &$iterator, ?string $pattern = NULL, ?int $count = NULL)
 	{
-		return call_user_func([$this, 'send'], __FUNCTION__, [$key, &$iterator, $pattern, $count]);
+		return $this->send(__FUNCTION__, [$key, &$iterator, $pattern, $count]);
 	}
-
-
 
 	/**
 	 * Scan a set for members (Redis >= 2.8)
 	 *
 	 * @param string $key
-	 * @param null|int $iterator Iterator reference, initialized to NULL
+	 * @param int|null $iterator Iterator reference, initialized to NULL
 	 * @param string $pattern Optional pattern to match
 	 * @param int $count Count of hash members per iteration (only a suggestion to Redis)
-	 * @return array|bool list of members or FALSE  if there are no more members
+	 * @return array<mixed>|bool list of members or FALSE  if there are no more members
+	 * @throws \RedisException
 	 */
-	public function sScan($key, &$iterator, $pattern = NULL, $count = NULL)
+	public function sScan(string $key, ?int &$iterator, ?string $pattern = NULL, ?int $count = NULL)
 	{
-		return call_user_func([$this, 'send'], __FUNCTION__, [$key, &$iterator, $pattern, $count]);
+		return $this->send(__FUNCTION__, [$key, &$iterator, $pattern, $count]);
 	}
-
-
 
 	/**
 	 * Scan a sorted set for members (Redis >= 2.8)
 	 *
 	 * @param string $key
-	 * @param null|int $iterator Iterator reference, initialized to NULL
+	 * @param int|null $iterator Iterator reference, initialized to NULL
 	 * @param string $pattern Optional pattern to match
 	 * @param int $count Count of hash members per iteration (only a suggestion to Redis)
-	 * @return array|bool list of members or FALSE  if there are no more members
+	 * @return array<mixed>|bool list of members or FALSE  if there are no more members
+	 * @throws \RedisException
 	 */
-	public function zScan($key, &$iterator, $pattern = NULL, $count = NULL)
+	public function zScan(string $key, ?int &$iterator, ?string $pattern = NULL, ?int $count = NULL)
 	{
-		return call_user_func([$this, 'send'], __FUNCTION__, [$key, &$iterator, $pattern, $count]);
+		return $this->send(__FUNCTION__, [$key, &$iterator, $pattern, $count]);
 	}
-
-
 
 	/**
 	 * Execute a Lua script server side
+	 *
+	 * @param mixed $script
+	 * @param array<mixed> $keys
+	 * @param array<mixed> $args
+	 * @return mixed
+	 * @throws \RedisException
 	 */
 	public function evalScript($script, array $keys = [], array $args = [])
 	{
-		$script = trim($script);
+		$script = \trim($script);
 
-		$result = $this->send('evalsha', [sha1($script), array_merge($keys, $args), count($keys)]);
-		if ($result === FALSE && stripos($this->driver->getLastError(), 'NOSCRIPT') !== FALSE) {
+		$result = $this->send('evalsha', [\sha1($script), \array_merge($keys, $args), \count($keys)]);
+		if ($result === FALSE && \stripos($this->driver->getLastError(), 'NOSCRIPT') !== FALSE) {
 			$this->driver->clearLastError();
 			$sha = $this->driver->script('load', $script);
-			$result = $this->send('evalsha', [$sha, array_merge($keys, $args), count($keys)]);
+			$result = $this->send('evalsha', [$sha, \array_merge($keys, $args), \count($keys)]);
 		}
 
 		return $result;
 	}
 
-
-
-	/**
-	 * @return ExclusiveLock
-	 */
-	protected function getLock()
+	protected function getLock(): ExclusiveLock
 	{
 		if ($this->lock === NULL) {
 			$this->lock = new ExclusiveLock($this);
@@ -622,12 +580,7 @@ class RedisClient implements \ArrayAccess
 		return $this->lock;
 	}
 
-
-
-	/**
-	 * @param ExclusiveLock $lock
-	 */
-	public function setLock(ExclusiveLock $lock)
+	public function setLock(ExclusiveLock $lock): void
 	{
 		$lock->setClient($this);
 
@@ -639,72 +592,51 @@ class RedisClient implements \ArrayAccess
 		$this->lock = $lock;
 	}
 
-
-
 	/**
 	 * @internal
 	 * @param int $duration
-	 * @param int|boolean $timeout
+	 * @param int|bool $timeout
 	 */
-	public function setupLockDuration($duration, $timeout = FALSE)
+	public function setupLockDuration(int $duration, $timeout = FALSE): void
 	{
-		$this->getLock()->duration = abs((int)$duration);
-		$this->getLock()->acquireTimeout = abs((int) $timeout) ?: FALSE;
+		$this->getLock()->duration = \abs((int) $duration);
+		$this->getLock()->acquireTimeout = \abs((int) $timeout) ?: FALSE;
 	}
 
-
-
-	/**
-	 * @param string $key
-	 * @return bool
-	 */
-	public function lock($key)
+	public function lock(string $key): bool
 	{
 		return $this->getLock()->acquireLock($key);
 	}
 
-
-
-	/**
-	 * @param string $key
-	 */
-	public function unlock($key)
+	public function unlock(string $key): void
 	{
 		$this->getLock()->release($key);
 	}
 
-
-
 	/**
 	 * @internal
-	 * @throws Nette\Utils\AssertionException
+	 * @throws \Nette\Utils\AssertionException
 	 */
-	public function assertVersion()
+	public function assertVersion(): void
 	{
 		$version = $this->info('redis_version');
-		if (version_compare($version, '2.6.0', '<')) {
-			throw new Nette\Utils\AssertionException(
-				"Minimum required version for this Redis client is 2.6.0, your version is $version. Please upgrade your software."
+		if (\version_compare($version, '2.6.0', '<')) {
+			throw new \Nette\Utils\AssertionException(
+				\sprintf('Minimum required version for this Redis client is 2.6.0, your version is %s. Please upgrade your software.', $version)
 			);
 		}
 	}
 
-
-
-	private function formatServerAddress()
+	private function formatServerAddress(): string
 	{
-		if (stripos($this->host, '/') === 0) { // socket
+		if (\stripos($this->host, '/') === 0) { // socket
 			return $this->host;
 		}
 
-		return sprintf('tcp://%s:%s', $this->host, $this->port ?: self::DEFAULT_PORT);
+		return \sprintf('tcp://%s:%s', $this->host, $this->port ?: self::DEFAULT_PORT);
 	}
 
-
-
 	/************************ syntax sugar ************************/
-
-
 
 	/**
 	 * Magic method for sending redis messages.
@@ -714,17 +646,14 @@ class RedisClient implements \ArrayAccess
 	 * </code>
 	 *
 	 * @param string $name
-	 * @param array $args
-	 *
-	 * @throws RedisClientException
-	 * @return array|null|string
+	 * @param array<mixed> $args
+	 * @throws \RedisException
+	 * @return mixed
 	 */
-	public function __call($name, $args)
+	public function __call(string $name, array $args)
 	{
 		return $this->send($name, $args);
 	}
-
-
 
 	/**
 	 * Magic method as alias for get command.
@@ -732,56 +661,51 @@ class RedisClient implements \ArrayAccess
 	 * @param string $name
 	 * @return mixed
 	 */
-	public function &__get($name)
+	public function &__get(string $name)
 	{
-		$res = $this->send('get', [$name]);
-		return $res;
+		// phpcs:disable SlevomatCodingStandard.Variables.UselessVariable.UselessVariable
+		$send = $this->send('get', [$name]);
+
+		return $send;
 	}
-
-
 
 	/**
 	 * Magic method as alias for set command.
 	 *
 	 * @param string $name
 	 * @param mixed $value
+	 * @return mixed
+	 * @throws \RedisException
 	 */
-	public function __set($name, $value)
+	public function __set(string $name, $value)
 	{
 		return $this->send('set', [$name, $value]);
 	}
-
-
 
 	/**
 	 * Magic method as alias for exists command.
 	 *
 	 * @param string $name
-	 *
 	 * @return bool|void
+	 * @throws \RedisException
 	 */
-	public function __isset($name)
+	public function __isset(string $name)
 	{
 		return $this->send('exists', [$name]);
 	}
-
-
 
 	/**
 	 * Magic method as alias for del command.
 	 *
 	 * @param string $name
+	 * @throws \RedisException
 	 */
-	public function __unset($name)
+	public function __unset(string $name): void
 	{
-		return $this->send('del', [$name]);
+		$this->send('del', [$name]);
 	}
 
-
-
 	/********************************* \ArrayAccess *********************************/
-
-
 
 	/**
 	 * ArrayAccess method as alias for exists command.
@@ -789,17 +713,15 @@ class RedisClient implements \ArrayAccess
 	 * @param mixed $offset
 	 * @return bool
 	 */
-	public function offsetExists($offset)
+	public function offsetExists($offset): bool
 	{
 		return $this->__isset($offset);
 	}
 
-
-
 	/**
 	 * ArrayAccess method as alias for get command.
 	 *
-	 * @param string $offset
+	 * @param string|int $offset
 	 * @return mixed
 	 */
 	public function offsetGet($offset)
@@ -807,27 +729,23 @@ class RedisClient implements \ArrayAccess
 		return $this->__get($offset);
 	}
 
-
-
 	/**
 	 * ArrayAccess method as alias for set command.
 	 *
-	 * @param string $offset
+	 * @param string|int $offset
 	 * @param mixed $value
 	 */
-	public function offsetSet($offset, $value)
+	public function offsetSet($offset, $value): void
 	{
 		$this->__set($offset, $value);
 	}
 
-
-
 	/**
 	 * ArrayAccess method as alias for del command.
 	 *
-	 * @param string $offset
+	 * @param mixed $offset
 	 */
-	public function offsetUnset($offset)
+	public function offsetUnset($offset): void
 	{
 		$this->__unset($offset);
 	}
