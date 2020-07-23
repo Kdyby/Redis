@@ -216,6 +216,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 		}
 
 		$store = \json_encode($meta) . Cache::NAMESPACE_SEPARATOR . $data;
+		$store = \snappy_compress($store);
 
 		try {
 			if (isset($dp[Cache::EXPIRATION])) {
@@ -334,6 +335,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 */
 	private static function processStoredValue(string $key, string $storedValue): array
 	{
+		$storedValue = \snappy_uncompress($storedValue);
 		[$meta, $data] = \explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + [NULL, NULL];
 		return [[self::KEY => $key] + \json_decode($meta, TRUE), $data];
 	}

@@ -69,6 +69,10 @@ class RedisJournal implements \Nette\Caching\Storages\IJournal
 			$this->client->zAdd($this->formatKey(self::PRIORITY), $dp[Cache::PRIORITY], $key);
 		}
 
+		if (isset($dp[Cache::EXPIRE])) {
+			$this->client->send('expire', [$this->formatKey($key, self::TAGS), $dp[Cache::EXPIRE]]);
+		}
+
 		$this->client->exec();
 	}
 
@@ -90,8 +94,7 @@ class RedisJournal implements \Nette\Caching\Storages\IJournal
 			}
 
 			// drop tags of entry and priority, in case there are some
-			$this->client->del($this->formatKey($key, self::TAGS), $this->formatKey($key, self::PRIORITY));
-			$this->client->zRem($this->formatKey(self::PRIORITY), $key);
+			$this->client->del($this->formatKey($key, self::TAGS));
 
 			$this->client->exec();
 		}
