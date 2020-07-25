@@ -61,16 +61,15 @@ class RedisJournal implements \Nette\Caching\Storages\IJournal
 		// add entry to each tag & tag to entry
 		$tags = empty($dp[Cache::TAGS]) ? [] : (array) $dp[Cache::TAGS];
 		foreach (\array_unique($tags) as $tag) {
-			$this->client->sAdd($this->formatKey($tag, self::KEYS), $key);
-			$this->client->sAdd($this->formatKey($key, self::TAGS), $tag);
-		}
-
-		if (isset($dp[Cache::PRIORITY])) {
-			$this->client->zAdd($this->formatKey(self::PRIORITY), $dp[Cache::PRIORITY], $key);
+			$tagKeyName = $this->formatKey($tag, self::KEYS);
+			$keyTagName = $this->formatKey($key, self::TAGS);
+			$this->client->sAdd($tagKeyName, $key);
+			$this->client->sAdd($keyTagName, $tag);
 		}
 
 		if (isset($dp[Cache::EXPIRE])) {
-			$this->client->send('expire', [$this->formatKey($key, self::TAGS), $dp[Cache::EXPIRE]]);
+			$this->client->expire($tagKeyName, $dp[Cache::EXPIRE]);
+			$this->client->expire($keyTagName, $dp[Cache::EXPIRE]);
 		}
 
 		$this->client->exec();
