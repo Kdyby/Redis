@@ -307,7 +307,11 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 			return NULL;
 		}
 
-		return self::processStoredValue($key, $stored);
+		try {
+			return self::processStoredValue($key, $stored);
+		} catch (\Throwable $e) {
+			return null;
+		}
 	}
 
 	/**
