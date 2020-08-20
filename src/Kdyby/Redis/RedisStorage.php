@@ -339,7 +339,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 */
 	private static function processStoredValue(string $key, string $storedValue): array
 	{
-		$storedValue = \snappy_uncompress($storedValue);
+		$storedValue = @\snappy_uncompress($storedValue);
 		[$meta, $data] = \explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + [NULL, NULL];
 		return [[self::KEY => $key] + \json_decode($meta, TRUE), $data];
 	}
