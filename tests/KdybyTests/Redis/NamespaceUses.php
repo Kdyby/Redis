@@ -42,6 +42,12 @@ class NamespaceUses
 	 */
 	private function parseFile(): array
 	{
+		// Compatibility with PHP 8.0 namespace handling for older PHP
+		if (!defined('T_NAME_FULLY_QUALIFIED')) {
+			define('T_NAME_FULLY_QUALIFIED', -1);
+			define('T_NAME_QUALIFIED', -1);
+		}
+
 		$code = \file_get_contents($this->refl->getFileName());
 
 		$expected = FALSE;
@@ -66,6 +72,8 @@ class NamespaceUses
 
 					case T_NS_SEPARATOR:
 					case T_STRING:
+					case T_NAME_QUALIFIED:
+					case T_NAME_FULLY_QUALIFIED:
 						if ($expected) {
 							$name .= $token[1];
 							continue 2;
@@ -104,7 +112,7 @@ class NamespaceUses
 						}
 
 						if ($token === ';') {
-							$list = \array_map(\Nette\Utils\Callback::closure('trim'), \explode(',', $name));
+							$list = \array_map(\Closure::fromCallable('trim'), \explode(',', $name));
 							$uses[$namespace] = isset($uses[$namespace]) ? \array_merge(
 								$uses[$namespace],
 								$list

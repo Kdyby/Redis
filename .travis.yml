@@ -30,11 +30,16 @@ matrix:
       env: COMPOSER_EXTRA_ARGS="" PHPSTAN=1 RUN_TESTS=0
     - php: 7.4
       env: COMPOSER_EXTRA_ARGS="" CODING_STANDARD=1 RUN_TESTS=0
+    - php: 8.0
+      env: RUN_TESTS=1 COMPOSER_EXTRA_ARGS="--ignore-platform-reqs" # dev
+    - php: 8.0
+      env: RUN_TESTS=1 COMPOSER_EXTRA_ARGS="--prefer-stable --ignore-platform-reqs" # because of incompatible dev dependencies
   exclude:
     - php: 7.4
       env: COMPOSER_EXTRA_ARGS=""
   allow_failures:
     - env: RUN_TESTS=1
+    - env: RUN_TESTS=1 COMPOSER_EXTRA_ARGS="--ignore-platform-reqs"
 
 before_install:
   - travis_retry composer self-update
