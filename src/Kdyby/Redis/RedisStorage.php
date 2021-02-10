@@ -267,10 +267,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 
 		// cleaning using journal
 		if ($this->journal) {
-			$keys = $this->journal->clean($conds);
-			if ($keys) {
-				$this->client->send('del', $keys);
-			}
+			$this->journal->clean($conds);
 		}
 	}
 

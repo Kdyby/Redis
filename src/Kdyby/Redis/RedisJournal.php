@@ -68,7 +68,6 @@ class RedisJournal implements \Nette\Caching\Storages\IJournal
 		}
 
 		if (isset($dp[Cache::EXPIRE])) {
-			$this->client->expire($tagKeyName, $dp[Cache::EXPIRE]);
 			$this->client->expire($keyTagName, $dp[Cache::EXPIRE]);
 		}
 

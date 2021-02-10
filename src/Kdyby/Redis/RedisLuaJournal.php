@@ -21,8 +21,6 @@ use Nette\Caching\Cache;
 class RedisLuaJournal extends \Kdyby\Redis\RedisJournal
 {
 
-	private const DELETE_ENTRIES = 'delete-entries';
-
 	/**
 	 * @var array
 	 */
@@ -39,10 +37,6 @@ class RedisLuaJournal extends \Kdyby\Redis\RedisJournal
 	 */
 	public function clean(array $conds, ?Nette\Caching\IStorage $storage = NULL): ?array
 	{
-		if ($storage instanceof RedisStorage) {
-			$conds[self::DELETE_ENTRIES] = '1';
-		}
-
 		$args = self::flattenDp($conds);
 
 		$result = $this->client->evalScript($this->getScript('clean'), [], [$args]);
@@ -67,7 +61,7 @@ class RedisLuaJournal extends \Kdyby\Redis\RedisJournal
 		if (isset($array[Cache::TAGS])) {
 			$array[Cache::TAGS] = (array) $array[Cache::TAGS];
 		}
-		$filtered = \array_intersect_key($array, \array_flip([Cache::TAGS, Cache::PRIORITY, Cache::ALL, self::DELETE_ENTRIES]));
+		$filtered = \array_intersect_key($array, \array_flip([Cache::TAGS, Cache::PRIORITY, Cache::ALL]));
 
 		return Nette\Utils\Json::encode($filtered);
 	}
