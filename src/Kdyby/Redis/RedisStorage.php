@@ -241,6 +241,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	public function remove(string $key): void
 	{
 		$this->client->send('del', [$this->formatEntryKey($key)]);
+		$this->unlock($key);
 	}
 
 	/**
