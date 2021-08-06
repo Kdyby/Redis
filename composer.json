@@ -36,7 +36,7 @@
 		"kdyby/coding-standard": "dev-master",
 		"nette/tester": "^2.3.1",
 		"phpstan/phpstan": "^0.12",
-		"jakub-onderka/php-parallel-lint": "^1.0",
+		"php-parallel-lint/php-parallel-lint": "dev-master",
 		"php-coveralls/php-coveralls": "^2.1",
 		"typo3/class-alias-loader": "^1.0"
 	},
