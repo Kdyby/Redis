@@ -1,4 +1,8 @@
 <?xml version="1.0"?>
-<ruleset name="Kdyby/Console">
-	<rule ref="vendor/kdyby/coding-standard/ruleset.xml"/>
+<ruleset name="Kdyby/Redis">
+	<rule ref="SlevomatCodingStandard.Files.LineLength">
+		<properties>
+			<property name="lineLengthLimit" value="260"></property>
+		</properties>
+	</rule>
 </ruleset>
