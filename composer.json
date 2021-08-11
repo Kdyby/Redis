@@ -36,8 +36,7 @@
 		"nette/tester": "^2.3.1",
 		"phpstan/phpstan": "^0.12",
 		"php-parallel-lint/php-parallel-lint": "dev-master",
-		"php-coveralls/php-coveralls": "^2.1",
-		"typo3/class-alias-loader": "^1.0"
+		"php-coveralls/php-coveralls": "^2.1"
 	},
 	"autoload": {
 		"psr-4": {
@@ -54,11 +53,6 @@
 	"extra": {
 		"branch-alias": {
 			"dev-master": "5.0-dev"
-		},
-		"typo3/class-alias-loader": {
-			"class-alias-maps": [
-				"src/Kdyby/Redis/DI/ClassAliasMap.php"
-			]
 		}
 	}
 }

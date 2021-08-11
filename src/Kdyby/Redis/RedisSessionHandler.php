@@ -102,7 +102,7 @@ class RedisSessionHandler implements \SessionHandlerInterface
 
 	/**
 	 * @param string $id
-	 * @throws \Kdyby\Redis\SessionHandlerException
+	 * @throws \Kdyby\Redis\Exception\SessionHandlerException
 	 * @return string
 	 */
 	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
