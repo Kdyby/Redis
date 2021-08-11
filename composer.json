@@ -17,7 +17,7 @@
 		"issues": "https://github.com/kdyby/redis/issues"
 	},
 	"require": {
-		"php": ">=7.1",
+		"php": ">=7.4",
 		"ext-redis": "*",
 		"nette/di": "~2.4.10 || ~3.0",
 		"nette/caching": "~3.0",
@@ -32,8 +32,7 @@
 		"nette/deprecated": "~3.0",
 		"nette/php-generator": "~3.0",
 		"tracy/tracy": "~2.4",
-
-		"kdyby/coding-standard": "dev-master",
+		"slevomat/coding-standard": "dev-master",
 		"nette/tester": "^2.3.1",
 		"phpstan/phpstan": "^0.12",
 		"php-parallel-lint/php-parallel-lint": "dev-master",
@@ -51,6 +50,7 @@
 		}
 	},
 	"minimum-stability": "dev",
+	"prefer-stable": true,
 	"extra": {
 		"branch-alias": {
 			"dev-master": "5.0-dev"
