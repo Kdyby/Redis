@@ -1,0 +1,42 @@
+name: Package CI
+
+on:
+  pull_request:
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [ 7.4, 8.0 ]
+        redis-version: [4, 5, 6]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: redis
+
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
+
+      - run: composer update --no-interaction --no-suggest --no-progress --prefer-dist
+
+      - run: mkdir -p $HOME/phpcs-cache
+
+      - if: matrix.php == '8.0'
+        run: vendor/bin/phpcs --standard=ruleset.xml --cache=$HOME/phpcs-cache/.phpcs-cache --encoding=utf-8 -sp src tests
+
+      - if: matrix.php == '8.0'
+        run: vendor/bin/parallel-lint -e php,phpt --exclude vendor .
+
+      - if: matrix.php == '8.0'
+        run: vendor/bin/phpstan analyse -l 2 -c phpstan.neon src tests/KdybyTests
+
+      - run: vendor/bin/tester -s -C ./tests/KdybyTests/
+
+      - if: matrix.php == '8.0'
+        run: vendor/bin/php-coveralls --verbose --config tests/.coveralls.yml || true
