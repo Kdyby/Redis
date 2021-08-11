@@ -17,7 +17,7 @@ use Nette\Caching\Cache;
 /**
  * Redis journal for tags and priorities of cached values.
  */
-class RedisJournal implements \Nette\Caching\Storages\IJournal
+class RedisJournal implements \Nette\Caching\Storages\Journal
 {
 
 	use \Nette\SmartObject;
