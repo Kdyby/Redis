@@ -102,7 +102,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		// close session
 		$session->close();
 
-		Assert::same(['open', '', 'PHPSESSID'], $handler->series[0][0]);
+		Assert::same(['open', '/var/lib/php/sessions', 'PHPSESSID'], $handler->series[0][0]);
 		Assert::same(['read', $sessionId], $handler->series[0][1]);
 		Assert::same('write', $handler->series[0][2][0]);
 		$unserialize022 = \unserialize(\str_replace('__NF|', '', $handler->series[0][2][2]));
@@ -113,7 +113,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 			],
 		], $unserialize022['DATA']);
 
-		Assert::same(['open', '', 'PHPSESSID'], $handler->series[1][0]);
+		Assert::same(['open', '/var/lib/php/sessions', 'PHPSESSID'], $handler->series[1][0]);
 		Assert::same(['read', $sessionId], $handler->series[1][1]);
 		Assert::same('write', $handler->series[1][2][0]);
 		$unserialize122 = \unserialize(\str_replace('__NF|', '', $handler->series[1][2][2]));
@@ -152,12 +152,12 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		}
 
 		// open & destroy
-		Assert::same(['open', '', 'PHPSESSID'], $handler1->series[0][0]);
+		Assert::same(['open', '/var/lib/php/sessions', 'PHPSESSID'], $handler1->series[0][0]);
 		Assert::same(['read', $sessionId], $handler1->series[0][1]);
 		Assert::same(['destroy', $sessionId], $handler1->series[0][2]);
 
 		// open regenerated
-		Assert::same(['open', '', 'PHPSESSID'], $handler1->series[1][0]);
+		Assert::same(['open', '/var/lib/php/sessions', 'PHPSESSID'], $handler1->series[1][0]);
 		Assert::same('read', $handler1->series[1][1][0]);
 		Assert::match('%S%', $regeneratedId = $handler1->series[1][1][1]);
 		Assert::same('write', $secondVisit[0]);
@@ -184,7 +184,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		// close session
 		$session2->close();
 
-		Assert::same(['open', '', 'PHPSESSID'], $handler2->series[0][0]);
+		Assert::same(['open', '/var/lib/php/sessions', 'PHPSESSID'], $handler2->series[0][0]);
 		Assert::same(['read', $regeneratedId], $handler2->series[0][1]);
 		Assert::same('write', $handler2->series[0][2][0]);
 
@@ -246,7 +246,7 @@ class RedisSessionHandlerTest extends \KdybyTests\Redis\AbstractRedisTestCase
 		// explicitly close
 		$session->close();
 
-		Assert::same(['open', '', 'PHPSESSID'], $handler->series[0][0]);
+		Assert::same(['open', '/var/lib/php/sessions', 'PHPSESSID'], $handler->series[0][0]);
 		Assert::same(['read', $sessionId], $handler->series[0][1]);
 		Assert::same('write', $handler->series[0][2][0]);
 
