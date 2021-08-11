@@ -270,7 +270,7 @@ class RedisClient implements \ArrayAccess
 		}
 
 		if (!$this->driver) {
-			$this->driver = \phpversion('redis') >= '4.0.0' ? new Driver\PhpRedisDriver() : new Driver\PhpRedisDriverOld();
+			$this->driver = new Driver\PhpRedisDriver();
 		}
 
 		if ($this->driver->isConnected()) {

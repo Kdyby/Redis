@@ -66,7 +66,7 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 
 		$this->buildClient(NULL, $config);
 
-		$phpRedisDriverClass = \phpversion('redis') >= '4.0.0' ? Kdyby\Redis\Driver\PhpRedisDriver::class : Kdyby\Redis\Driver\PhpRedisDriverOld::class;
+		$phpRedisDriverClass = Kdyby\Redis\Driver\PhpRedisDriver::class;
 
 		$builder->addDefinition($this->prefix('driver'))
 			->setType($phpRedisDriverClass)
