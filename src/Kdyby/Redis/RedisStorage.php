@@ -62,7 +62,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 */
 	private $useLocks = TRUE;
 
-	public function __construct(RedisClient $client, ?Journal $journal = NULL)
+	public function __construct(\Kdyby\Redis\RedisClient $client, ?\Nette\Caching\Storages\Journal $journal = NULL)
 	{
 		$this->client = $client;
 		$this->journal = $journal;

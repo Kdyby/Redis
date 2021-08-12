@@ -12,12 +12,6 @@ declare(strict_types = 1);
 
 namespace Kdyby\Redis\Diagnostics;
 
-use Closure;
-use Nette\PhpGenerator as Code;
-use Tracy\Bar;
-use Tracy\BlueScreen;
-use Tracy\Debugger;
-
 class Panel implements \Tracy\IBarPanel
 {
 
@@ -81,7 +75,7 @@ class Panel implements \Tracy\IBarPanel
 		} else {
 			$cmd = [];
 			foreach ($args as $arg) {
-				if (!$arg instanceof Closure) {
+				if (!$arg instanceof \Closure) {
 					$cmd[] = \is_array($arg) ? \urldecode(\http_build_query($arg, '', ' ')) : $arg;
 				}
 			}
@@ -95,7 +89,7 @@ class Panel implements \Tracy\IBarPanel
 			'time' => 0,
 		];
 
-		Debugger::timer(self::TIMER_NAME); // reset timer
+		\Tracy\Debugger::timer(self::TIMER_NAME); // reset timer
 	}
 
 	/**
@@ -112,7 +106,7 @@ class Panel implements \Tracy\IBarPanel
 
 	public function end(): void
 	{
-		$time = Debugger::timer(self::TIMER_NAME);
+		$time = \Tracy\Debugger::timer(self::TIMER_NAME);
 		$query = \end($this->queries);
 		if ($query) {
 			$query->time = $time;
@@ -161,7 +155,7 @@ class Panel implements \Tracy\IBarPanel
 			$s .= '<tr><td>' . \sprintf('%0.3f', $query->time * 1000000);
 			$s .= '</td><td class="kdyby-RedisClientPanel-dbindex">' . $query->db;
 			$s .= '</td><td class="kdyby-RedisClientPanel-cmd">' .
-				$h(\substr(Code\Helpers::dump(self::$maxLength ? \substr($query->cmd, 0, self::$maxLength) : $query->cmd), 1, -1));
+				$h(\substr(\Nette\PhpGenerator\Helpers::dump(self::$maxLength ? \substr($query->cmd, 0, self::$maxLength) : $query->cmd), 1, -1));
 			$s .= '</td></tr>';
 		}
 
@@ -189,7 +183,7 @@ class Panel implements \Tracy\IBarPanel
 					'</span></pre>';
 			}
 			if ($e->response) {
-				$response = Code\Helpers::dump($e->response);
+				$response = \Nette\PhpGenerator\Helpers::dump($e->response);
 				$panel .= '<h3>Redis Response (' . \strlen($e->response) . ')</h3>' .
 					'<pre class="nette-dump"><span class="php-string">' .
 					\htmlspecialchars($response) .
@@ -216,14 +210,14 @@ class Panel implements \Tracy\IBarPanel
 		return $panel;
 	}
 
-	private static function getDebuggerBar(): Bar
+	private static function getDebuggerBar(): \Tracy\Bar
 	{
-		return Debugger::getBar();
+		return \Tracy\Debugger::getBar();
 	}
 
-	private static function getDebuggerBlueScreen(): BlueScreen
+	private static function getDebuggerBlueScreen(): \Tracy\BlueScreen
 	{
-		return Debugger::getBlueScreen();
+		return \Tracy\Debugger::getBlueScreen();
 	}
 
 }
