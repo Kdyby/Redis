@@ -21,45 +21,21 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 	/**
 	 * @var array
 	 */
-	public $defaults = [
-		'journal' => FALSE,
-		'storage' => FALSE,
-		'session' => FALSE,
-		'clients' => [],
-	];
-
-	/**
-	 * @var array
-	 */
-	public $clientDefaults = [
-		'host' => '127.0.0.1',
-		'port' => NULL,
-		'timeout' => 10,
-		'database' => 0,
-		'auth' => NULL,
-		'persistent' => FALSE,
-		'connectionAttempts' => 1,
-		'lockDuration' => 15,
-		'lockAcquireTimeout' => FALSE,
-		'debugger' => '%debugMode%',
-		'versionCheck' => TRUE,
-	];
-
-	/**
-	 * @var array
-	 */
 	private $configuredClients = [];
+
+
+	public function getConfigSchema(): \Nette\Schema\Schema
+	{
+		return new \Kdyby\Redis\DI\Config\RedisSchema($this->getContainerBuilder());
+	}
+
 
 	public function loadConfiguration(): void
 	{
 		$this->configuredClients = [];
 
 		$builder = $this->getContainerBuilder();
-		$config = self::fixClientConfig(
-			\Nette\DI\Config\Helpers::merge($this->getConfig(), $this->defaults + $this->clientDefaults)
-		);
-
-		$this->buildClient(NULL, $config);
+		$config = (array) $this->getConfig();
 
 		$phpRedisDriverClass = \Kdyby\Redis\Driver\PhpRedisDriver::class;
 
@@ -72,7 +48,7 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 		$this->loadSession($config);
 
 		foreach ($config['clients'] as $name => $clientConfig) {
-			$this->buildClient($name, $clientConfig);
+			$this->buildClient($name, (array) $clientConfig);
 		}
 	}
 
@@ -83,16 +59,6 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 	protected function buildClient(?string $name, array $config): \Nette\DI\Definitions\ServiceDefinition
 	{
 		$builder = $this->getContainerBuilder();
-
-		$defaultConfig = \Nette\DI\Config\Helpers::merge($this->getConfig(), $this->clientDefaults);
-		$parentName = \Nette\DI\Config\Helpers::takeParent($config);
-		if ($parentName) {
-			\Nette\Utils\Validators::assertField($this->configuredClients, $parentName, 'array', "parent configuration '%', are you sure it's defined?");
-			$defaultConfig = \Nette\DI\Config\Helpers::merge($this->configuredClients[$parentName], $defaultConfig);
-		}
-
-		$config = \Nette\DI\Config\Helpers::merge($config, $defaultConfig);
-		$config = \array_intersect_key(self::fixClientConfig($config), $this->clientDefaults);
 
 		$client = $builder->addDefinition($clientName = $this->prefix(($name ? $name . '_' : '') . 'client'))
 			->setType(\Kdyby\Redis\RedisClient::class)
@@ -124,7 +90,7 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 		$client->addSetup('setConnectionAttempts', [$config['connectionAttempts']]);
 		$client->addTag('redis.client');
 
-		if (\array_key_exists('debugger', $config) && $config['debugger']) {
+		if ($builder->parameters['debugMode'] && $config['debugger']) {
 			$builder->addDefinition($panelName = $clientName . '.panel')
 				->setType(\Kdyby\Redis\Diagnostics\Panel::class)
 				->setFactory(\Kdyby\Redis\Diagnostics\Panel::class . '::register')
@@ -195,23 +161,27 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
-		$sessionConfig = \Nette\DI\Config\Helpers::merge(\is_array($config['session']) ? $config['session'] : [], [
-			'host' => $config['host'],
-			'port' => $config['port'],
-			'weight' => 1,
-			'timeout' => $config['timeout'],
-			'database' => $config['database'],
-			'prefix' => self::DEFAULT_SESSION_PREFIX,
-			'auth' => $config['auth'],
-			'native' => TRUE,
-			'lockDuration' => $config['lockDuration'],
-			'lockAcquireTimeout' => $config['lockAcquireTimeout'],
-			'connectionAttempts' => $config['connectionAttempts'],
-			'persistent' => $config['persistent'],
-		]);
-		$sessionConfig = self::fixClientConfig($sessionConfig);
+		$clientConfig = $config['clients'][NULL];
 
-		$this->buildClient('sessionHandler', ['debugger' => FALSE] + $sessionConfig);
+		$sessionConfig = \Nette\DI\Config\Helpers::merge(\is_array($config['session']) ? $config['session'] : [], [
+			'host' => $clientConfig->host,
+			'port' => $clientConfig->port,
+			'weight' => 1,
+			'timeout' => $clientConfig->timeout,
+			'database' => $clientConfig->database,
+			'prefix' => self::DEFAULT_SESSION_PREFIX,
+			'auth' => $clientConfig->auth,
+			'native' => TRUE,
+			'lockDuration' => $clientConfig->lockDuration,
+			'lockAcquireTimeout' => $clientConfig->lockAcquireTimeout,
+			'connectionAttempts' => $clientConfig->connectionAttempts,
+			'persistent' => $clientConfig->persistent,
+			'versionCheck' => $clientConfig->versionCheck,
+		]);
+
+		$sessionConfig['debugger'] = FALSE;
+
+		$this->buildClient('sessionHandler', $sessionConfig);
 
 		if ($sessionConfig['native']) {
 			$this->loadNativeSessionHandler($sessionConfig);
@@ -295,22 +265,6 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 			$client->assertVersion();
 			$client->close();
 		}
-	}
-
-	/**
-	 * @param array<mixed> $config
-	 * @return array<mixed>
-	 */
-	protected static function fixClientConfig(array $config): array
-	{
-		if ($config['host'][0] === '/') {
-			$config['port'] = NULL; // sockets have no ports
-
-		} elseif (!$config['port']) {
-			$config['port'] = \Kdyby\Redis\RedisClient::DEFAULT_PORT;
-		}
-
-		return $config;
 	}
 
 }
