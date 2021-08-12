@@ -28,7 +28,7 @@
 		"ext-redis": "The php redis extension https://github.com/nicolasff/phpredis/ is required for connecting to redis server"
 	},
 	"require-dev": {
-		"nette/bootstrap": "~2.4 || ~3.0",
+		"nette/bootstrap": "~3.0",
 		"nette/deprecated": "~3.0",
 		"nette/php-generator": "~3.0",
 		"tracy/tracy": "~2.4",
