@@ -21,7 +21,7 @@
 		"ext-redis": "*",
 		"nette/di": "~3.0",
 		"nette/caching": "~3.0",
-		"nette/http": "~2.4.7 || ~3.0",
+		"nette/http": "~3.0",
 		"nette/utils": "~3.0"
 	},
 	"suggest": {
