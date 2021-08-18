@@ -25,18 +25,16 @@ jobs:
 
       - run: composer update --no-interaction --no-suggest --no-progress --prefer-dist
 
-      - run: mkdir -p $HOME/phpcs-cache
+      - if: matrix.php == '8.0'
+        run: make phpcs
 
       - if: matrix.php == '8.0'
-        run: vendor/bin/phpcs --standard=ruleset.xml --cache=$HOME/phpcs-cache/.phpcs-cache --encoding=utf-8 -sp src tests
+        run: make lint
 
       - if: matrix.php == '8.0'
-        run: vendor/bin/parallel-lint -e php,phpt --exclude vendor .
+        run: make phpstan
+
+      - run: make run-tests
 
       - if: matrix.php == '8.0'
-        run: vendor/bin/phpstan analyse -l 2 -c phpstan.neon src tests/KdybyTests
-
-      - run: vendor/bin/tester -s -C ./tests/KdybyTests/
-
-      - if: matrix.php == '8.0'
-        run: vendor/bin/php-coveralls --verbose --config tests/.coveralls.yml || true
+        run: make coveralls || true
