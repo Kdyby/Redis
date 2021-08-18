@@ -12,9 +12,6 @@ declare(strict_types = 1);
 
 namespace Kdyby\Redis;
 
-use Nette;
-use Nette\Caching\Cache;
-
 /**
  * Redis journal for tags and priorities of cached values.
  */
@@ -37,9 +34,9 @@ class RedisLuaJournal extends \Kdyby\Redis\RedisJournal
 	 * @throws \Nette\Utils\JsonException
 	 * @return array<mixed>|NULL of removed items or NULL when performing a full cleanup
 	 */
-	public function clean(array $conds, ?Nette\Caching\IStorage $storage = NULL): ?array
+	public function clean(array $conds, ?\Nette\Caching\IStorage $storage = NULL): ?array
 	{
-		if ($storage instanceof RedisStorage) {
+		if ($storage instanceof \Kdyby\Redis\RedisStorage) {
 			$conds[self::DELETE_ENTRIES] = '1';
 		}
 
@@ -50,7 +47,7 @@ class RedisLuaJournal extends \Kdyby\Redis\RedisJournal
 			throw new \Kdyby\Redis\Exception\RedisClientException('Failed to successfully execute lua script journal.clean(): ' . $this->client->getDriver()->getLastError());
 		}
 
-		if ($storage instanceof RedisStorage) {
+		if ($storage instanceof \Kdyby\Redis\RedisStorage) {
 			return [];
 		}
 
@@ -64,12 +61,17 @@ class RedisLuaJournal extends \Kdyby\Redis\RedisJournal
 	 */
 	private static function flattenDp(array $array): string
 	{
-		if (isset($array[Cache::TAGS])) {
-			$array[Cache::TAGS] = (array) $array[Cache::TAGS];
+		if (isset($array[\Nette\Caching\Cache::TAGS])) {
+			$array[\Nette\Caching\Cache::TAGS] = (array) $array[\Nette\Caching\Cache::TAGS];
 		}
-		$filtered = \array_intersect_key($array, \array_flip([Cache::TAGS, Cache::PRIORITY, Cache::ALL, self::DELETE_ENTRIES]));
+		$filtered = \array_intersect_key($array, \array_flip([
+			\Nette\Caching\Cache::TAGS,
+			\Nette\Caching\Cache::PRIORITY,
+			\Nette\Caching\Cache::ALL,
+			self::DELETE_ENTRIES,
+		]));
 
-		return Nette\Utils\Json::encode($filtered);
+		return \Nette\Utils\Json::encode($filtered);
 	}
 
 	/**

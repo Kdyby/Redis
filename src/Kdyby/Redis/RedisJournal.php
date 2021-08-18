@@ -12,12 +12,10 @@ declare(strict_types = 1);
 
 namespace Kdyby\Redis;
 
-use Nette\Caching\Cache;
-
 /**
  * Redis journal for tags and priorities of cached values.
  */
-class RedisJournal implements \Nette\Caching\Storages\IJournal
+class RedisJournal implements \Nette\Caching\Storages\Journal
 {
 
 	use \Nette\SmartObject;
@@ -39,7 +37,7 @@ class RedisJournal implements \Nette\Caching\Storages\IJournal
 	 */
 	protected $client;
 
-	public function __construct(RedisClient $client)
+	public function __construct(\Kdyby\Redis\RedisClient $client)
 	{
 		$this->client = $client;
 	}
@@ -59,14 +57,14 @@ class RedisJournal implements \Nette\Caching\Storages\IJournal
 		$this->client->multi();
 
 		// add entry to each tag & tag to entry
-		$tags = empty($dp[Cache::TAGS]) ? [] : (array) $dp[Cache::TAGS];
+		$tags = empty($dp[\Nette\Caching\Cache::TAGS]) ? [] : (array) $dp[\Nette\Caching\Cache::TAGS];
 		foreach (\array_unique($tags) as $tag) {
 			$this->client->sAdd($this->formatKey($tag, self::KEYS), $key);
 			$this->client->sAdd($this->formatKey($key, self::TAGS), $tag);
 		}
 
-		if (isset($dp[Cache::PRIORITY])) {
-			$this->client->zAdd($this->formatKey(self::PRIORITY), $dp[Cache::PRIORITY], $key);
+		if (isset($dp[\Nette\Caching\Cache::PRIORITY])) {
+			$this->client->zAdd($this->formatKey(self::PRIORITY), $dp[\Nette\Caching\Cache::PRIORITY], $key);
 		}
 
 		$this->client->exec();
@@ -106,7 +104,7 @@ class RedisJournal implements \Nette\Caching\Storages\IJournal
 	 */
 	public function clean(array $conds): ?array
 	{
-		if (!empty($conds[Cache::ALL])) {
+		if (!empty($conds[\Nette\Caching\Cache::ALL])) {
 			$all = $this->client->keys(self::NS_NETTE . ':*');
 
 			$this->client->multi();
@@ -116,15 +114,15 @@ class RedisJournal implements \Nette\Caching\Storages\IJournal
 		}
 
 		$entries = [];
-		if (!empty($conds[Cache::TAGS])) {
-			foreach ((array) $conds[Cache::TAGS] as $tag) {
+		if (!empty($conds[\Nette\Caching\Cache::TAGS])) {
+			foreach ((array) $conds[\Nette\Caching\Cache::TAGS] as $tag) {
 				$this->cleanEntry($found = $this->tagEntries($tag));
 				$entries = \array_merge($entries, $found);
 			}
 		}
 
-		if (isset($conds[Cache::PRIORITY])) {
-			$this->cleanEntry($found = $this->priorityEntries($conds[Cache::PRIORITY]));
+		if (isset($conds[\Nette\Caching\Cache::PRIORITY])) {
+			$this->cleanEntry($found = $this->priorityEntries($conds[\Nette\Caching\Cache::PRIORITY]));
 			$entries = \array_merge($entries, $found);
 		}
 

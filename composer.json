@@ -17,28 +17,26 @@
 		"issues": "https://github.com/kdyby/redis/issues"
 	},
 	"require": {
-		"php": ">=7.1",
+		"php": ">=7.4",
 		"ext-redis": "*",
-		"nette/di": "~2.4.10 || ~3.0",
+		"nette/di": "~3.0",
 		"nette/caching": "~3.0",
-		"nette/http": "~2.4.7 || ~3.0",
+		"nette/http": "~3.0",
 		"nette/utils": "~3.0"
 	},
 	"suggest": {
 		"ext-redis": "The php redis extension https://github.com/nicolasff/phpredis/ is required for connecting to redis server"
 	},
 	"require-dev": {
-		"nette/bootstrap": "~2.4 || ~3.0",
+		"nette/bootstrap": "~3.0",
 		"nette/deprecated": "~3.0",
 		"nette/php-generator": "~3.0",
 		"tracy/tracy": "~2.4",
-
-		"kdyby/coding-standard": "dev-master",
+		"slevomat/coding-standard": "dev-master",
 		"nette/tester": "^2.3.1",
 		"phpstan/phpstan": "^0.12",
 		"php-parallel-lint/php-parallel-lint": "dev-master",
-		"php-coveralls/php-coveralls": "^2.1",
-		"typo3/class-alias-loader": "^1.0"
+		"php-coveralls/php-coveralls": "^2.1"
 	},
 	"autoload": {
 		"psr-4": {
@@ -51,14 +49,10 @@
 		}
 	},
 	"minimum-stability": "dev",
+	"prefer-stable": true,
 	"extra": {
 		"branch-alias": {
 			"dev-master": "5.0-dev"
-		},
-		"typo3/class-alias-loader": {
-			"class-alias-maps": [
-				"src/Kdyby/Redis/DI/ClassAliasMap.php"
-			]
 		}
 	}
 }

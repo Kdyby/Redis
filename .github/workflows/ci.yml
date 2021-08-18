@@ -1,0 +1,40 @@
+name: Package CI
+
+on:
+  pull_request:
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [ 7.4, 8.0 ]
+        redis-version: [4, 5, 6]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: redis
+
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
+
+      - run: composer update --no-interaction --no-suggest --no-progress --prefer-dist
+
+      - if: matrix.php == '8.0'
+        run: make phpcs
+
+      - if: matrix.php == '8.0'
+        run: make lint
+
+      - if: matrix.php == '8.0'
+        run: make phpstan
+
+      - run: make run-tests
+
+      - if: matrix.php == '8.0'
+        run: make coveralls || true

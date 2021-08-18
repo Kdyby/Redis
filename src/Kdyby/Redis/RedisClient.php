@@ -12,10 +12,6 @@ declare(strict_types = 1);
 
 namespace Kdyby\Redis;
 
-use Kdyby\Redis\Driver\PhpRedisDriver;
-use Redis;
-use Tracy\Debugger;
-
 /**
  * <code>
  * $client = new Kdyby\Redis\RedisClient();
@@ -247,7 +243,7 @@ class RedisClient implements \ArrayAccess
 		$this->close();
 	}
 
-	public function getDriver(): PhpRedisDriver
+	public function getDriver(): \Kdyby\Redis\Driver\PhpRedisDriver
 	{
 		$this->connect();
 		return $this->driver;
@@ -270,7 +266,7 @@ class RedisClient implements \ArrayAccess
 		}
 
 		if (!$this->driver) {
-			$this->driver = \phpversion('redis') >= '4.0.0' ? new Driver\PhpRedisDriver() : new Driver\PhpRedisDriverOld();
+			$this->driver = new \Kdyby\Redis\Driver\PhpRedisDriver();
 		}
 
 		if ($this->driver->isConnected()) {
@@ -306,7 +302,7 @@ class RedisClient implements \ArrayAccess
 
 			} catch (\Exception $e) {
 				$errors[] = $e;
-				if (\class_exists('Tracy\Debugger') && !Debugger::$productionMode) {
+				if (\class_exists('Tracy\Debugger') && !\Tracy\Debugger::$productionMode) {
 					break;
 				}
 
@@ -345,7 +341,7 @@ class RedisClient implements \ArrayAccess
 		$this->isConnected = FALSE;
 	}
 
-	public function setConnectionAttempts(int $attempts): RedisClient
+	public function setConnectionAttempts(int $attempts): \Kdyby\Redis\RedisClient
 	{
 		$this->connectionAttempts = \max((int) $attempts, 1);
 		return $this;
@@ -382,7 +378,7 @@ class RedisClient implements \ArrayAccess
 				$this->database = $args[0];
 			}
 
-			if ($result instanceof Redis) {
+			if ($result instanceof \Redis) {
 				$result = \strtolower($cmd) === 'multi' ? 'OK' : 'QUEUED';
 
 			} elseif ($result === FALSE) {
@@ -571,16 +567,16 @@ class RedisClient implements \ArrayAccess
 		return $result;
 	}
 
-	protected function getLock(): ExclusiveLock
+	protected function getLock(): \Kdyby\Redis\ExclusiveLock
 	{
 		if ($this->lock === NULL) {
-			$this->lock = new ExclusiveLock($this);
+			$this->lock = new \Kdyby\Redis\ExclusiveLock($this);
 		}
 
 		return $this->lock;
 	}
 
-	public function setLock(ExclusiveLock $lock): void
+	public function setLock(\Kdyby\Redis\ExclusiveLock $lock): void
 	{
 		$lock->setClient($this);
 

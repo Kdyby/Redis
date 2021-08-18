@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace Kdyby\Redis;
 
-interface IMultiReadStorage extends \Nette\Caching\IStorage
+interface IMultiReadStorage extends \Nette\Caching\Storage
 {
 
 	/**

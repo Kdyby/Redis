@@ -1,6 +1,3 @@
 [php]
 session.gc_probability=0
 error_reporting=E_ALL & ~( E_WARNING | E_DEPRECATED )
-
-[redis]
-extension=redis.so

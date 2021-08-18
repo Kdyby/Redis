@@ -3,13 +3,5 @@ parameters:
 		- '#Result of function usleep \(void\) is used.#'
 		- '#Constant TEMP_DIR not found.#'
 		- '#Unsafe usage of new static\(\).#'
-		-
-			message: '#Negated boolean expression is always true.#'
-			path: src/Kdyby/Redis/ExclusiveLock.php
 
-	excludes_analyse:
-		- src/Kdyby/Redis/DI/ClassAliasMap.php
-		# PhpRedisDriverOld can't be verified because it overrides class Redis from phpredis older than 4.0
-		- src/Kdyby/Redis/Driver/PhpRedisDriverOld.php
-
-	reportUnmatchedIgnoredErrors: FALSE
+	reportUnmatchedIgnoredErrors: TRUE
