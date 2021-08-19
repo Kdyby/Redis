@@ -54,8 +54,9 @@ class RedisSchema implements \Nette\Schema\Schema
 
 	public function complete($value, \Nette\Schema\Context $context)
 	{
-		$value = $this->expandParameters($value);
+		$value = $this->expandParameters((array) $value);
 
+		$value = $this->normalize($value, $context);
 		$value = $this->getSchema()->complete($value, $context);
 
 		return $value;
