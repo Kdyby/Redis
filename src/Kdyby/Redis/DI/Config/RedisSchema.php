@@ -56,7 +56,6 @@ class RedisSchema implements \Nette\Schema\Schema
 	{
 		$value = $this->expandParameters((array) $value);
 
-		$value = $this->normalize($value, $context);
 		$value = $this->getSchema()->complete($value, $context);
 
 		return $value;
@@ -89,7 +88,21 @@ class RedisSchema implements \Nette\Schema\Schema
 				'session' => \Nette\Schema\Expect::bool(FALSE),
 				'clients' => \Nette\Schema\Expect::arrayOf(
 					new \Kdyby\Redis\DI\Config\ClientSchema($this->builder)
-				)->default([]),
+				)->default([
+					NULL => [
+						'host' => '127.0.0.1',
+						'port' => \Kdyby\Redis\RedisClient::DEFAULT_PORT,
+						'timeout' => 10,
+						'database' => 0,
+						'auth' => NULL,
+						'persistent' => FALSE,
+						'connectionAttempts' => 1,
+						'lockDuration' => 15,
+						'lockAcquireTimeout' => FALSE,
+						'debugger' => $this->builder->parameters['debugMode'],
+						'versionCheck' => TRUE,
+					],
+				]),
 			]);
 		}
 
