@@ -15,6 +15,8 @@ class ClientSchema implements \Nette\Schema\Schema
 
 	public function normalize($value, \Nette\Schema\Context $context)
 	{
+		$value = $this->getSchema()->normalize($value, $context);
+
 		if (\array_key_exists('host', $value) && $value['host'][0] === '/') {
 			$value['port'] = NULL; // sockets have no ports
 
@@ -36,7 +38,6 @@ class ClientSchema implements \Nette\Schema\Schema
 	{
 		$value = $this->expandParameters($value);
 
-		$value = $this->getSchema()->normalize($value, $context);
 		$value = $this->getSchema()->complete($value, $context);
 
 		return $value;
