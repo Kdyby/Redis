@@ -5,6 +5,7 @@ declare(strict_types = 1);
 /**
  * Test: Kdyby\Redis\SessionHandler.
  *
+ * @skip
  * @testCase Kdyby\Redis\RedisSessionHandlerTest
  */
 
