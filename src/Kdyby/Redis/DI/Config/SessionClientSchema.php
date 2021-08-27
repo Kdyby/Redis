@@ -84,7 +84,7 @@ class SessionClientSchema implements \Nette\Schema\Schema
 			'native' => \Nette\Schema\Expect::bool(TRUE),
 			'prefix' => \Nette\Schema\Expect::string(\Kdyby\Redis\DI\RedisExtension::DEFAULT_SESSION_PREFIX),
 			'weight' => \Nette\Schema\Expect::int(1),
-		]);
+		])->castTo('array');
 	}
 
 }

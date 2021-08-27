@@ -139,6 +139,8 @@ class ExtensionTest extends \Tester\TestCase
 		$config->addConfig(__DIR__ . '/files/session.neon');
 		$dic = $config->createContainer();
 		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
+		Assert::true($dic->hasService('redis.sessionHandler'));
+		Assert::type(\Kdyby\Redis\RedisSessionHandler::class, $dic->getService('redis.sessionHandler'));
 		Assert::false($dic->hasService('redis.cacheJournal'));
 		Assert::false($dic->hasService('redis.cacheStorage'));
 	}

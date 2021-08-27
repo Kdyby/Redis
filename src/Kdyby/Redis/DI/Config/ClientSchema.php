@@ -81,7 +81,7 @@ class ClientSchema implements \Nette\Schema\Schema
 			'lockAcquireTimeout' => \Nette\Schema\Expect::bool(FALSE),
 			'debugger' => \Nette\Schema\Expect::bool($this->builder->parameters['debugMode']),
 			'versionCheck' => \Nette\Schema\Expect::bool(TRUE),
-		]);
+		])->castTo('array');
 	}
 
 }
