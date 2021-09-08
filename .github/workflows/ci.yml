@@ -16,7 +16,9 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: redis
+          extensions: redis, igbinary
+        env:
+          REDIS_CONFIGURE_OPTS: --enable-redis --enable-redis-igbinary
 
       - name: Start Redis
         uses: supercharge/redis-github-action@1.2.0

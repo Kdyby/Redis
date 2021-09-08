@@ -19,9 +19,9 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 	private const PANEL_COUNT_MODE = 'count';
 
 	/**
-	 * @var array
+	 * @var array<string, array<string, mixed>>
 	 */
-	private $configuredClients = [];
+	private array $configuredClients = [];
 
 
 	public function getConfigSchema(): \Nette\Schema\Schema
@@ -32,10 +32,11 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 
 	public function loadConfiguration(): void
 	{
-		$this->configuredClients = [];
-
 		$builder = $this->getContainerBuilder();
-		$config = (array) $this->getConfig();
+		$config = $this->getConfig();
+
+		// we need to register default client before session is processed
+		$this->buildClient(NULL, $config['clients']['']);
 
 		$phpRedisDriverClass = \Kdyby\Redis\Driver\PhpRedisDriver::class;
 
@@ -47,8 +48,9 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 		$this->loadStorage($config);
 		$this->loadSession($config);
 
+		unset($config['clients']['']);
 		foreach ($config['clients'] as $name => $clientConfig) {
-			$this->buildClient($name, (array) $clientConfig);
+			$this->buildClient($name, $clientConfig);
 		}
 	}
 
@@ -164,19 +166,19 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 		$clientConfig = $config['clients'][NULL];
 
 		$sessionConfig = \Nette\DI\Config\Helpers::merge(\is_array($config['session']) ? $config['session'] : [], [
-			'host' => $clientConfig->host,
-			'port' => $clientConfig->port,
+			'host' => $clientConfig['host'],
+			'port' => $clientConfig['port'],
 			'weight' => 1,
-			'timeout' => $clientConfig->timeout,
-			'database' => $clientConfig->database,
+			'timeout' => $clientConfig['timeout'],
+			'database' => $clientConfig['database'],
 			'prefix' => self::DEFAULT_SESSION_PREFIX,
-			'auth' => $clientConfig->auth,
+			'auth' => $clientConfig['auth'],
 			'native' => TRUE,
-			'lockDuration' => $clientConfig->lockDuration,
-			'lockAcquireTimeout' => $clientConfig->lockAcquireTimeout,
-			'connectionAttempts' => $clientConfig->connectionAttempts,
-			'persistent' => $clientConfig->persistent,
-			'versionCheck' => $clientConfig->versionCheck,
+			'lockDuration' => $clientConfig['lockDuration'],
+			'lockAcquireTimeout' => $clientConfig['lockAcquireTimeout'],
+			'connectionAttempts' => $clientConfig['connectionAttempts'],
+			'persistent' => $clientConfig['persistent'],
+			'versionCheck' => $clientConfig['versionCheck'],
 		]);
 
 		$sessionConfig['debugger'] = FALSE;

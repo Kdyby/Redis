@@ -82,10 +82,15 @@ class RedisSchema implements \Nette\Schema\Schema
 	private function getSchema(): \Nette\Schema\Schema
 	{
 		if ($this->schema === NULL) {
+			$storageSchema = \Nette\Schema\Expect::structure([
+				'locks' => \Nette\Schema\Expect::bool(TRUE),
+			])->castTo('array');
+			$sessionClientSchema = new \Kdyby\Redis\DI\Config\SessionClientSchema($this->builder);
+
 			$this->schema = \Nette\Schema\Expect::structure([
 				'journal' => \Nette\Schema\Expect::bool(FALSE),
-				'storage' => \Nette\Schema\Expect::bool(FALSE),
-				'session' => \Nette\Schema\Expect::bool(FALSE),
+				'storage' => \Nette\Schema\Expect::anyOf($storageSchema, TRUE, FALSE)->default(FALSE),
+				'session' => \Nette\Schema\Expect::anyOf($sessionClientSchema, TRUE, FALSE)->default(FALSE),
 				'clients' => \Nette\Schema\Expect::arrayOf(
 					new \Kdyby\Redis\DI\Config\ClientSchema($this->builder)
 				)->default([
@@ -103,7 +108,7 @@ class RedisSchema implements \Nette\Schema\Schema
 						'versionCheck' => TRUE,
 					],
 				]),
-			]);
+			])->castTo('array');
 		}
 
 		return $this->schema;

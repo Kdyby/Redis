@@ -2,7 +2,7 @@
 
 namespace Kdyby\Redis\DI\Config;
 
-class ClientSchema implements \Nette\Schema\Schema
+class SessionClientSchema implements \Nette\Schema\Schema
 {
 
 	private \Nette\DI\ContainerBuilder $builder;
@@ -79,8 +79,11 @@ class ClientSchema implements \Nette\Schema\Schema
 			'connectionAttempts' => \Nette\Schema\Expect::int(1),
 			'lockDuration' => \Nette\Schema\Expect::int(15),
 			'lockAcquireTimeout' => \Nette\Schema\Expect::bool(FALSE),
-			'debugger' => \Nette\Schema\Expect::bool($this->builder->parameters['debugMode']),
+			'debugger' => \Nette\Schema\Expect::bool(FALSE),
 			'versionCheck' => \Nette\Schema\Expect::bool(TRUE),
+			'native' => \Nette\Schema\Expect::bool(TRUE),
+			'prefix' => \Nette\Schema\Expect::string(\Kdyby\Redis\DI\RedisExtension::DEFAULT_SESSION_PREFIX),
+			'weight' => \Nette\Schema\Expect::int(1),
 		])->castTo('array');
 	}
 
