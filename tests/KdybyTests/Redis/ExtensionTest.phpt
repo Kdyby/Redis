@@ -22,13 +22,20 @@ require_once __DIR__ . '/../bootstrap.php';
 class ExtensionTest extends \Tester\TestCase
 {
 
-	protected function createContainer(): Container
+	protected function createConfig(): \Nette\Bootstrap\Configurator
 	{
-		$config = new Nette\Configurator();
+		$config = new \Nette\Bootstrap\Configurator();
 		$config->setTempDirectory(TEMP_DIR);
 		$config->onCompile[] = static function ($config, Nette\DI\Compiler $compiler): void {
 			$compiler->addExtension('redis', new Kdyby\Redis\DI\RedisExtension());
 		};
+
+		return $config;
+	}
+
+	protected function createContainer(): Container
+	{
+		$config = $this->createConfig();
 
 		$config->addConfig(__DIR__ . '/files/config.neon');
 
@@ -95,6 +102,47 @@ class ExtensionTest extends \Tester\TestCase
 
 		Assert::true(isset($sessionOptions['cookie_secure']));
 		Assert::same(FALSE, $sessionOptions['cookie_secure']);
+	}
+
+	public function testWithoutConfiguration(): void
+	{
+		$config = $this->createConfig();
+		$dic = $config->createContainer();
+		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
+		Assert::false($dic->hasService('redis.cacheJournal'));
+		Assert::false($dic->hasService('redis.cacheStorage'));
+	}
+
+	public function testOfflineConfiguration(): void
+	{
+		$config = $this->createConfig();
+		$config->addConfig(__DIR__ . '/files/offline.neon');
+		$dic = $config->createContainer();
+		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
+		Assert::false($dic->hasService('redis.cacheJournal'));
+		Assert::false($dic->hasService('redis.cacheStorage'));
+	}
+
+	public function testSocketConfiguration(): void
+	{
+		$config = $this->createConfig();
+		$config->addConfig(__DIR__ . '/files/socket.neon');
+		$dic = $config->createContainer();
+		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
+		Assert::false($dic->hasService('redis.cacheJournal'));
+		Assert::false($dic->hasService('redis.cacheStorage'));
+	}
+
+	public function testSessionConfiguration(): void
+	{
+		$config = $this->createConfig();
+		$config->addConfig(__DIR__ . '/files/session.neon');
+		$dic = $config->createContainer();
+		Assert::true($dic->getService('redis.client') instanceof Kdyby\Redis\RedisClient);
+		Assert::true($dic->hasService('redis.sessionHandler'));
+		Assert::type(\Kdyby\Redis\RedisSessionHandler::class, $dic->getService('redis.sessionHandler'));
+		Assert::false($dic->hasService('redis.cacheJournal'));
+		Assert::false($dic->hasService('redis.cacheStorage'));
 	}
 
 }

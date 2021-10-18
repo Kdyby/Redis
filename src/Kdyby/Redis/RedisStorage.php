@@ -13,7 +13,7 @@ declare(strict_types = 1);
 namespace Kdyby\Redis;
 
 use Nette\Caching\Cache;
-use Nette\Caching\Storages\IJournal;
+use Nette\Caching\Storages\Journal;
 
 /**
  * Redis Storage.
@@ -53,7 +53,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	private $client;
 
 	/**
-	 * @var \Nette\Caching\Storages\IJournal|NULL
+	 * @var \Nette\Caching\Storages\Journal|NULL
 	 */
 	private $journal;
 
@@ -62,7 +62,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 */
 	private $useLocks = TRUE;
 
-	public function __construct(RedisClient $client, ?IJournal $journal = NULL)
+	public function __construct(\Kdyby\Redis\RedisClient $client, ?\Nette\Caching\Storages\Journal $journal = NULL)
 	{
 		$this->client = $client;
 		$this->journal = $journal;

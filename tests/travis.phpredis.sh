@@ -2,7 +2,7 @@
 
 mkdir /tmp/build-phpredis && cd /tmp/build-phpredis || exit 1
 
-wget -O phpredis.zip "https://github.com/phpredis/phpredis/archive/master.zip" && unzip phpredis.zip && cd phpredis-*/ || exit 1
+wget -O phpredis.zip "https://github.com/phpredis/phpredis/archive/develop.zip" && unzip phpredis.zip && cd phpredis-*/ || exit 1
 echo
 
 phpize && ./configure && make && make install || exit 1

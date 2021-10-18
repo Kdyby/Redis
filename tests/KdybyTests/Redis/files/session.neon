@@ -1,0 +1,7 @@
+redis:
+	journal: false
+	storage: false
+	session:
+		database: 1
+		native: false
+	versionCheck: false

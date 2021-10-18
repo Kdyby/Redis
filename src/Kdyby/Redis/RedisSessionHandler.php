@@ -12,8 +12,6 @@ declare(strict_types = 1);
 
 namespace Kdyby\Redis;
 
-use Nette;
-
 /**
  * Redis session handler allows to store session in redis using Nette\Http\Session.
  *
@@ -49,7 +47,7 @@ class RedisSessionHandler implements \SessionHandlerInterface
 	 */
 	private $ttl;
 
-	public function __construct(RedisClient $redisClient)
+	public function __construct(\Kdyby\Redis\RedisClient $redisClient)
 	{
 		$this->client = $redisClient;
 	}
@@ -57,9 +55,8 @@ class RedisSessionHandler implements \SessionHandlerInterface
 	/**
 	 * @internal
 	 * @param \Nette\Http\Session $session
-	 * @return \Kdyby\Redis\RedisSessionHandler
 	 */
-	public function bind(Nette\Http\Session $session): RedisSessionHandler
+	public function bind(\Nette\Http\Session $session): \Kdyby\Redis\RedisSessionHandler
 	{
 		$this->session = $session;
 		$session->setHandler($this);
@@ -102,7 +99,7 @@ class RedisSessionHandler implements \SessionHandlerInterface
 
 	/**
 	 * @param string $id
-	 * @throws \Kdyby\Redis\SessionHandlerException
+	 * @throws \Kdyby\Redis\Exception\SessionHandlerException
 	 * @return string
 	 */
 	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
@@ -133,7 +130,7 @@ class RedisSessionHandler implements \SessionHandlerInterface
 		}
 
 		$key = $this->formatKey($id);
-		$this->client->multi(static function (RedisClient $client) use ($key): void {
+		$this->client->multi(static function (\Kdyby\Redis\RedisClient $client) use ($key): void {
 			$client->del($key);
 			$client->unlock($key);
 		});

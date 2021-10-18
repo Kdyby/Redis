@@ -42,12 +42,12 @@ class ExclusiveLock
 	 */
 	public $acquireTimeout = FALSE;
 
-	public function __construct(RedisClient $redisClient)
+	public function __construct(\Kdyby\Redis\RedisClient $redisClient)
 	{
 		$this->client = $redisClient;
 	}
 
-	public function setClient(RedisClient $client): void
+	public function setClient(\Kdyby\Redis\RedisClient $client): void
 	{
 		$this->client = $client;
 	}

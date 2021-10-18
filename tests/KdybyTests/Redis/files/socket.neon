@@ -1,0 +1,6 @@
+redis:
+	journal: false
+	storage: false
+	session: false
+	versionCheck: false
+	host: /tmp/redis.sock
