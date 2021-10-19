@@ -63,10 +63,10 @@ class RedisJournal implements \Nette\Caching\Storages\Journal
 			$keyTagName = $this->formatKey($key, self::TAGS);
 			$this->client->sAdd($tagKeyName, $key);
 			$this->client->sAdd($keyTagName, $tag);
-		}
 
-		if (isset($dp[Cache::EXPIRE])) {
-			$this->client->expire($keyTagName, $dp[Cache::EXPIRE]);
+			if (isset($dp[\Nette\Caching\Cache::EXPIRE])) {
+				$this->client->expire($keyTagName, $dp[\Nette\Caching\Cache::EXPIRE]);
+			}
 		}
 
 		$this->client->exec();
