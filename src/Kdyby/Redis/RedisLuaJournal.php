@@ -12,6 +12,8 @@ declare(strict_types = 1);
 
 namespace Kdyby\Redis;
 
+use Nette\Caching\Cache;
+
 /**
  * Redis journal for tags and priorities of cached values.
  */
@@ -55,12 +57,12 @@ class RedisLuaJournal extends \Kdyby\Redis\RedisJournal
 	 */
 	private static function flattenDp(array $array): string
 	{
-		if (isset($array[\Nette\Caching\Cache::TAGS])) {
-			$array[\Nette\Caching\Cache::TAGS] = (array) $array[\Nette\Caching\Cache::TAGS];
+		if (isset($array[Cache::TAGS])) {
+			$array[Cache::TAGS] = (array) $array[Cache::TAGS];
 		}
 		$filtered = \array_intersect_key($array, \array_flip([Cache::TAGS, Cache::PRIORITY, Cache::ALL]));
 
-		return Nette\Utils\Json::encode($filtered);
+		return \Nette\Utils\Json::encode($filtered);
 	}
 
 	/**
