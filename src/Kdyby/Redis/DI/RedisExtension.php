@@ -179,7 +179,7 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 			'connectionAttempts' => $clientConfig['connectionAttempts'],
 			'persistent' => $clientConfig['persistent'],
 			'versionCheck' => $clientConfig['versionCheck'],
-		], \is_array($config['session']) ? $config['session'] : []););
+		], \is_array($config['session']) ? $config['session'] : []);
 
 		$sessionConfig['debugger'] = FALSE;
 
