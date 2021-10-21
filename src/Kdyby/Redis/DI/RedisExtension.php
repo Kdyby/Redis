@@ -165,7 +165,7 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 
 		$clientConfig = $config['clients'][NULL];
 
-		$sessionConfig = \Nette\DI\Config\Helpers::merge(\is_array($config['session']) ? $config['session'] : [], [
+		$sessionConfig = \Nette\DI\Config\Helpers::merge([
 			'host' => $clientConfig['host'],
 			'port' => $clientConfig['port'],
 			'weight' => 1,
@@ -179,7 +179,7 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 			'connectionAttempts' => $clientConfig['connectionAttempts'],
 			'persistent' => $clientConfig['persistent'],
 			'versionCheck' => $clientConfig['versionCheck'],
-		]);
+		], \is_array($config['session']) ? $config['session'] : []););
 
 		$sessionConfig['debugger'] = FALSE;
 
