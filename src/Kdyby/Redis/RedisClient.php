@@ -720,6 +720,7 @@ class RedisClient implements \ArrayAccess
 	 * @param string|int $offset
 	 * @return mixed
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetGet($offset)
 	{
 		return $this->__get($offset);

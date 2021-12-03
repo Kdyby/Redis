@@ -102,7 +102,7 @@ class RedisSessionHandler implements \SessionHandlerInterface
 	 * @throws \Kdyby\Redis\Exception\SessionHandlerException
 	 * @return string
 	 */
-	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	#[\ReturnTypeWillChange]
 	public function read($id): string
 	{
 		return (string) $this->client->get($this->lock($id));
@@ -138,7 +138,6 @@ class RedisSessionHandler implements \SessionHandlerInterface
 		return TRUE;
 	}
 
-	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
 	public function close(): bool
 	{
 		foreach ($this->ssIds as $key) {
@@ -150,9 +149,9 @@ class RedisSessionHandler implements \SessionHandlerInterface
 	}
 
 	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
-	public function gc($maxLifeTime): bool
+	public function gc($maxLifeTime): int
 	{
-		return TRUE;
+		return 1;
 	}
 
 	protected function lock(string $id): string
