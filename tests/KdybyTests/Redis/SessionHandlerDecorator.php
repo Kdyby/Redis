@@ -54,13 +54,9 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	/**
 	 * @param string $savePath
 	 * @param string $sessionId
-	 * @return bool
 	 */
 	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
-	public function open(
-		$savePath,
-		$sessionId
-	)
+	public function open($savePath, $sessionId): bool
 	{
 		$this->log(\sprintf('%s: %s', __FUNCTION__, $sessionId));
 		$this->openedSessionCalls[] = \array_merge([__FUNCTION__], \func_get_args());
@@ -68,11 +64,7 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 		return $this->handler->open($savePath, $sessionId);
 	}
 
-	/**
-	 * @return bool
-	 */
-	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
-	public function close()
+	public function close(): bool
 	{
 		$this->log(__FUNCTION__);
 		$this->openedSessionCalls[] = \array_merge([__FUNCTION__], \func_get_args());
@@ -84,10 +76,11 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 
 	/**
 	 * @param string $sessionId
-	 * @return string
+	 * @return string|false
 	 * @throws \Throwable
 	 */
 	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	#[\ReturnTypeWillChange]
 	public function read($sessionId)
 	{
 		$this->log(\sprintf('%s: %s', __FUNCTION__, $sessionId));
@@ -102,11 +95,10 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 
 	/**
 	 * @param string $sessionId
-	 * @return bool
 	 * @throws \Throwable
 	 */
 	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
-	public function destroy($sessionId)
+	public function destroy($sessionId): bool
 	{
 		$this->log(\sprintf('%s: %s', __FUNCTION__, $sessionId));
 		$this->openedSessionCalls[] = \array_merge([__FUNCTION__], \func_get_args());
@@ -121,14 +113,10 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 	/**
 	 * @param string $sessionId
 	 * @param string $sessionData
-	 * @return bool
 	 * @throws \Throwable
 	 */
 	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
-	public function write(
-		$sessionId,
-		$sessionData
-	)
+	public function write($sessionId, $sessionData): bool
 	{
 		$this->log(\sprintf('%s: %s', __FUNCTION__, $sessionId));
 		$this->openedSessionCalls[] = \array_merge([__FUNCTION__], \func_get_args());
@@ -142,9 +130,10 @@ class SessionHandlerDecorator implements \SessionHandlerInterface
 
 	/**
 	 * @param int $maxlifetime
-	 * @return bool
+	 * @return int|false
 	 */
 	// phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint,SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+	#[\ReturnTypeWillChange]
 	public function gc($maxlifetime)
 	{
 		$this->log(__FUNCTION__);
