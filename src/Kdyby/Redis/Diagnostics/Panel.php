@@ -151,11 +151,14 @@ class Panel implements \Tracy\IBarPanel
 
 		$s = '';
 		$h = 'htmlSpecialChars';
+
+		$dumper = new \Nette\PhpGenerator\Dumper();
+
 		foreach ($this->queries as $query) {
 			$s .= '<tr><td>' . \sprintf('%0.3f', $query->time * 1000000);
 			$s .= '</td><td class="kdyby-RedisClientPanel-dbindex">' . $query->db;
 			$s .= '</td><td class="kdyby-RedisClientPanel-cmd">' .
-				$h(\substr(\Nette\PhpGenerator\Helpers::dump(self::$maxLength ? \substr($query->cmd, 0, self::$maxLength) : $query->cmd), 1, -1));
+				$h(\substr($dumper->dump(self::$maxLength ? \substr($query->cmd, 0, self::$maxLength) : $query->cmd), 1, -1));
 			$s .= '</td></tr>';
 		}
 
@@ -183,7 +186,8 @@ class Panel implements \Tracy\IBarPanel
 					'</span></pre>';
 			}
 			if ($e->response) {
-				$response = \Nette\PhpGenerator\Helpers::dump($e->response);
+				$dumper = new \Nette\PhpGenerator\Dumper();
+				$response = $dumper->dump($e->response);
 				$panel .= '<h3>Redis Response (' . \strlen($e->response) . ')</h3>' .
 					'<pre class="nette-dump"><span class="php-string">' .
 					\htmlspecialchars($response) .
