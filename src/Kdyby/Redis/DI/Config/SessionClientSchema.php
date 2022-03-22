@@ -44,8 +44,6 @@ class SessionClientSchema implements \Nette\Schema\Schema
 			$value = $this->expandParameters($value);
 		}
 
-		$value = $this->getSchema()->complete($value, $context);
-
 		return $value;
 	}
 
