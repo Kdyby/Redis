@@ -47,6 +47,12 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 */
 	private const KEY = 'key';
 
+    /**
+     * @internal
+     */
+    private static $NetteCache;
+    private static $NamespaceSeparator;
+
 	/**
 	 * @var \Kdyby\Redis\RedisClient
 	 */
@@ -66,6 +72,13 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	{
 		$this->client = $client;
 		$this->journal = $journal;
+
+        self::$NetteCache = new \ReflectionClass(Cache::class);
+        if (self::$NetteCache->getConstant('NAMESPACE_SEPARATOR')){
+            self::$NamespaceSeparator = Cache::NAMESPACE_SEPARATOR;
+        } else {
+            self::$NamespaceSeparator = Cache::NamespaceSeparator;
+        }
 	}
 
 	public function disableLocking(): void
@@ -215,7 +228,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 			$meta[self::META_SERIALIZED] = TRUE;
 		}
 
-		$store = \json_encode($meta) . Cache::NAMESPACE_SEPARATOR . $data;
+		$store = \json_encode($meta) . self::$NamespaceSeparator . $data;
 
 		try {
 			if (isset($dp[Cache::EXPIRATION])) {
@@ -275,7 +288,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 
 	protected function formatEntryKey(string $key): string
 	{
-		return self::NS_NETTE . ':' . \str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
+		return self::NS_NETTE . ':' . \str_replace(self::$NamespaceSeparator, ':', $key);
 	}
 
 	/**
@@ -334,7 +347,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 */
 	private static function processStoredValue(string $key, string $storedValue): array
 	{
-		[$meta, $data] = \explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + [NULL, NULL];
+		[$meta, $data] = \explode(self::$NamespaceSeparator, $storedValue, 2) + [NULL, NULL];
 		return [[self::KEY => $key] + \json_decode($meta, TRUE), $data];
 	}
 
