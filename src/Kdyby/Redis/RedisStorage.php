@@ -29,6 +29,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 * @internal
 	 */
 	private const NS_NETTE = 'Nette.Storage';
+	private const NAMESPACE_SEPARATOR = "\x00";
 
 	/**
 	 * cache meta structure: array of
@@ -215,7 +216,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 			$meta[self::META_SERIALIZED] = TRUE;
 		}
 
-		$store = \json_encode($meta) . Cache::NAMESPACE_SEPARATOR . $data;
+		$store = \json_encode($meta) . self::NAMESPACE_SEPARATOR . $data;
 
 		try {
 			if (isset($dp[Cache::EXPIRATION])) {
@@ -275,7 +276,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 
 	protected function formatEntryKey(string $key): string
 	{
-		return self::NS_NETTE . ':' . \str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
+		return self::NS_NETTE . ':' . \str_replace(self::NAMESPACE_SEPARATOR, ':', $key);
 	}
 
 	/**
@@ -334,7 +335,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 */
 	private static function processStoredValue(string $key, string $storedValue): array
 	{
-		[$meta, $data] = \explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + [NULL, NULL];
+		[$meta, $data] = \explode(self::NAMESPACE_SEPARATOR, $storedValue, 2) + [NULL, NULL];
 		return [[self::KEY => $key] + \json_decode($meta, TRUE), $data];
 	}
 
