@@ -38,3 +38,4 @@ Learn more in the [documentation](https://github.com/Kdyby/Redis/blob/master/doc
 -----
 
 Homepage [http://www.kdyby.org](http://www.kdyby.org) and repository [http://github.com/kdyby/Redis](http://github.com/kdyby/Redis).
+ 

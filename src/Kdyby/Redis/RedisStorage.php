@@ -29,6 +29,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	 * @internal
 	 */
 	private const NS_NETTE = 'Nette.Storage';
+	private const NAMESPACE_SEPARATOR = "\x00";
 
 	/**
 	 * cache meta structure: array of
@@ -273,7 +274,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 
 	protected function formatEntryKey(string $key): string
 	{
-		return self::NS_NETTE . ':' . \str_replace(Cache::NAMESPACE_SEPARATOR, ':', $key);
+		return self::NS_NETTE . ':' . \str_replace(self::NAMESPACE_SEPARATOR, ':', $key);
 	}
 
 	/**
