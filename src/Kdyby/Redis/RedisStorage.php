@@ -216,7 +216,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 			$meta[self::META_SERIALIZED] = TRUE;
 		}
 
-		$store = \json_encode($meta) . Cache::NAMESPACE_SEPARATOR . $data;
+		$store = \json_encode($meta) . Cache::NamespaceSeparator . $data;
 		$store = \snappy_compress($store);
 
 		try {
@@ -274,7 +274,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 
 	protected function formatEntryKey(string $key): string
 	{
-		return self::NS_NETTE . ':' . \str_replace(self::NAMESPACE_SEPARATOR, ':', $key);
+		return self::NS_NETTE . ':' . \str_replace(Cache::NamespaceSeparator, ':', $key);
 	}
 
 	/**
@@ -338,7 +338,7 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 	private static function processStoredValue(string $key, string $storedValue): array
 	{
 		$storedValue = @\snappy_uncompress($storedValue);
-		[$meta, $data] = \explode(Cache::NAMESPACE_SEPARATOR, $storedValue, 2) + [NULL, NULL];
+		[$meta, $data] = \explode(Cache::NamespaceSeparator, $storedValue, 2) + [NULL, NULL];
 		return [[self::KEY => $key] + \json_decode($meta, TRUE), $data];
 	}
 
