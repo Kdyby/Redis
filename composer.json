@@ -54,5 +54,10 @@
 		"branch-alias": {
 			"dev-master": "5.0-dev"
 		}
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		}
 	}
 }
