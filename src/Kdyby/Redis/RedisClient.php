@@ -221,11 +221,11 @@ class RedisClient implements \ArrayAccess
 	 * @param ?int $port
 	 * @param int $database
 	 * @param int $timeout
-	 * @param string $auth
+	 * @param string|array $auth
 	 * @param bool $persistent
 	 * @throws \Kdyby\Redis\Exception\MissingExtensionException
 	 */
-	public function __construct(string $host = '127.0.0.1', ?int $port = 6379, int $database = 0, int $timeout = 10, ?string $auth = NULL, bool $persistent = FALSE)
+	public function __construct(string $host = '127.0.0.1', ?int $port = 6379, int $database = 0, int $timeout = 10, $auth = NULL, bool $persistent = FALSE)
 	{
 		$this->host = $host;
 		$this->port = $port;
