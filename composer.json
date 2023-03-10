@@ -22,7 +22,7 @@
 		"nette/di": "~3.0",
 		"nette/caching": "~3.1",
 		"nette/http": "~3.0",
-		"nette/utils": "~3.0"
+		"nette/utils": "~3.0 || ^4.0"
 	},
 	"suggest": {
 		"ext-redis": "The php redis extension https://github.com/nicolasff/phpredis/ is required for connecting to redis server"
@@ -30,7 +30,7 @@
 	"require-dev": {
 		"nette/bootstrap": "~3.0",
 		"nette/deprecated": "~3.0",
-		"nette/php-generator": "~3.3",
+		"nette/php-generator": "~3.3 || ^4.0",
 		"tracy/tracy": "~2.4",
 		"slevomat/coding-standard": "dev-master",
 		"nette/tester": "^2.3.1",
