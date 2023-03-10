@@ -38,13 +38,14 @@ DOC;
 		$code .= "\n\nnamespace " . $class->getNamespaceName() . ";\n\n";
 		$code .= 'use ' . \implode(";\n" . 'use ', $uses->parse()) . ";\n\n";
 
+		$dumper = new \Nette\PhpGenerator\Dumper();
 		// bootstrap
-		$code .= \Nette\PhpGenerator\Helpers::formatArgs('require_once ?;', [__DIR__ . '/../bootstrap.php']) . "\n";
+		$code .= $dumper->format('require_once ?;', __DIR__ . '/../bootstrap.php') . "\n";
 		$code .= '\Tester\Environment::$checkAssertions = FALSE;' . "\n";
-		$code .= \Nette\PhpGenerator\Helpers::formatArgs('\Tracy\Debugger::$logDirectory = ?;', [TEMP_DIR]) . "\n\n\n";
+		$code .= $dumper->format('\Tracy\Debugger::$logDirectory = ?;', TEMP_DIR) . "\n\n\n";
 
 		// script
-		$code .= \Nette\PhpGenerator\Helpers::formatArgs('extract(?);', [$this->closure->getStaticVariables()]) . "\n\n";
+		$code .= $dumper->format('extract(?);', $this->closure->getStaticVariables()) . "\n\n";
 		$code .= $codeParser->parse() . "\n\n\n";
 
 		return $code;
