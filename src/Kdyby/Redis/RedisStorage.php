@@ -18,7 +18,7 @@ use Nette\Caching\Storages\Journal;
 /**
  * Redis Storage.
  */
-class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
+class RedisStorage implements \Nette\Caching\BulkReader, \Kdyby\Redis\IMultiReadStorage
 {
 
 	use \Nette\SmartObject;
@@ -351,6 +351,12 @@ class RedisStorage implements \Kdyby\Redis\IMultiReadStorage
 		}
 
 		return @\unserialize($stored[1]); // intentionally @
+	}
+
+
+	public function bulkRead(array $keys): array
+	{
+		return $this->multiRead($keys);
 	}
 
 }
