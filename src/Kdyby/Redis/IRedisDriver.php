@@ -180,7 +180,7 @@ interface IRedisDriver
 	 * @param int $timeout value in seconds (optional, default is 0 meaning unlimited)
 	 * @return bool
 	 */
-	function connect($host, $port = NULL, $timeout = NULL, $retry_interval = NULL);
+	function connect($host, $port = NULL, $timeout = NULL, $persistent_id = NULL, $retry_interval = NULL, $read_timeout = NULL, $context = NULL);
 
 	/**
 	 * Change the selected database for the current connection.

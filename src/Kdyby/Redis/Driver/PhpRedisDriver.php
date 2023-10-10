@@ -24,7 +24,7 @@ class PhpRedisDriver extends \Redis implements Kdyby\Redis\IRedisDriver
 	/**
 	 * {@inheritdoc}
 	 */
-	public function connect($host, $port = NULL, $timeout = NULL, $retry_interval = NULL)
+    public function connect($host, $port = NULL, $timeout = NULL, $persistent_id = NULL, $retry_interval = NULL, $read_timeout = NULL, $context = NULL)
 	{
 		$args = func_get_args();
 		return call_user_func_array('parent::connect', $args);
