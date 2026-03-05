@@ -40,7 +40,7 @@ class RedisSchema implements \Nette\Schema\Schema
 			}
 		}
 
-		$value['clients'][NULL] = $client;
+		$value['clients'][''] = $client;
 
 		return $this->getSchema()->normalize($value, $context);
 	}
@@ -94,7 +94,7 @@ class RedisSchema implements \Nette\Schema\Schema
 				'clients' => \Nette\Schema\Expect::arrayOf(
 					new \Kdyby\Redis\DI\Config\ClientSchema($this->builder)
 				)->default([
-					NULL => [
+					'' => [
 						'host' => '127.0.0.1',
 						'port' => \Kdyby\Redis\RedisClient::DEFAULT_PORT,
 						'timeout' => 10,

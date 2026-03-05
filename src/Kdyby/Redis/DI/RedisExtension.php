@@ -86,7 +86,7 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 			$client->setAutowired(FALSE);
 		}
 
-		$this->configuredClients[$name] = $config;
+		$this->configuredClients[$name ?: ''] = $config;
 
 		$client->addSetup('setupLockDuration', [$config['lockDuration'], $config['lockAcquireTimeout']]);
 		$client->addSetup('setConnectionAttempts', [$config['connectionAttempts']]);
@@ -163,7 +163,7 @@ class RedisExtension extends \Nette\DI\CompilerExtension
 
 		$builder = $this->getContainerBuilder();
 
-		$clientConfig = $config['clients'][NULL];
+		$clientConfig = $config['clients'][''];
 
 		$sessionConfig = \Nette\DI\Config\Helpers::merge(\is_array($config['session']) ? $config['session'] : [], [
 			'host' => $clientConfig['host'],
